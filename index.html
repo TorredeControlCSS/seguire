@@ -3,8 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Sistema de Seguimiento Inteligente de Requisiciones · CEDIS CSS</title>
+<title>Torre de Control Inteligente — Requisiciones · CEDIS CSS</title>
 <link rel="icon" href="favicon.ico">
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=Space+Mono:wght@400;700&display=swap');
   :root{
@@ -890,26 +891,162 @@ function docNota(p,d){
       '<div style="text-align:center;border-top:1px solid var(--txt);padding-top:6px;font-size:12px"><b>Jefe de Planeación</b><br><span style="color:var(--muted)">Vo.Bo.</span></div>'+
     '</div>';
 }
+function autoCols(aoa){
+  var w=[];
+  aoa.forEach(function(row){ row.forEach(function(cell,i){
+    var len=(cell===null||cell===undefined)?0:String(cell).length;
+    w[i]=Math.max(w[i]||8, Math.min(len+2,48));
+  });});
+  return w.map(function(x){return {wch:x};});
+}
 function descargarPedido(cod){
   var p=P.find(function(x){return x.cod===cod;});if(!p)return;
-  if(!WEBAPP_URL || WEBAPP_URL.indexOf('PEGAR_URL')===0){
-    alert('Para generar el Excel con formato institucional, el sistema debe estar conectado al back end (Google Sheets). Configura la WEBAPP_URL.');
-    return;
-  }
+  if(typeof XLSX==='undefined'){ var bi=document.getElementById('pedDescInfo'); if(bi) bi.textContent='No se pudo cargar el generador de Excel (revisa tu conexión).'; return; }
   var btnInfo=document.getElementById('pedDescInfo');
-  if(btnInfo) btnInfo.textContent='Generando Excel en el servidor…';
-  // pide al back end que genere el Excel premium y devuelva el enlace
-  var url=WEBAPP_URL+'?accion=generarExcelPedido&codigo='+encodeURIComponent(cod);
-  fetch(url).then(function(r){return r.json();}).then(function(res){
-    if(res && res.url){
-      if(btnInfo) btnInfo.innerHTML='✓ Excel generado. <a href="'+res.url+'" target="_blank" style="color:var(--cssblue);font-weight:700">Abrir/descargar aquí</a>';
-      window.open(res.url,'_blank');
-    } else {
-      throw new Error(res && res.error ? res.error : 'respuesta vacía');
-    }
-  }).catch(function(e){
-    if(btnInfo) btnInfo.textContent='No se pudo generar el Excel: '+e.message;
+  if(btnInfo) btnInfo.textContent='Generando Excel…';
+  var d=calcPedido(p);
+  var folio='SP-'+Utilities_date()+'-'+Math.floor(Math.random()*9000+1000);
+  var hoy=new Date().toLocaleDateString('es-PA');
+  var ING='[POR INGESTAR]';
+  var holg=PEDIDO.holgura, te=PEDIDO.tiempoEspera, pc=PEDIDO.periodoCompra;
+  var wb=XLSX.utils.book_new();
+
+  // ===== HOJA 1: AnálisisDespacho =====
+  var consPA=p.eCDPA!==undefined?p.despMes*holg:0; // si hubiera desglose por centro
+  var a1=[
+    ['CAJA DE SEGURO SOCIAL'],
+    ['DIRECCIÓN NACIONAL DE LOGÍSTICA — DEPARTAMENTO DE PLANIFICACIÓN'],
+    ['ANÁLISIS DE DESPACHO Y CÁLCULO DE CANTIDAD A SOLICITAR'],
+    ['Folio '+folio+'   ·   '+hoy],
+    [],
+    ['CÓDIGO:',p.sap||p.cod,'','RENGLÓN:',p.cod,'','Acto No.:',p.numReq||ING],
+    ['DESCRIPCIÓN DEL PRODUCTO:',p.desc],
+    ['PRESENTACIÓN:',p.esp||ING,'','USO CLÍNICO:',p.esp||ING],
+    ['TIEMPO DE ESPERA:',te,'mes(es)','','NORMA DE ABASTECIMIENTO:',PEDIDO.norma,'días'],
+    ['PERÍODO DE EVALUACIÓN:','12 MESES'],
+    [],
+    ['C E D I S','FECHA','CANTIDAD PA','CANTIDAD DI','CANTIDAD CH','ALCANCE (meses)','SITUACIÓN'],
+    ['SALDO INICIAL (SAFIRO)',ING,ING,ING,ING,'',''],
+    ['(SAFIRO - SALMI)',ING,ING,ING,ING,'',''],
+    ['SALDO FINAL (SALMI)',ING,p.eCDPA,p.eCDDI,p.eCDCH,'',''],
+    ['SALIDAS POR ROTURAS/FALLAS/VENCIDOS',ING,ING,ING,ING,'Uds',''],
+    ['TOTAL CONSUMO',ING,ING,ING,ING,'Uds',''],
+    ['DÍAS DESABASTECIDOS',ING,ING,ING,ING,'Días',''],
+    ['TOTAL DE DÍAS ABASTECIDOS',ING,ING,ING,ING,'Días',''],
+    ['CONSUMO MENSUAL ESTIMADO',ING,ING,ING,ING,'Uds',''],
+    ['(consumo de despacho actualizado)',ING,ING,ING,ING,'Uds',''],
+    ['CONSUMO MENSUAL PROPUESTO',ING,'','','','Uds',''],
+    [],
+    ['CÁLCULO DE LA CANTIDAD A SOLICITAR'],
+    ['CONCEPTO','VALOR','UNIDAD'],
+    ['Existencia total',p.existTot,'Uds'],
+    ['Despacho mensual (consumo base)',p.despMes,'Uds'],
+    ['Consumo propuesto (×'+holg+')',Math.round(d.consPropuesto),'Uds'],
+    ['Punto de reorden = consumo × '+te,d.puntoReorden,'Uds'],
+    ['Inventario máximo = consumo × '+pc+' + punto reorden',d.invMaximo,'Uds'],
+    ['CANTIDAD A SOLICITAR (Qo) = inv.máx − exist − tránsito',d.qo,'Uds'],
+    ['MONTO ESTIMADO',Math.round(d.monto),'B/.'],
+    [],
+    ['PLANIFICADOR:',nombre(p.analista),'','','Vo.Bo. JEFE DE PLANIFICACIÓN DE MEDICAMENTOS']
+  ];
+  var ws1=XLSX.utils.aoa_to_sheet(a1); ws1['!cols']=autoCols(a1);
+  ws1['!merges']=[{s:{r:0,c:0},e:{r:0,c:6}},{s:{r:1,c:0},e:{r:1,c:6}},{s:{r:2,c:0},e:{r:2,c:6}},{s:{r:6,c:1},e:{r:6,c:6}}];
+  XLSX.utils.book_append_sheet(wb,ws1,'AnálisisDespacho');
+
+  // ===== HOJA 2: PROFORMA DE PEDIDO =====
+  var alcExist=p.despMes>0?p.existTot/p.despMes:0, alcSol=p.despMes>0?d.qo/p.despMes:0;
+  var rA=0.85, rB=0.15;
+  var a2=[
+    ['CAJA DE SEGURO SOCIAL'],
+    ['DEPARTAMENTO DE PLANEACIÓN DE SUMINISTROS'],
+    ['PROFORMA DE REQUISICIÓN DE PEDIDO'],
+    ['Folio '+folio+'   ·   '+hoy],
+    [],
+    ['No. DE RENGLÓN:',p.cod,'','SEGÚN ACTO PÚBLICO:',ING],
+    ['CÓDIGO DEL PRODUCTO (ABASTO):',p.cod,'','No. MATERIAL CATÁLOGO:',ING],
+    ['DESCRIPCIÓN DEL INSUMO:',p.desc],
+    ['USO CLÍNICO:',p.esp||ING,'','CERT. INTERCAMBIABILIDAD:',ING],
+    ['PRESENTACIÓN:',p.esp||ING,'','PRECIO ÚNICO:',ING],
+    ['SOLICITUD DE PEDIDO (No. REQUISICIÓN):',p.numReq||ING,'','ACTO No.:',ING,'','CONVOCATORIA:',ING],
+    [],
+    ['CONSUMO PROG. EST.','CONSUMO CALCULADO','EXISTENCIA DISP.','ALCANCE EXIST.(m)','CANT. SOLICITADA','ALCANCE SOLICITUD(m)','MONTO COMPROMETER(B/.)'],
+    [Math.round(p.despMes),Math.round(d.consPropuesto),p.existTot,Math.round(alcExist*100)/100,d.qo,Math.round(alcSol*100)/100,Math.round(d.monto)],
+    [],
+    ['DETALLE ACTUALIZADO DE CONSUMO Y EXISTENCIA'],
+    ['CDPA CONSUMO','CDPA EXIST.','CDDI CONSUMO','CDDI EXIST.','CDCH CONSUMO','CDCH EXIST.','TOTAL CONSUMO','TOTAL EXIST.'],
+    [ING,p.eCDPA,ING,p.eCDDI,ING,p.eCDCH,Math.round(d.consPropuesto),p.existTot],
+    [],
+    ['PEDIDOS PENDIENTE DE ENTREGA'],
+    ['FECHA RETIRO','# REQ/OC','CANT. A RECIBIR','ALCANCE','PRECIO UNIT.','PROVEEDOR','FECHA VTO ENTREGA'],
+    [ING,ING,ING,ING,p.precio,p.proveedor||ING,ING],
+    [],
+    ['PEDIDOS EN TRÁMITE'],
+    ['FECHA CONFECCIÓN','# REQ/OC','CANT. SOLICITADA','ALCANCE','PRECIO UNIT.','PROVEEDOR','CANT. RECIBIDA','CANT. PENDIENTE'],
+    [ING,ING,ING,ING,p.precio,p.proveedor||ING,ING,ING],
+    [],
+    ['ÚLTIMO ANTECEDENTE DE PRECIO RECIBIDO'],
+    ['FECHA OC','# OC','CANT. SOLICITADA','CANT. RECIBIDA','PRECIO UNIT.','PROVEEDOR','PAÍS ORIGEN'],
+    [ING,ING,ING,ING,ING,ING,ING],
+    ['OBSERVACIONES:',''],
+    [],
+    ['DETALLE DE LA COTIZACIÓN EN LÍNEA (% de riesgo '+rA+' / '+rB+')'],
+    ['PERÍODO ENTREGA','CEDIS/UE','CANT. A SOLICITAR','% RIESGO','CANT. POR RIESGO','MONTO (B/.)']
+  ];
+  ['ENTREGA INMEDIATA (10 DÍAS)','PRIMERA ENTREGA (30 DÍAS)','A PARTIR DE NOTA DE SOLICITUD','CESTA'].forEach(function(per){
+    ['CEDI - PANAMA','CEDI - DIVISA','CEDI - CHIRIQUI'].forEach(function(ce,i){
+      a2.push([i===0?per:'',ce,ING,rA,ING,ING]);
+    });
   });
+  a2.push([]);
+  a2.push(['PREPARADO POR:',nombre(p.analista),'','REVISADO POR:','']);
+  a2.push(['Planificador de Seg. Social','','','Planificador Farmacéutico','','','Vo.Bo. Jefe de Planif. de Medicamentos']);
+  var ws2=XLSX.utils.aoa_to_sheet(a2); ws2['!cols']=autoCols(a2);
+  ws2['!merges']=[{s:{r:0,c:0},e:{r:0,c:6}},{s:{r:1,c:0},e:{r:1,c:6}},{s:{r:2,c:0},e:{r:2,c:6}},{s:{r:7,c:1},e:{r:7,c:6}}];
+  XLSX.utils.book_append_sheet(wb,ws2,'PROFORMA DE PEDIDO');
+
+  // ===== HOJA 3: NOTA-ENTREGA =====
+  var q=d.qo, q1=Math.round(q*0.3), q2=Math.round(q*0.4), q3=q-q1-q2;
+  var a3=[
+    ['CAJA DE SEGURO SOCIAL'],
+    ['DIRECCIÓN NACIONAL DE LOGÍSTICA'],
+    ['SOLICITUD DE ENTREGA — CONTROL DE ABASTECIMIENTO'],
+    ['Folio '+folio+'   ·   '+hoy],
+    [],
+    ['DINALOG-P. de S. MED. N°:',ING,'','FECHA:',hoy],
+    ['ORDEN DE COMPRA N°:',p.numReq||ING,'','VIGENCIA PRESUPUESTARIA:',ING],
+    ['ACTO N°:',ING],
+    [],
+    ['SEÑORES:',p.proveedor||ING],
+    ['Por este medio, se les solicita la entrega de los siguientes productos:'],
+    [],
+    ['DESCRIPCIÓN DEL PRODUCTO:',p.desc],
+    ['CÓDIGO DE ABASTOS:',p.cod,'','RENGLÓN No.:',p.cod,'','PRESENTACIÓN:',p.esp||ING],
+    ['CONSUMO SEGÚN PLIEGO:',Math.round(d.consPropuesto),'','EXISTENCIA:',p.existTot,'','PRECIO UNIT.:',p.precio],
+    [],
+    ['CONDICIONES DE ENTREGA'],
+    ['CANTIDAD A SOLICITAR','DÍAS','LUGAR DE ENTREGA','MONTO POR ENTREGA (B/.)'],
+    [q1,30,'CEDIS PA',Math.round(q1*p.precio)],
+    [q2,30,'CEDIS DI',Math.round(q2*p.precio)],
+    [q3,30,'CEDIS CH',Math.round(q3*p.precio)],
+    ['TOTAL: '+q,'','',Math.round(q*p.precio)],
+    [],
+    ['DETALLE PRESUPUESTARIO'],
+    ['PARTIDA PRESUPUESTARIA','PARTIDA FINANCIERA','IMPORTE B/.'],
+    [ING,'0.85',ING],
+    [ING,'0.15',ING],
+    [],
+    ['Atentamente,'],
+    [],
+    ['_____________________________','','_____________________________'],
+    [ING+' — Jefe de Planeación de Suministros','','Dirección Nacional de Logística'],
+    ['CC:',ING]
+  ];
+  var ws3=XLSX.utils.aoa_to_sheet(a3); ws3['!cols']=autoCols(a3);
+  ws3['!merges']=[{s:{r:0,c:0},e:{r:0,c:5}},{s:{r:1,c:0},e:{r:1,c:5}},{s:{r:2,c:0},e:{r:2,c:5}},{s:{r:12,c:1},e:{r:12,c:5}}];
+  XLSX.utils.book_append_sheet(wb,ws3,'NOTA-ENTREGA');
+
+  XLSX.writeFile(wb,'SolicitudPedido_'+p.cod+'_'+folio+'.xlsx');
+  if(btnInfo) btnInfo.textContent='✓ Excel descargado.';
 }
 function simularSubida(){
   const s=document.getElementById('genStatus');s.textContent='Subiendo a Google Cloud…';
