@@ -102,7 +102,8 @@
   .kcards{display:flex;flex-direction:column;gap:8px;max-height:440px;overflow-y:auto}
   .kcard{background:#fff;border-radius:9px;padding:10px 11px;box-shadow:0 1px 3px rgba(11,31,58,.08);cursor:pointer;border-left:3px solid var(--baja);transition:.15s}
   .kcard:hover{transform:translateY(-2px);box-shadow:0 6px 16px rgba(11,31,58,.14)}
-  .kcard .kc-desc{font-size:12px;font-weight:600;color:var(--navy);line-height:1.25;margin-bottom:5px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  .kcard .kc-desc{font-size:11px;font-weight:500;color:var(--txt);line-height:1.25;margin-bottom:5px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  .kcard .kc-req{font-size:12px;color:var(--navy);margin-bottom:5px;font-weight:700;background:#EEF3FB;border-radius:5px;padding:3px 7px;display:inline-block}
   .kcard .kc-meta{font-size:10.5px;color:var(--muted);font-family:'Space Mono',monospace;display:flex;justify-content:space-between}
   .kcard .kc-age{font-weight:700}
   .kmore{font-size:11px;color:var(--cssblue);text-align:center;padding:6px;cursor:pointer;font-weight:600}
@@ -248,6 +249,16 @@ const moneyK=n=>{n=Math.round(n);if(Math.abs(n)>=1e6)return 'B/. '+(n/1e6).toFix
 const cap=s=>s.replace(/\w\S*/g,t=>t.charAt(0).toUpperCase()+t.substr(1).toLowerCase());
 const NOM=DATA.nombres;const TODAY=new Date('2026-05-14');
 function nombre(ini){return NOM[ini]?cap(NOM[ini]):ini;}
+function formatearCorte(v){
+  if(!v) return '';
+  var s=String(v);
+  // intenta extraer YYYY-MM-DD del inicio (ISO o fecha simple)
+  var m=s.match(/(\d{4})-(\d{2})-(\d{2})/);
+  if(!m) return s;
+  var meses=['ENE','FEB','MAR','ABR','MAY','JUN','JUL','AGO','SEP','OCT','NOV','DIC'];
+  var dia=m[3], mes=meses[parseInt(m[2],10)-1]||m[2], anio=m[1];
+  return dia+' '+mes+' '+anio;
+}
 let CORTE,P,critFilter={cond:null,oc:null},anaSel=null,ocFilter=null,agingFilter=null,funnelFilter=null;
 
 function ocClean(o){o=(o||'').toUpperCase().trim();
@@ -292,7 +303,7 @@ function loadCorte(key){
   CORTE=DATA.cortes[key];P=CORTE.prods;
   P.forEach(p=>{p._oc=ocClean(p.estatusOC);p._cond=calcCond(p);p._alc=calcAlcance(p);p._dias=diasReq(p);p._repo=calcReposicion(p);});
   critFilter={cond:null,oc:null};anaSel=null;ocFilter=null;agingFilter=null;funnelFilter=null;
-  document.getElementById('demoNote').innerHTML=`<span>⚡</span><div><b>Torre de Control — demo en vivo</b> · corte <b>${CORTE.label}</b> · <b>${fmt(P.length)} renglones reales</b>. `+
+  document.getElementById('demoNote').innerHTML=`<span>⚡</span><div><b>SEGUIR — datos en vivo</b> · corte <b>${CORTE.label}</b> · <b>${fmt(P.length)} renglones reales</b>. `+
     (CORTE.full?`Incluye bloque completo de abastecimiento.`:`<b>Nota:</b> este corte no trae punto de pedido / inv. máximo / reposición; use 07 MAY para esas columnas.`)+`</div>`;
   renderGeneral();renderAnalistas();renderRequis();renderFlujo();renderGenerador();renderSistema();
 }
@@ -590,8 +601,10 @@ function renderFlujo(){
         const age=p._dias!=null?p._dias+'d':'—';
         const ageCol=p._dias>365?'#D14343':p._dias>180?'#E8730C':'var(--muted)';
         return `<div class="kcard" style="border-left-color:${condColor[p._cond]}" data-cod="${p.cod}">
+          <div class="kc-req mono">${p.numReq?('Req '+p.numReq):'<span style="color:#B0432E">sin requisición</span>'}</div>
           <div class="kc-desc">${p.desc}</div>
-          <div class="kc-meta"><span>${nombre(p.analista).split(' ')[0]}</span><span class="kc-age" style="color:${ageCol}">${age}</span></div></div>`;}).join('')}
+          <div class="kc-meta"><span class="mono" style="font-size:10px">Renglón ${p.cod}</span><span class="kc-age" style="color:${ageCol}">${age}</span></div>
+          <div class="kc-meta" style="margin-top:2px"><span>${nombre(p.analista).split(' ')[0]}</span></div></div>`;}).join('')}
         ${items.length>15?`<div class="kmore" data-et="${e.id}" data-t="${e.t}">+ ver ${fmt(items.length-15)} más</div>`:''}
       </div></div>`;
   }).join('');
@@ -768,7 +781,10 @@ function renderGenerador(){
     </div>
     <div class="tbl-scroll"><table id="genTable"><thead></thead><tbody></tbody></table></div>
     <p style="font-size:11px;color:var(--muted);margin-top:10px">Fórmula de la sugerencia: <span class="mono">reposición = máx(0, inventario máximo − existencia − tránsito)</span>, disparada cuando la existencia cae bajo el punto de pedido (despacho × 3 meses).</p>`;
-  const cols=[colCodigo(),colDesc(),colAnalista(),
+  const cols=[
+    {h:'No. Requisición',v:p=>p.numReq||'',cell:p=>p.numReq?`<span class="mono" style="font-weight:700;color:var(--navy)">${p.numReq}</span>`:'<span style="color:#B0432E;font-size:11px">por generar</span>'},
+    {h:'Renglón',v:p=>p.cod,cell:p=>`<span class="mono">${p.cod}</span>`},
+    colDesc(),colAnalista(),
     {h:'Existencia',v:p=>p.existTot,cell:p=>`<span class="mono">${fmt(p.existTot)}</span>`},
     {h:'Punto pedido',v:p=>p.puntoPedido||p.despMes*3,cell:p=>`<span class="mono">${fmt(p.puntoPedido||p.despMes*3)}</span>`},
     {h:'Inv. máximo',v:p=>p.invMax||p.despMes*6,cell:p=>`<span class="mono">${fmt(p.invMax||p.despMes*6)}</span>`},
@@ -796,11 +812,12 @@ function openPedidoModal(p){
       '<div class="pdoc" id="pdoc0">'+docAnalisis(p,d)+'</div>'+
       '<div class="pdoc" id="pdoc1" style="display:none">'+docProforma(p,d)+'</div>'+
       '<div class="pdoc" id="pdoc2" style="display:none">'+docNota(p,d)+'</div>'+
-      '<div style="display:flex;gap:10px;margin-top:18px">'+
-        '<button class="btn" onclick=\'descargarPedido("'+p.cod+'")\'>⬇ Descargar los 3 en Excel</button>'+
+      '<div style="display:flex;gap:10px;margin-top:18px;align-items:center;flex-wrap:wrap">'+
+        '<button class="btn" onclick=\'descargarPedido("'+p.cod+'")\'>⬇ Generar Excel institucional (3 documentos)</button>'+
         '<button class="btn ghost" onclick="closeModal()">Cerrar</button>'+
+        '<span id="pedDescInfo" style="font-size:12px;color:var(--muted)"></span>'+
       '</div>'+
-      '<p style="font-size:11px;color:var(--muted);margin-top:10px">Generado automáticamente con la metodología del Departamento de Planificación. Reemplaza el llenado manual renglón por renglón.</p>'+
+      '<p style="font-size:11px;color:var(--muted);margin-top:10px">El Excel se genera en el servidor con el formato oficial de los tres formularios. Reemplaza el llenado manual renglón por renglón.</p>'+
     '</div>';
   document.querySelectorAll('#pedTabs .ptab').forEach(function(b){b.onclick=function(){
     document.querySelectorAll('#pedTabs .ptab').forEach(function(x){x.classList.remove('on');});
@@ -875,29 +892,24 @@ function docNota(p,d){
 }
 function descargarPedido(cod){
   var p=P.find(function(x){return x.cod===cod;});if(!p)return;
-  var d=calcPedido(p);
-  // CSV simple con las 3 secciones (el front no genera xlsx nativo; el back end sí)
-  var L=[];
-  L.push(['ANÁLISIS DE DESPACHO']);
-  L.push(['Código',p.cod,'SAP',p.sap,'Analista',nombre(p.analista)]);
-  L.push(['Descripción',p.desc]);
-  L.push(['Existencia',p.existTot,'Despacho/mes',p.despMes]);
-  L.push(['Consumo propuesto',Math.round(d.consPropuesto),'Punto reorden',d.puntoReorden]);
-  L.push(['Inventario máximo',d.invMaximo,'Cantidad a solicitar (Qo)',d.qo]);
-  L.push(['Monto',Math.round(d.monto)]);
-  L.push([]);
-  L.push(['PROFORMA DE PEDIDO']);
-  L.push(['Proveedor',p.proveedor,'Precio unit.',p.precio]);
-  L.push(['Cantidad solicitada',d.qo,'Alcance solicitud (meses)',d.alcanceQo.toFixed(1)]);
-  L.push(['Monto a comprometer',Math.round(d.monto)]);
-  L.push([]);
-  L.push(['NOTA DE ENTREGA']);
-  L.push(['Cantidad a solicitar',d.qo,'Monto total',Math.round(d.monto)]);
-  L.push(['Planificador',nombre(p.analista)]);
-  var csv=L.map(function(r){return r.map(function(x){return '"'+String(x==null?'':x).replace(/"/g,'""')+'"';}).join(',');}).join('\n');
-  var blob=new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'});
-  var a=document.createElement('a');a.href=URL.createObjectURL(blob);
-  a.download='SolicitudPedido_'+p.cod+'.csv';a.click();
+  if(!WEBAPP_URL || WEBAPP_URL.indexOf('PEGAR_URL')===0){
+    alert('Para generar el Excel con formato institucional, el sistema debe estar conectado al back end (Google Sheets). Configura la WEBAPP_URL.');
+    return;
+  }
+  var btnInfo=document.getElementById('pedDescInfo');
+  if(btnInfo) btnInfo.textContent='Generando Excel en el servidor…';
+  // pide al back end que genere el Excel premium y devuelva el enlace
+  var url=WEBAPP_URL+'?accion=generarExcelPedido&codigo='+encodeURIComponent(cod);
+  fetch(url).then(function(r){return r.json();}).then(function(res){
+    if(res && res.url){
+      if(btnInfo) btnInfo.innerHTML='✓ Excel generado. <a href="'+res.url+'" target="_blank" style="color:var(--cssblue);font-weight:700">Abrir/descargar aquí</a>';
+      window.open(res.url,'_blank');
+    } else {
+      throw new Error(res && res.error ? res.error : 'respuesta vacía');
+    }
+  }).catch(function(e){
+    if(btnInfo) btnInfo.textContent='No se pudo generar el Excel: '+e.message;
+  });
 }
 function simularSubida(){
   const s=document.getElementById('genStatus');s.textContent='Subiendo a Google Cloud…';
@@ -1106,7 +1118,7 @@ function integrarDatosVivos(live){
       fechaTermino:'',cantRecibir:0,puntoPedido:+r.PUNTO_PEDIDO||0,invMax:+r.INV_MAXIMO||0,
       reposicion:+r.REPOSICION||0,precio:precio};
   });
-  var lbl=live.corte||'EN VIVO';
+  var lbl=formatearCorte(live.corte)||'EN VIVO';
   DATA.cortes={'vivo':{label:lbl+' (en vivo)',full:true,prods:prods}};
   DATA.orden=['vivo'];
   DATA.nombres={};
