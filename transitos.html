@@ -203,7 +203,7 @@
       <div class="tabla-scroll">
         <table id="tablaTransitos">
           <thead><tr id="theadRow"></tr></thead>
-          <tbody id="tbodyTransitos"><tr><td colspan="15" style="text-align:center;color:#999;padding:20px;">Cargando…</td></tr></tbody>
+          <tbody id="tbodyTransitos"><tr><td colspan="16" style="text-align:center;color:#999;padding:20px;">Cargando…</td></tr></tbody>
         </table>
       </div>
       <div class="hint" id="contadorFilas" style="margin-top:8px;"></div>
@@ -222,6 +222,7 @@ const COLUMNAS = [
   {k:'tipo',        t:'Tipo'},
   {k:'n_documento', t:'N° Documento'},
   {k:'proveedor',   t:'Proveedor'},
+  {k:'cedi',        t:'CEDI'},
   {k:'cod_abasto_norm', t:'Cód. Abasto'},
   {k:'cod_sap',     t:'Cód. SAP'},
   {k:'descripcion', t:'Descripción'},
@@ -387,7 +388,7 @@ $('btnGuardar').addEventListener('click',function(){
 
 /* ====== PASO 3: TABLA VIVA ====== */
 function cargarTransitos(){
-  $('tbodyTransitos').innerHTML='<tr><td colspan="15" style="text-align:center;color:#999;padding:20px;">Cargando…</td></tr>';
+  $('tbodyTransitos').innerHTML='<tr><td colspan="16" style="text-align:center;color:#999;padding:20px;">Cargando…</td></tr>';
   const cb='cbTr'+Date.now();
   window[cb]=function(resp){
     try{ delete window[cb]; }catch(e){}
@@ -396,7 +397,7 @@ function cargarTransitos(){
   };
   const s=document.createElement('script');
   s.src=API_URL+'?accion=listarTransitos&callback='+cb;
-  s.onerror=()=>{ $('tbodyTransitos').innerHTML='<tr><td colspan="15" style="text-align:center;color:#a3331f;padding:20px;">No se pudo cargar. Verifique la conexión.</td></tr>'; };
+  s.onerror=()=>{ $('tbodyTransitos').innerHTML='<tr><td colspan="16" style="text-align:center;color:#a3331f;padding:20px;">No se pudo cargar. Verifique la conexión.</td></tr>'; };
   document.body.appendChild(s);
 }
 function estadoPill(est){
@@ -436,12 +437,13 @@ function renderTabla(){
     });
   }
   const tb=$('tbodyTransitos');
-  if(!filas.length){ tb.innerHTML='<tr><td colspan="15" style="text-align:center;color:#999;padding:20px;">Sin tránsitos que coincidan.</td></tr>'; }
+  if(!filas.length){ tb.innerHTML='<tr><td colspan="16" style="text-align:center;color:#999;padding:20px;">Sin tránsitos que coincidan.</td></tr>'; }
   else {
     tb.innerHTML=filas.map(t=>'<tr>'+
       '<td>'+esc(t.tipo)+'</td>'+
       '<td class="mono">'+esc(t.n_documento)+'</td>'+
       '<td>'+esc(t.proveedor)+'</td>'+
+      '<td style="text-align:center;font-weight:600;color:#0C447C;">'+esc(t.cedi||'—')+'</td>'+
       '<td class="mono">'+esc(t.cod_abasto_norm||t.cod_abasto)+'</td>'+
       '<td class="mono">'+esc(t.cod_sap)+'</td>'+
       '<td>'+esc(t.descripcion)+'</td>'+
@@ -544,7 +546,7 @@ function cargarAnalistas(){
 
 /* ====== INICIO ====== */
 if(API_URL){ cargarTransitos(); cargarAnalistas(); }
-else { $('tbodyTransitos').innerHTML='<tr><td colspan="15" style="text-align:center;color:#a3331f;padding:20px;">Configure API_URL (línea superior del script) tras desplegar el backend.</td></tr>'; }
+else { $('tbodyTransitos').innerHTML='<tr><td colspan="16" style="text-align:center;color:#a3331f;padding:20px;">Configure API_URL (línea superior del script) tras desplegar el backend.</td></tr>'; }
 </script>
 </body>
 </html>
