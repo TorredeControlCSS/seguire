@@ -65,8 +65,14 @@
   .kpi{background:#fff;border:1px solid var(--linea);border-radius:4px;padding:10px 12px;}
   .kpi .n{font-size:22px;font-weight:700;color:var(--azul);font-family:Consolas,monospace;}
   .kpi .l{font-size:11px;color:#666;text-transform:uppercase;letter-spacing:.3px;}
-  .reng-edit{display:grid;grid-template-columns:1.2fr 2.5fr .8fr .8fr;gap:8px;align-items:end;padding:8px;border:1px solid #dce6f0;border-radius:3px;margin-bottom:6px;background:#fbfdff;}
-  @media(max-width:760px){.reng-edit{grid-template-columns:1fr 1fr;}}
+  .reng-edit{padding:8px;border:1px solid #dce6f0;border-radius:3px;margin-bottom:8px;background:#fbfdff;}
+  .reng-campos{display:grid;grid-template-columns:1.2fr 2.5fr .8fr .8fr;gap:8px;align-items:end;}
+  @media(max-width:760px){.reng-campos{grid-template-columns:1fr 1fr;}}
+  .reng-cedis{margin-top:8px;padding-top:8px;border-top:1px dashed #c9d6e5;}
+  .reng-cedis-tit{font-size:11.5px;color:#0C447C;font-weight:600;margin-bottom:6px;}
+  .reng-cedis-grid{display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:8px;align-items:end;}
+  @media(max-width:760px){.reng-cedis-grid{grid-template-columns:1fr 1fr;}}
+  .reng-cedis-suma{font-family:Consolas,'Courier New',monospace;font-size:13px;font-weight:700;padding:6px 4px;white-space:nowrap;}
   .mini{font-size:11px;padding:4px 8px;}
   .hint{font-size:11px;color:#777;margin-top:3px;}
 </style>
@@ -342,12 +348,52 @@ function filaRenglon(r){
   let marca='';
   if(r._maestro===true){ marca=' <span style="color:#2d5a1e;font-weight:600;font-size:10.5px;">✓ validado</span>'; }
   else if(r._maestro===false && (r.cod_abasto||r.cod_sap)){ marca=' <span style="color:#8a6a00;font-weight:600;font-size:10.5px;">sin match en maestro</span>'; }
+  // Precargar cantidades por CEDI si Gemini las extrajo en r.destinos
+  const dmap={PANAMA:'',DIVISA:'',CHIRIQUI:''};
+  (r.destinos||[]).forEach(d=>{
+    const c=normCedi(d&&d.cedi);
+    if(c && dmap.hasOwnProperty(c)) dmap[c]=(d.cantidad!=null&&d.cantidad!=='')?d.cantidad:'';
+  });
   div.innerHTML=
-    '<div><label>Cód. Abasto'+marca+'</label><input type="text" data-f="cod_abasto" value="'+esc(r.cod_abasto||'')+'"></div>'+
-    '<div><label>Descripción</label><input type="text" data-f="descripcion" value="'+esc(r.descripcion||'')+'"></div>'+
-    '<div><label>Cantidad</label><input type="number" data-f="cantidad" value="'+esc(r.cantidad||'')+'"></div>'+
-    '<div style="display:flex;gap:6px;align-items:end;"><div style="flex:1;"><label>Cód. SAP</label><input type="text" data-f="cod_sap" value="'+esc(r.cod_sap||'')+'"></div><button class="btn btn-sec mini" type="button" onclick="this.closest(\'.reng-edit\').remove()" style="height:32px;">✕</button></div>';
+    '<div class="reng-campos">'+
+      '<div><label>Cód. Abasto'+marca+'</label><input type="text" data-f="cod_abasto" value="'+esc(r.cod_abasto||'')+'"></div>'+
+      '<div><label>Descripción</label><input type="text" data-f="descripcion" value="'+esc(r.descripcion||'')+'"></div>'+
+      '<div><label>Cantidad total</label><input type="number" data-f="cantidad" value="'+esc(r.cantidad||'')+'"></div>'+
+      '<div style="display:flex;gap:6px;align-items:end;"><div style="flex:1;"><label>Cód. SAP</label><input type="text" data-f="cod_sap" value="'+esc(r.cod_sap||'')+'"></div><button class="btn btn-sec mini" type="button" onclick="this.closest(\'.reng-edit\').remove()" style="height:32px;">✕</button></div>'+
+    '</div>'+
+    '<div class="reng-cedis">'+
+      '<div class="reng-cedis-tit">Reparto por CEDI <span style="font-weight:400;color:#888;">(deje en blanco si la entrega es a un solo CEDI; complete dos o más para segregar)</span></div>'+
+      '<div class="reng-cedis-grid">'+
+        '<div><label>CEDIS Panamá</label><input type="number" min="0" data-cedi="PANAMA" value="'+esc(dmap.PANAMA)+'" placeholder="cantidad"></div>'+
+        '<div><label>CEDIS Divisa</label><input type="number" min="0" data-cedi="DIVISA" value="'+esc(dmap.DIVISA)+'" placeholder="cantidad"></div>'+
+        '<div><label>CEDIS Chiriquí</label><input type="number" min="0" data-cedi="CHIRIQUI" value="'+esc(dmap.CHIRIQUI)+'" placeholder="cantidad"></div>'+
+        '<div style="display:flex;align-items:end;"><div class="reng-cedis-suma" data-suma>—</div></div>'+
+      '</div>'+
+    '</div>';
+  // Recalcular suma de CEDIS y avisar si no cuadra con la cantidad total
+  const inputsCedi=div.querySelectorAll('[data-cedi]');
+  const sumaBox=div.querySelector('[data-suma]');
+  const cantTotal=div.querySelector('[data-f="cantidad"]');
+  function recalc(){
+    let s=0,n=0;
+    inputsCedi.forEach(i=>{ const v=parseFloat(i.value)||0; if(v>0){s+=v;n++;} });
+    if(n===0){ sumaBox.textContent='—'; sumaBox.style.color='#888'; return; }
+    const tot=parseFloat(cantTotal.value)||0;
+    sumaBox.textContent='Σ '+s.toLocaleString('es-PA');
+    sumaBox.style.color=(tot && s!==tot)?'#a3331f':'#2d5a1e';
+    sumaBox.title=(tot && s!==tot)?('No cuadra con la cantidad total ('+tot.toLocaleString('es-PA')+')'):'Coincide con la cantidad total';
+  }
+  inputsCedi.forEach(i=>i.addEventListener('input',recalc));
+  cantTotal.addEventListener('input',recalc);
+  recalc();
   return div;
+}
+function normCedi(s){
+  let t=String(s||'').toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+  if(/CHIRIQUI/.test(t)) return 'CHIRIQUI';
+  if(/DIVISA/.test(t)) return 'DIVISA';
+  if(/PANAMA/.test(t)) return 'PANAMA';
+  return '';
 }
 $('btnAddReng').addEventListener('click',()=>$('renglones').appendChild(filaRenglon({})));
 $('btnCancelar').addEventListener('click',()=>{ $('panelRevision').style.display='none'; _extraido=null; _pdfBase64=null; $('estadoCarga').className='estado-msg'; });
@@ -355,7 +401,15 @@ $('btnCancelar').addEventListener('click',()=>{ $('panelRevision').style.display
 /* ====== GUARDAR ====== */
 $('btnGuardar').addEventListener('click',function(){
   const renglones=[...$('renglones').querySelectorAll('.reng-edit')].map(div=>{
-    const o={}; div.querySelectorAll('[data-f]').forEach(i=>o[i.dataset.f]=i.value.trim()); return o;
+    const o={}; div.querySelectorAll('[data-f]').forEach(i=>o[i.dataset.f]=i.value.trim());
+    // Reparto por CEDI: solo se incluyen los que tienen cantidad > 0
+    const destinos=[];
+    div.querySelectorAll('[data-cedi]').forEach(i=>{
+      const c=parseFloat(i.value)||0;
+      if(c>0) destinos.push({cedi:i.dataset.cedi, cantidad:c});
+    });
+    o.destinos=destinos;
+    return o;
   }).filter(r=>r.cod_abasto||r.descripcion);
   if(!renglones.length){ setMsg($('estadoGuardar'),'err','Debe haber al menos un renglón con datos.'); return; }
   const payload={
