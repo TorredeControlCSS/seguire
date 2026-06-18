@@ -338,8 +338,11 @@ function mostrarRevision(d, tipoElegido){
 function filaRenglon(r){
   const div=document.createElement('div');
   div.className='reng-edit';
+  let marca='';
+  if(r._maestro===true){ marca=' <span style="color:#2d5a1e;font-weight:600;font-size:10.5px;">✓ validado</span>'; }
+  else if(r._maestro===false && (r.cod_abasto||r.cod_sap)){ marca=' <span style="color:#8a6a00;font-weight:600;font-size:10.5px;">sin match en maestro</span>'; }
   div.innerHTML=
-    '<div><label>Cód. Abasto</label><input type="text" data-f="cod_abasto" value="'+esc(r.cod_abasto||'')+'"></div>'+
+    '<div><label>Cód. Abasto'+marca+'</label><input type="text" data-f="cod_abasto" value="'+esc(r.cod_abasto||'')+'"></div>'+
     '<div><label>Descripción</label><input type="text" data-f="descripcion" value="'+esc(r.descripcion||'')+'"></div>'+
     '<div><label>Cantidad</label><input type="number" data-f="cantidad" value="'+esc(r.cantidad||'')+'"></div>'+
     '<div style="display:flex;gap:6px;align-items:end;"><div style="flex:1;"><label>Cód. SAP</label><input type="text" data-f="cod_sap" value="'+esc(r.cod_sap||'')+'"></div><button class="btn btn-sec mini" type="button" onclick="this.closest(\'.reng-edit\').remove()" style="height:32px;">✕</button></div>';
