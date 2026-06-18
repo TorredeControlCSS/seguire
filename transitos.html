@@ -18,7 +18,7 @@
   header img{width:46px;height:46px;object-fit:contain;flex-shrink:0;}
   header h1{font-size:16px;margin:0;line-height:1.2;}
   header .sub{font-size:11px;opacity:.85;margin-top:2px;}
-  .wrap{max-width:1280px;margin:0 auto;padding:16px;}
+  .wrap{max-width:1600px;margin:0 auto;padding:16px;}
   .panel{background:#fff;border:1px solid var(--linea);border-radius:4px;margin-bottom:16px;}
   .panel-h{background:#f4f8fc;border-bottom:1px solid var(--linea);padding:10px 14px;font-weight:700;color:var(--azul);font-size:14px;display:flex;align-items:center;gap:8px;}
   .panel-b{padding:14px;}
@@ -26,6 +26,9 @@
   label{display:block;font-size:12px;font-weight:600;color:#444;margin-bottom:4px;}
   select,input[type=text],input[type=number],input[type=date]{width:100%;padding:7px 9px;border:1px solid var(--linea);border-radius:3px;font-size:13px;font-family:inherit;}
   .grid{display:grid;gap:12px;}
+  .fila-carga{display:grid;grid-template-columns:1.4fr 1fr;gap:16px;align-items:start;}
+  .fila-carga .panel{margin-bottom:16px;}
+  @media(max-width:980px){.fila-carga{grid-template-columns:1fr;}}
   .g2{grid-template-columns:1fr 1fr;}
   .g3{grid-template-columns:1fr 1fr 1fr;}
   .g4{grid-template-columns:repeat(4,1fr);}
@@ -35,11 +38,11 @@
   .btn:disabled{opacity:.5;cursor:not-allowed;}
   .btn-sec{background:#fff;color:var(--azul);}
   .btn-sec:hover{background:#f0f6fc;}
-  .dropzone{display:flex;align-items:center;justify-content:center;gap:12px;border:2px dashed #1e5a9e;border-radius:5px;padding:12px 18px;text-align:left;background:#0C447C;cursor:pointer;transition:.15s;}
-  .dropzone:hover,.dropzone.drag{background:#1e5a9e;border-color:#fff;}
-  .dropzone .ico{font-size:22px;color:#fff;line-height:1;}
-  .dropzone .t{font-weight:600;color:#fff;font-size:13.5px;}
-  .dropzone .s{font-size:11.5px;color:#cfe0f2;margin-top:1px;}
+  .dropzone{display:flex;align-items:center;justify-content:center;gap:12px;border:2px dashed #c9a227;border-radius:6px;padding:18px;text-align:left;background:rgba(255,221,87,0.18);cursor:pointer;transition:.15s;}
+  .dropzone:hover,.dropzone.drag{background:rgba(255,210,40,0.32);border-color:#a9851a;}
+  .dropzone .ico{font-size:26px;color:#8a6a00;line-height:1;}
+  .dropzone .t{font-weight:600;color:#6b5400;font-size:13.5px;}
+  .dropzone .s{font-size:11.5px;color:#8a7320;margin-top:1px;}
   .estado-msg{padding:9px 12px;border-radius:3px;font-size:13px;margin-top:10px;display:none;}
   .estado-msg.info{background:#e7f1fb;color:var(--azul);border:1px solid #b8d4ee;display:block;}
   .estado-msg.ok{background:var(--verde-bg);color:var(--verde);border:1px solid #b5d4a8;display:block;}
@@ -57,7 +60,7 @@
   .reng-row{border-top:1px solid #dce6f0;padding:8px 0;}
   .filtros{display:flex;gap:10px;flex-wrap:wrap;align-items:end;margin-bottom:12px;}
   .filtros>div{flex:1;min-width:160px;}
-  .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px;}
+  .kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:14px;}
   @media(max-width:760px){.kpis{grid-template-columns:1fr 1fr;}}
   .kpi{background:#fff;border:1px solid var(--linea);border-radius:4px;padding:10px 12px;}
   .kpi .n{font-size:22px;font-weight:700;color:var(--azul);font-family:Consolas,monospace;}
@@ -88,46 +91,47 @@
     <div class="kpi"><div class="n" id="kpiPallets">—</div><div class="l">Pallets equivalentes (total)</div></div>
   </div>
 
-  <!-- PASO 1: Cargar documento -->
-  <div class="panel">
-    <div class="panel-h"><span class="num">1</span> Cargar documento del planificador</div>
-    <div class="panel-b">
-      <div class="grid g2" style="margin-bottom:12px;">
-        <div>
-          <label>Tipo de documento</label>
-          <select id="tipoDoc">
-            <option value="">— Seleccione antes de subir —</option>
-            <option value="ORDEN_COMPRA">Orden de Compra (OC)</option>
-            <option value="SOLICITUD_ENTREGA">Solicitud de Entrega (DINALOG-P. de S. MED.)</option>
-            <option value="ADELANTO">Nota de Adelanto (DINALOG-N°)</option>
-          </select>
-          <div class="hint">El sistema verificará el tipo al procesar el documento; si difiere, se le notificará.</div>
+  <!-- PASO 1 + Gráfico, lado a lado -->
+  <div class="fila-carga">
+    <div class="panel">
+      <div class="panel-h"><span class="num">1</span> Cargar documento del planificador</div>
+      <div class="panel-b">
+        <div class="grid g2" style="margin-bottom:12px;">
+          <div>
+            <label>Tipo de documento</label>
+            <select id="tipoDoc">
+              <option value="">— Seleccione antes de subir —</option>
+              <option value="ORDEN_COMPRA">Orden de Compra (OC)</option>
+              <option value="SOLICITUD_ENTREGA">Solicitud de Entrega (DINALOG-P. de S. MED.)</option>
+              <option value="ADELANTO">Nota de Adelanto (DINALOG-N°)</option>
+            </select>
+            <div class="hint">El sistema verificará el tipo al procesar el documento; si difiere, se le notificará.</div>
+          </div>
+          <div>
+            <label>Planificador que sube</label>
+            <select id="planificadorSel"><option value="">— Seleccione —</option><option value="__OTRO__">Otro (escribir)</option></select>
+            <input type="text" id="planificador" placeholder="Su nombre y apellido" style="display:none;margin-top:6px;">
+            <div class="hint">Para registrar quién dio visibilidad al documento.</div>
+          </div>
         </div>
-        <div>
-          <label>Planificador que sube</label>
-          <select id="planificadorSel"><option value="">— Seleccione —</option><option value="__OTRO__">Otro (escribir)</option></select>
-          <input type="text" id="planificador" placeholder="Su nombre y apellido" style="display:none;margin-top:6px;">
-          <div class="hint">Para registrar quién dio visibilidad al documento.</div>
+        <div class="dropzone" id="dropzone">
+          <div class="ico">⬆</div>
+          <div>
+            <div class="t">Arrastre el PDF aquí o haga clic para seleccionar</div>
+            <div class="s">Orden de compra, solicitud de entrega o nota de adelanto — formato PDF</div>
+          </div>
+          <input type="file" id="filePdf" accept="application/pdf" style="display:none;">
         </div>
+        <div class="estado-msg" id="estadoCarga"></div>
       </div>
-      <div class="dropzone" id="dropzone">
-        <div class="ico">⬆</div>
-        <div>
-          <div class="t">Arrastre el PDF aquí o haga clic para seleccionar</div>
-          <div class="s">Orden de compra, solicitud de entrega o nota de adelanto — formato PDF</div>
-        </div>
-        <input type="file" id="filePdf" accept="application/pdf" style="display:none;">
-      </div>
-      <div class="estado-msg" id="estadoCarga"></div>
     </div>
-  </div>
 
-  <!-- Gráfico: OC subidas por planificador -->
-  <div class="panel">
-    <div class="panel-h">Documentos cargados por planificador</div>
-    <div class="panel-b">
-      <div style="font-size:12px;color:#666;margin-bottom:10px;">Órdenes de compra (documentos únicos) que cada planificador ha dado de alta en este sistema.</div>
-      <div id="graficoPlanif"><div style="font-size:12px;color:#999;padding:8px;">Cargando…</div></div>
+    <div class="panel">
+      <div class="panel-h">Documentos cargados por planificador</div>
+      <div class="panel-b">
+        <div style="font-size:12px;color:#666;margin-bottom:10px;">Órdenes de compra (documentos únicos) que cada planificador ha dado de alta en este sistema.</div>
+        <div id="graficoPlanif"><div style="font-size:12px;color:#999;padding:8px;">Cargando…</div></div>
+      </div>
     </div>
   </div>
 
