@@ -4,6 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Tránsitos de OC — SEGUIRE · CEDIS Panamá</title>
+<link rel="icon" href="https://torredecontrolcss.github.io/seguire/favicon.ico">
+<link rel="apple-touch-icon" href="https://torredecontrolcss.github.io/seguire/icons/icon-192.png">
 <style>
   :root{
     --azul:#0C447C; --azul2:#1e5a9e; --bg:#ececec; --linea:#a8a8a8;
@@ -33,11 +35,11 @@
   .btn:disabled{opacity:.5;cursor:not-allowed;}
   .btn-sec{background:#fff;color:var(--azul);}
   .btn-sec:hover{background:#f0f6fc;}
-  .dropzone{border:2px dashed var(--azul2);border-radius:6px;padding:28px;text-align:center;background:#f8fbff;cursor:pointer;transition:.15s;}
-  .dropzone:hover,.dropzone.drag{background:#eaf3fc;border-color:var(--azul);}
-  .dropzone .ico{font-size:32px;color:var(--azul2);}
-  .dropzone .t{font-weight:600;color:var(--azul);margin-top:6px;}
-  .dropzone .s{font-size:12px;color:#777;margin-top:3px;}
+  .dropzone{display:flex;align-items:center;justify-content:center;gap:12px;border:2px dashed #1e5a9e;border-radius:5px;padding:12px 18px;text-align:left;background:#0C447C;cursor:pointer;transition:.15s;}
+  .dropzone:hover,.dropzone.drag{background:#1e5a9e;border-color:#fff;}
+  .dropzone .ico{font-size:22px;color:#fff;line-height:1;}
+  .dropzone .t{font-weight:600;color:#fff;font-size:13.5px;}
+  .dropzone .s{font-size:11.5px;color:#cfe0f2;margin-top:1px;}
   .estado-msg{padding:9px 12px;border-radius:3px;font-size:13px;margin-top:10px;display:none;}
   .estado-msg.info{background:#e7f1fb;color:var(--azul);border:1px solid #b8d4ee;display:block;}
   .estado-msg.ok{background:var(--verde-bg);color:var(--verde);border:1px solid #b5d4a8;display:block;}
@@ -83,6 +85,7 @@
     <div class="kpi"><div class="n" id="kpiOC">—</div><div class="l">Órdenes de compra</div></div>
     <div class="kpi"><div class="n" id="kpiPend">—</div><div class="l">Sin retirar / pendientes</div></div>
     <div class="kpi"><div class="n" id="kpiVenc">—</div><div class="l">Vencen ≤ 15 días</div></div>
+    <div class="kpi"><div class="n" id="kpiPallets">—</div><div class="l">Pallets equivalentes (total)</div></div>
   </div>
 
   <!-- PASO 1: Cargar documento -->
@@ -98,21 +101,33 @@
             <option value="SOLICITUD_ENTREGA">Solicitud de Entrega (DINALOG-P. de S. MED.)</option>
             <option value="ADELANTO">Nota de Adelanto (DINALOG-N°)</option>
           </select>
-          <div class="hint">La IA confirmará el tipo al leer el documento; si difiere, se le avisará.</div>
+          <div class="hint">El sistema verificará el tipo al procesar el documento; si difiere, se le notificará.</div>
         </div>
         <div>
           <label>Planificador que sube</label>
-          <input type="text" id="planificador" placeholder="Su nombre y apellido">
-          <div class="hint">Para registrar quién ingresó el documento.</div>
+          <select id="planificadorSel"><option value="">— Seleccione —</option><option value="__OTRO__">Otro (escribir)</option></select>
+          <input type="text" id="planificador" placeholder="Su nombre y apellido" style="display:none;margin-top:6px;">
+          <div class="hint">Para registrar quién dio visibilidad al documento.</div>
         </div>
       </div>
       <div class="dropzone" id="dropzone">
         <div class="ico">⬆</div>
-        <div class="t">Arrastre el PDF aquí o haga clic para seleccionar</div>
-        <div class="s">Orden de compra, solicitud de entrega o nota de adelanto — formato PDF</div>
+        <div>
+          <div class="t">Arrastre el PDF aquí o haga clic para seleccionar</div>
+          <div class="s">Orden de compra, solicitud de entrega o nota de adelanto — formato PDF</div>
+        </div>
         <input type="file" id="filePdf" accept="application/pdf" style="display:none;">
       </div>
       <div class="estado-msg" id="estadoCarga"></div>
+    </div>
+  </div>
+
+  <!-- Gráfico: OC subidas por planificador -->
+  <div class="panel">
+    <div class="panel-h">Documentos cargados por planificador</div>
+    <div class="panel-b">
+      <div style="font-size:12px;color:#666;margin-bottom:10px;">Órdenes de compra (documentos únicos) que cada planificador ha dado de alta en este sistema.</div>
+      <div id="graficoPlanif"><div style="font-size:12px;color:#999;padding:8px;">Cargando…</div></div>
     </div>
   </div>
 
@@ -130,7 +145,7 @@
       <div class="grid g3" style="margin-bottom:12px;">
         <div><label>Proveedor</label><input type="text" id="rProv"></div>
         <div><label>Vencimiento OC (estampada)</label><input type="text" id="rVenc" placeholder="AAAA-MM-DD"></div>
-        <div><label>Vencimiento de entrega (operativa)</label><input type="text" id="rVencEnt" placeholder="AAAA-MM-DD"></div>
+        <div><label>Vencimiento de entrega (operativa)</label><input type="text" id="rVencEnt" placeholder="AAAA-MM-DD"><div id="confVencEnt" style="font-size:11px;margin-top:3px;display:none;"></div></div>
       </div>
       <div class="grid g2" style="margin-bottom:12px;">
         <div><label>Término de entrega (inicio)</label><input type="text" id="rTermino" placeholder="AAAA-MM-DD"></div>
@@ -184,7 +199,7 @@
       <div class="tabla-scroll">
         <table id="tablaTransitos">
           <thead><tr id="theadRow"></tr></thead>
-          <tbody id="tbodyTransitos"><tr><td colspan="13" style="text-align:center;color:#999;padding:20px;">Cargando…</td></tr></tbody>
+          <tbody id="tbodyTransitos"><tr><td colspan="15" style="text-align:center;color:#999;padding:20px;">Cargando…</td></tr></tbody>
         </table>
       </div>
       <div class="hint" id="contadorFilas" style="margin-top:8px;"></div>
@@ -207,11 +222,13 @@ const COLUMNAS = [
   {k:'cod_sap',     t:'Cód. SAP'},
   {k:'descripcion', t:'Descripción'},
   {k:'cantidad',    t:'Cantidad'},
+  {k:'pallets_equiv', t:'Pallets eq.'},
   {k:'n_entrega',   t:'Entrega'},
   {k:'saldo',       t:'Saldo'},
   {k:'vencimiento_entrega', t:'Vence Entrega'},
   {k:'vencimiento_oc', t:'Vence OC'},
-  {k:'analista',    t:'Analista'},
+  {k:'planificador', t:'Planificador'},
+  {k:'fecha_ingesta', t:'Cargado'},
   {k:'estado_transito', t:'Estado'}
 ];
 
@@ -247,7 +264,7 @@ function procesarArchivo(file){
   if(file.type!=='application/pdf'){ setMsg($('estadoCarga'),'err','El archivo debe ser PDF.'); return; }
   const tipo=$('tipoDoc').value;
   if(!tipo){ setMsg($('estadoCarga'),'err','Seleccione primero el tipo de documento.'); return; }
-  if(!$('planificador').value.trim()){ setMsg($('estadoCarga'),'err','Indique su nombre antes de subir.'); return; }
+  if(!$('planificador').value.trim()){ setMsg($('estadoCarga'),'err','Seleccione o indique el planificador antes de subir.'); return; }
   _pdfNombre=file.name;
   const reader=new FileReader();
   reader.onload=()=>{ _pdfBase64=reader.result.split(',')[1]; extraerConIA(tipo); };
@@ -274,6 +291,22 @@ function extraerConIA(tipoElegido){
 }
 
 /* ====== PASO 2: REVISIÓN EDITABLE ====== */
+function mostrarConfianzaVenc(conf, fecha){
+  const box=$('confVencEnt');
+  if(!box) return;
+  // Sin fecha leída: no mostramos indicador (el planificador la captura a mano).
+  if(fecha==null || fecha===''){ box.style.display='none'; return; }
+  let c=Number(conf);
+  if(isNaN(c)) c=1;
+  let col,txt;
+  if(c>=0.85){ col='#2d5a1e'; txt='Lectura confiable de la fecha manuscrita.'; }
+  else if(c>=0.55){ col='#8a6a00'; txt='Lectura con dudas — verifique la fecha contra el documento.'; }
+  else { col='#a3331f'; txt='Lectura poco fiable — confirme la fecha manualmente.'; }
+  box.style.color=col;
+  box.textContent='Confianza '+Math.round(c*100)+'%: '+txt;
+  box.style.display='block';
+}
+
 function mostrarRevision(d, tipoElegido){
   $('panelRevision').style.display='block';
   const tipoIA=d.tipo||tipoElegido;
@@ -285,6 +318,8 @@ function mostrarRevision(d, tipoElegido){
   $('rVenc').value=d.vencimiento_oc||'';
   $('rVencEnt').value=d.vencimiento_entrega||'';
   $('rTermino').value=d.termino_entrega||'';
+  // Indicador de confianza de la lectura del dato manuscrito (vencimiento de entrega)
+  mostrarConfianzaVenc(d.confianza_venc_entrega, d.vencimiento_entrega);
   // aviso si la IA detectó un tipo distinto al elegido
   if(tipoIA && tipoElegido && tipoIA!==tipoElegido){
     setMsg($('avisoTipo'),'info','El reconocimiento detectó este documento como <b>'+esc(tipoIA)+'</b>, pero usted eligió <b>'+esc(tipoElegido)+'</b>. Verifique cuál es correcto.');
@@ -345,7 +380,7 @@ $('btnGuardar').addEventListener('click',function(){
 
 /* ====== PASO 3: TABLA VIVA ====== */
 function cargarTransitos(){
-  $('tbodyTransitos').innerHTML='<tr><td colspan="13" style="text-align:center;color:#999;padding:20px;">Cargando…</td></tr>';
+  $('tbodyTransitos').innerHTML='<tr><td colspan="15" style="text-align:center;color:#999;padding:20px;">Cargando…</td></tr>';
   const cb='cbTr'+Date.now();
   window[cb]=function(resp){
     try{ delete window[cb]; }catch(e){}
@@ -354,7 +389,7 @@ function cargarTransitos(){
   };
   const s=document.createElement('script');
   s.src=API_URL+'?accion=listarTransitos&callback='+cb;
-  s.onerror=()=>{ $('tbodyTransitos').innerHTML='<tr><td colspan="13" style="text-align:center;color:#a3331f;padding:20px;">No se pudo cargar. Verifique la conexión.</td></tr>'; };
+  s.onerror=()=>{ $('tbodyTransitos').innerHTML='<tr><td colspan="15" style="text-align:center;color:#a3331f;padding:20px;">No se pudo cargar. Verifique la conexión.</td></tr>'; };
   document.body.appendChild(s);
 }
 function estadoPill(est){
@@ -394,7 +429,7 @@ function renderTabla(){
     });
   }
   const tb=$('tbodyTransitos');
-  if(!filas.length){ tb.innerHTML='<tr><td colspan="13" style="text-align:center;color:#999;padding:20px;">Sin tránsitos que coincidan.</td></tr>'; }
+  if(!filas.length){ tb.innerHTML='<tr><td colspan="15" style="text-align:center;color:#999;padding:20px;">Sin tránsitos que coincidan.</td></tr>'; }
   else {
     tb.innerHTML=filas.map(t=>'<tr>'+
       '<td>'+esc(t.tipo)+'</td>'+
@@ -404,11 +439,13 @@ function renderTabla(){
       '<td class="mono">'+esc(t.cod_sap)+'</td>'+
       '<td>'+esc(t.descripcion)+'</td>'+
       '<td class="mono" style="text-align:right;">'+fmtNum(t.cantidad)+'</td>'+
+      '<td class="mono" style="text-align:right;">'+(t.pallets_equiv!==''&&t.pallets_equiv!=null?fmtNum(t.pallets_equiv):'—')+'</td>'+
       '<td style="text-align:center;">'+esc(t.n_entrega||'—')+'</td>'+
       '<td class="mono" style="text-align:right;">'+fmtNum(t.saldo)+'</td>'+
       '<td>'+vencCell(t.vencimiento_entrega,t.estado_transito)+'</td>'+
       '<td>'+vencCell(t.vencimiento_oc,t.estado_transito)+'</td>'+
-      '<td>'+esc(t.analista||'—')+'</td>'+
+      '<td>'+esc(t.planificador||'—')+'</td>'+
+      '<td class="mono" style="font-size:11px;">'+esc(t.fecha_ingesta||'—')+'</td>'+
       '<td>'+estadoPill(t.estado_transito)+'</td>'+
       '</tr>').join('');
   }
@@ -431,28 +468,76 @@ function renderKPIs(){
   $('kpiTotal').textContent=TRANSITOS.length;
   $('kpiOC').textContent=new Set(TRANSITOS.map(t=>t.n_documento)).size;
   $('kpiPend').textContent=TRANSITOS.filter(t=>String(t.estado_transito||'').toUpperCase()!=='COMPLETADA').length;
-  $('kpiVenc').textContent=TRANSITOS.filter(t=>{const d=diasPara(t.vencimiento_oc);return d!=null&&d>=0&&d<=15;}).length;
+  $('kpiVenc').textContent=TRANSITOS.filter(t=>{const d=diasPara(t.vencimiento_entrega||t.vencimiento_oc);return d!=null&&d>=0&&d<=15;}).length;
+  const totPal=TRANSITOS.reduce((s,t)=>s+(parseFloat(t.pallets_equiv)||0),0);
+  $('kpiPallets').textContent=totPal>0?fmtNum(Math.round(totPal*10)/10):'—';
+  renderGraficoPlanif();
+}
+
+/* Gráfico de barras: cantidad de OC (documentos únicos) por planificador */
+function renderGraficoPlanif(){
+  const cont=$('graficoPlanif');
+  if(!cont) return;
+  if(!TRANSITOS.length){ cont.innerHTML='<div style="font-size:12px;color:#999;padding:8px;">Sin datos para graficar.</div>'; return; }
+  const porP={};
+  TRANSITOS.forEach(t=>{
+    const p=String(t.planificador||'(sin planificador)').trim()||'(sin planificador)';
+    (porP[p]=porP[p]||new Set()).add(t.n_documento);
+  });
+  const filas=Object.keys(porP).map(p=>({p, n:porP[p].size})).sort((a,b)=>b.n-a.n);
+  const max=Math.max.apply(null,filas.map(f=>f.n))||1;
+  cont.innerHTML=filas.map(f=>{
+    const w=Math.round((f.n/max)*100);
+    return '<div style="display:flex;align-items:center;gap:8px;margin-bottom:5px;">'+
+      '<div style="flex:0 0 130px;font-size:11.5px;color:#333;text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="'+esc(f.p)+'">'+esc(f.p)+'</div>'+
+      '<div style="flex:1;background:#e7eef6;border-radius:3px;height:18px;position:relative;">'+
+        '<div style="width:'+w+'%;background:#0C447C;height:100%;border-radius:3px;"></div>'+
+      '</div>'+
+      '<div class="mono" style="flex:0 0 28px;font-size:12px;color:#0C447C;font-weight:700;">'+f.n+'</div>'+
+    '</div>';
+  }).join('');
 }
 ['fBuscar','fTipo','fEstado'].forEach(id=>$(id).addEventListener('input',renderTabla));
 $('btnRefrescar').addEventListener('click',cargarTransitos);
 
-/* ====== CARGAR ANALISTAS (desplegable con búsqueda) ====== */
+/* ====== CARGAR PLANIFICADORES (select paso 1 + datalist analista paso 2) ====== */
 function cargarAnalistas(){
   const cb='cbAna'+Date.now();
   window[cb]=function(resp){
     try{ delete window[cb]; }catch(e){}
-    const lista=(resp&&resp.analistas)?resp.analistas:[];
+    const lista=(resp&&resp.planificadores)?resp.planificadores:[];
+    // Datalist de analista (paso 2)
     const dl=$('listaAnalistas');
-    dl.innerHTML=lista.map(a=>'<option value="'+esc(a.nombre)+'">'+esc(a.iniciales)+'</option>').join('');
+    if(dl) dl.innerHTML=lista.map(a=>'<option value="'+esc(a.nombre)+'">'+esc(a.iniciales)+'</option>').join('');
+    // Select de planificador que sube (paso 1)
+    const sel=$('planificadorSel');
+    if(sel){
+      const opts=['<option value="">— Seleccione —</option>']
+        .concat(lista.map(a=>'<option value="'+esc(a.nombre)+'">'+esc(a.nombre)+'</option>'))
+        .concat(['<option value="__OTRO__">Otro (escribir)</option>']);
+      sel.innerHTML=opts.join('');
+    }
+    renderGraficoPlanif();
   };
   const s=document.createElement('script');
-  s.src=API_URL+'?accion=listarAnalistas&callback='+cb;
+  s.src=API_URL+'?accion=listarPlanificadores&callback='+cb;
   document.body.appendChild(s);
 }
 
+/* Select planificador -> input libre cuando elige "Otro"; mantiene #planificador como fuente del payload */
+(function(){
+  const sel=$('planificadorSel'), inp=$('planificador');
+  if(sel&&inp){
+    sel.addEventListener('change',function(){
+      if(this.value==='__OTRO__'){ inp.style.display='block'; inp.value=''; inp.focus(); }
+      else { inp.style.display='none'; inp.value=this.value; }
+    });
+  }
+})();
+
 /* ====== INICIO ====== */
 if(API_URL){ cargarTransitos(); cargarAnalistas(); }
-else { $('tbodyTransitos').innerHTML='<tr><td colspan="13" style="text-align:center;color:#a3331f;padding:20px;">Configure API_URL (línea superior del script) tras desplegar el backend.</td></tr>'; }
+else { $('tbodyTransitos').innerHTML='<tr><td colspan="15" style="text-align:center;color:#a3331f;padding:20px;">Configure API_URL (línea superior del script) tras desplegar el backend.</td></tr>'; }
 </script>
 </body>
 </html>
