@@ -3,149 +3,699 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>En mantenimiento — Torre de Control</title>
+<title>Tránsitos de OC — SEGUIRE · CEDIS Panamá</title>
+<link rel="icon" href="https://torredecontrolcss.github.io/seguire/favicon.ico">
+<link rel="apple-touch-icon" href="https://torredecontrolcss.github.io/seguire/icons/icon-192.png">
 <style>
   :root{
-    --azul:#0C447C;
-    --azul2:#1E5A9E;
-    --fondo:#ececec;
-    --borde:#a8a8a8;
-    --texto:#2a2a2a;
-    --tenue:#5a6472;
+    --azul:#0C447C; --azul2:#1e5a9e; --bg:#ececec; --linea:#a8a8a8;
+    --rojo:#a3331f; --ambar:#8a6a00; --verde:#2d5a1e;
+    --rojo-bg:#f8d7da; --ambar-bg:#fff3cd; --verde-bg:#d9ead3;
   }
-  *{box-sizing:border-box;margin:0;padding:0}
-  html,body{height:100%}
-  body{
-    font-family:Calibri,'Segoe UI',Arial,sans-serif;
-    background:var(--fondo);
-    color:var(--texto);
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    padding:24px;
-    min-height:100vh;
-  }
-  .tarjeta{
-    background:#ffffff;
-    border:1px solid var(--borde);
-    max-width:560px;
-    width:100%;
-    box-shadow:0 1px 0 rgba(0,0,0,.04);
-  }
-  .barra{
-    height:6px;
-    background:linear-gradient(90deg,var(--azul),var(--azul2));
-  }
-  .cabecera{
-    display:flex;
-    align-items:center;
-    gap:16px;
-    padding:28px 32px 20px;
-    border-bottom:1px solid #e2e2e2;
-  }
-  .cabecera img{
-    width:64px;
-    height:64px;
-    flex:none;
-  }
-  .cabecera .titulos{line-height:1.25}
-  .cabecera h1{
-    font-family:Cambria,'Times New Roman',serif;
-    font-size:22px;
-    color:var(--azul);
-    font-weight:700;
-  }
-  .cabecera p{
-    font-size:13px;
-    color:var(--tenue);
-    margin-top:2px;
-  }
-  .cuerpo{padding:28px 32px 32px}
-  .estado{
-    display:inline-block;
-    font-size:12px;
-    letter-spacing:.06em;
-    text-transform:uppercase;
-    color:var(--azul);
-    border:1px solid var(--azul);
-    padding:4px 10px;
-    margin-bottom:18px;
-  }
-  .cuerpo h2{
-    font-family:Cambria,'Times New Roman',serif;
-    font-size:26px;
-    color:var(--texto);
-    margin-bottom:12px;
-  }
-  .cuerpo p{
-    font-size:15px;
-    line-height:1.6;
-    color:#3a3a3a;
-    margin-bottom:14px;
-  }
-  .aviso{
-    background:#f4f7fb;
-    border-left:3px solid var(--azul2);
-    padding:14px 16px;
-    font-size:14px;
-    line-height:1.55;
-    color:#33465c;
-    margin-top:6px;
-  }
-  .pie{
-    padding:16px 32px;
-    border-top:1px solid #e2e2e2;
-    font-size:12px;
-    color:var(--tenue);
-    display:flex;
-    justify-content:space-between;
-    flex-wrap:wrap;
-    gap:8px;
-  }
-  .pulso{
-    display:inline-block;
-    width:9px;height:9px;
-    border-radius:50%;
-    background:var(--azul2);
-    margin-right:7px;
-    vertical-align:middle;
-    animation:pulso 1.8s ease-in-out infinite;
-  }
-  @keyframes pulso{
-    0%,100%{opacity:.35;transform:scale(.9)}
-    50%{opacity:1;transform:scale(1.15)}
-  }
-  @media (prefers-reduced-motion:reduce){
-    .pulso{animation:none}
-  }
-  @media (max-width:480px){
-    .cabecera,.cuerpo,.pie{padding-left:20px;padding-right:20px}
-    .cuerpo h2{font-size:22px}
-  }
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:'Segoe UI',Arial,sans-serif;background:var(--bg);color:#222;font-size:14px;}
+  header{background:var(--azul);color:#fff;padding:12px 18px;display:flex;align-items:center;gap:14px;}
+  header img{width:46px;height:46px;object-fit:contain;flex-shrink:0;}
+  header h1{font-size:16px;margin:0;line-height:1.2;}
+  header .sub{font-size:11px;opacity:.85;margin-top:2px;}
+  .wrap{max-width:1600px;margin:0 auto;padding:16px;}
+  .panel{background:#fff;border:1px solid var(--linea);border-radius:4px;margin-bottom:16px;}
+  .panel-h{background:#f4f8fc;border-bottom:1px solid var(--linea);padding:10px 14px;font-weight:700;color:var(--azul);font-size:14px;display:flex;align-items:center;gap:8px;}
+  .panel-b{padding:14px;}
+  .num{display:inline-flex;width:22px;height:22px;border-radius:50%;background:var(--azul);color:#fff;align-items:center;justify-content:center;font-size:12px;flex-shrink:0;}
+  label{display:block;font-size:12px;font-weight:600;color:#444;margin-bottom:4px;}
+  select,input[type=text],input[type=number],input[type=date]{width:100%;padding:7px 9px;border:1px solid var(--linea);border-radius:3px;font-size:13px;font-family:inherit;}
+  .grid{display:grid;gap:12px;}
+  .fila-carga{display:grid;grid-template-columns:3fr 2fr;gap:10px;align-items:start;}
+  .fila-carga .panel{margin-bottom:16px;}
+  @media(max-width:980px){.fila-carga{grid-template-columns:1fr;}}
+  .g2{grid-template-columns:1fr 1fr;}
+  .g3{grid-template-columns:1fr 1fr 1fr;}
+  .g4{grid-template-columns:repeat(4,1fr);}
+  @media(max-width:760px){.g2,.g3,.g4{grid-template-columns:1fr;}}
+  .btn{padding:9px 16px;border:1px solid var(--azul);background:var(--azul);color:#fff;border-radius:3px;font-size:13px;cursor:pointer;font-family:inherit;}
+  .btn:hover{background:var(--azul2);}
+  .btn:disabled{opacity:.5;cursor:not-allowed;}
+  .btn-sec{background:#fff;color:var(--azul);}
+  .btn-sec:hover{background:#f0f6fc;}
+  .dropzone{display:flex;align-items:center;justify-content:center;gap:12px;border:2px dashed #c9a227;border-radius:6px;padding:18px;text-align:left;background:rgba(255,221,87,0.18);cursor:pointer;transition:.15s;}
+  .dropzone:hover,.dropzone.drag{background:rgba(255,210,40,0.32);border-color:#a9851a;}
+  .dropzone .ico{font-size:26px;color:#8a6a00;line-height:1;}
+  .dropzone .t{font-weight:600;color:#6b5400;font-size:13.5px;}
+  .dropzone .s{font-size:11.5px;color:#8a7320;margin-top:1px;}
+  .estado-msg{padding:9px 12px;border-radius:3px;font-size:13px;margin-top:10px;display:none;}
+  .estado-msg.info{background:#e7f1fb;color:var(--azul);border:1px solid #b8d4ee;display:block;}
+  .estado-msg.ok{background:var(--verde-bg);color:var(--verde);border:1px solid #b5d4a8;display:block;}
+  .estado-msg.err{background:var(--rojo-bg);color:var(--rojo);border:1px solid #e3b0b0;display:block;}
+  .spinner{display:inline-block;width:14px;height:14px;border:2px solid #b8d4ee;border-top-color:var(--azul);border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:6px;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+  table{width:100%;border-collapse:collapse;font-size:12.5px;}
+  th,td{border:1px solid #d6dde6;padding:6px 8px;text-align:left;vertical-align:top;}
+  th{background:var(--azul);color:#fff;font-weight:600;cursor:pointer;white-space:nowrap;position:sticky;top:0;}
+  th:hover{background:var(--azul2);}
+  tbody tr:nth-child(even){background:#f6f9fc;}
+  .pill{display:inline-block;font-size:10.5px;font-weight:700;padding:2px 7px;border-radius:3px;}
+  .mono{font-family:Consolas,'Courier New',monospace;}
+  .tabla-scroll{max-height:480px;overflow:auto;border:1px solid var(--linea);border-radius:3px;}
+  .reng-row{border-top:1px solid #dce6f0;padding:8px 0;}
+  .filtros{display:flex;gap:10px;flex-wrap:wrap;align-items:end;margin-bottom:12px;}
+  .filtros>div{flex:1;min-width:160px;}
+  .kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:14px;}
+  @media(max-width:760px){.kpis{grid-template-columns:1fr 1fr;}}
+  .kpi{background:#fff;border:1px solid var(--linea);border-radius:4px;padding:10px 12px;}
+  .kpi .n{font-size:22px;font-weight:700;color:var(--azul);font-family:Consolas,monospace;}
+  .kpi .l{font-size:11px;color:#666;text-transform:uppercase;letter-spacing:.3px;}
+  .reng-edit{padding:8px;border:1px solid #dce6f0;border-radius:3px;margin-bottom:8px;background:#fbfdff;}
+  .reng-campos{display:grid;grid-template-columns:1.2fr 2.5fr .8fr .8fr;gap:8px;align-items:end;}
+  @media(max-width:760px){.reng-campos{grid-template-columns:1fr 1fr;}}
+  .reng-cedis{margin-top:8px;padding-top:8px;border-top:1px dashed #c9d6e5;}
+  .reng-cedis-tit{font-size:11.5px;color:#0C447C;font-weight:600;margin-bottom:6px;}
+  .reng-cedis-grid{display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:8px;align-items:end;}
+  @media(max-width:760px){.reng-cedis-grid{grid-template-columns:1fr 1fr;}}
+  .reng-cedis-suma{font-family:Consolas,'Courier New',monospace;font-size:13px;font-weight:700;padding:6px 4px;white-space:nowrap;}
+  .mini{font-size:11px;padding:4px 8px;}
+  .hint{font-size:11px;color:#777;margin-top:3px;}
 </style>
 </head>
 <body>
-  <main class="tarjeta" role="main">
-    <div class="barra"></div>
-    <div class="cabecera">
-      <img src="https://raw.githubusercontent.com/TorredeControlCSS/REPOSICION_UE_CSS/main/icons/icon-192.png" alt="Logo institucional">
-      <div class="titulos">
-        <h1>Tránsitos de Órdenes de Compra</h1>
-        <p>SEGUIRE · Dirección Nacional de Logística — CEDIS Panamá</p>
+<header>
+  <img src="icons/icon-192.png" alt="CSS" onerror="this.style.display='none'">
+  <div>
+    <h1>Tránsitos de Órdenes de Compra</h1>
+    <div class="sub">SEGUIRE · Dirección Nacional de Logística — CEDIS Panamá</div>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <!-- KPIs -->
+  <div class="kpis" id="kpis">
+    <div class="kpi"><div class="n" id="kpiTotal">—</div><div class="l">Renglones en tránsito</div></div>
+    <div class="kpi"><div class="n" id="kpiOC">—</div><div class="l">Órdenes de compra</div></div>
+    <div class="kpi"><div class="n" id="kpiPend">—</div><div class="l">Sin retirar / pendientes</div></div>
+    <div class="kpi"><div class="n" id="kpiVenc">—</div><div class="l">Vencen ≤ 15 días</div></div>
+    <div class="kpi"><div class="n" id="kpiPallets">—</div><div class="l">Pallets equivalentes (total)</div></div>
+  </div>
+
+  <!-- PASO 1 + Gráfico, lado a lado -->
+  <div class="fila-carga">
+    <div class="panel">
+      <div class="panel-h"><span class="num">1</span> Cargar documento del planificador</div>
+      <div class="panel-b">
+        <div class="grid g2" style="margin-bottom:12px;">
+          <div>
+            <label>Tipo de documento</label>
+            <select id="tipoDoc">
+              <option value="">— Seleccione antes de subir —</option>
+              <option value="ORDEN_COMPRA" data-prefijo="">Orden de Compra (OC)</option>
+              <option value="SOLICITUD_ENTREGA" data-prefijo="DINALOG-P. de S. MED. N°">Solicitud de Entrega — Medicamentos (MED.)</option>
+              <option value="SOLICITUD_ENTREGA" data-prefijo="DINALOG-P. de S. L.C. N°">Solicitud de Entrega — Laboratorio Clínico (L.C.)</option>
+              <option value="SOLICITUD_ENTREGA" data-prefijo="DINALOG-P. de S. R.M. N°">Solicitud de Entrega — Radiología Médica (R.M.)</option>
+              <option value="SOLICITUD_ENTREGA" data-prefijo="DINALOG-P. de S. O.M°">Solicitud de Entrega — Odontología (O.M)</option>
+              <option value="SOLICITUD_ENTREGA" data-prefijo="DINALOG-P. de S. M.Q. N°">Solicitud de Entrega — Médico Quirúrgico (M.Q.)</option>
+              <option value="SOLICITUD_ENTREGA" data-prefijo="DINALOG-P. de S. C.H. N°">Solicitud de Entrega — Clínica de Heridas (C.H.)</option>
+              <option value="ADELANTO" data-prefijo="">Nota de Adelanto (DINALOG-N°)</option>
+            </select>
+            <div class="hint">El sistema verificará el tipo al procesar el documento; si difiere, se le notificará.</div>
+          </div>
+          <div>
+            <label>Planificador que sube</label>
+            <select id="planificadorSel"><option value="">— Seleccione —</option><option value="__OTRO__">Otro (escribir)</option></select>
+            <input type="text" id="planificador" placeholder="Su nombre y apellido" style="display:none;margin-top:6px;">
+            <div class="hint">Para registrar quién dio visibilidad al documento.</div>
+          </div>
+        </div>
+        <div class="dropzone" id="dropzone">
+          <div class="ico">⬆</div>
+          <div>
+            <div class="t">Arrastre el PDF aquí o haga clic para seleccionar</div>
+            <div class="s">Orden de compra, solicitud de entrega o nota de adelanto — formato PDF</div>
+          </div>
+          <input type="file" id="filePdf" accept="application/pdf" style="display:none;">
+        </div>
+        <div class="estado-msg" id="estadoCarga"></div>
       </div>
     </div>
-    <div class="cuerpo">
-      <span class="estado"><span class="pulso"></span>En mantenimiento</span>
-      <h2>Estamos actualizando el sistema</h2>
-      <p>La Torre de Control está realizando mejoras y correcciones en la herramienta de visibilidad de OC y solicitudes de entrega. Durante este período la carga de documentos está temporalmente deshabilitada.</p>
-      <div class="aviso">
-        La herramienta volverá a estar disponible en breve.
+
+    <div class="panel">
+      <div class="panel-h">Documentos cargados por planificador</div>
+      <div class="panel-b">
+        <div style="font-size:12px;color:#666;margin-bottom:10px;">Órdenes de compra (documentos únicos) que cada planificador ha dado de alta en este sistema.</div>
+        <div id="graficoPlanif"><div style="font-size:12px;color:#999;padding:8px;">Cargando…</div></div>
       </div>
     </div>
-    <div class="pie">
-      <span>Torre de Control · CEDIS Panamá</span>
-      <span>Dirección Nacional de Logística</span>
+  </div>
+
+  <!-- PASO 2: Revisar y confirmar -->
+  <div class="panel" id="panelRevision" style="display:none;">
+    <div class="panel-h"><span class="num">2</span> Revisar datos extraídos y confirmar</div>
+    <div class="panel-b">
+      <div class="estado-msg info" id="avisoTipo" style="display:none;"></div>
+      <div class="grid g4" style="margin-bottom:12px;">
+        <div><label>Tipo</label><input type="text" id="rTipo" readonly></div>
+        <div><label>N° documento</label><input type="text" id="rDoc"></div>
+        <div><label>Fecha emisión</label><input type="text" id="rFecha"></div>
+        <div><label>N° entrega</label><input type="text" id="rEntrega" placeholder="1, 2, 3..."></div>
+      </div>
+      <div class="grid g3" style="margin-bottom:12px;">
+        <div><label>Proveedor</label><input type="text" id="rProv"></div>
+        <div><label>Vencimiento OC (estampada)</label><input type="text" id="rVenc" placeholder="AAAA-MM-DD"></div>
+        <div><label>Vencimiento de entrega (operativa)</label><input type="text" id="rVencEnt" placeholder="AAAA-MM-DD"><div id="confVencEnt" style="font-size:11px;margin-top:3px;display:none;"></div></div>
+      </div>
+      <div class="grid g2" style="margin-bottom:12px;">
+        <div><label>Término de entrega (inicio)</label><input type="text" id="rTermino" placeholder="AAAA-MM-DD"></div>
+        <div>
+          <label>Analista responsable</label>
+          <input type="text" id="rAnalista" list="listaAnalistas" placeholder="Escriba o seleccione...">
+          <datalist id="listaAnalistas"></datalist>
+        </div>
+      </div>
+      <label style="margin-top:6px;">Renglones del documento</label>
+      <div id="renglones"></div>
+      <button class="btn btn-sec mini" id="btnAddReng" type="button">+ Agregar renglón</button>
+      <div style="margin-top:14px;display:flex;gap:10px;">
+        <button class="btn" id="btnGuardar" type="button">Guardar en tránsitos</button>
+        <button class="btn btn-sec" id="btnCancelar" type="button">Cancelar</button>
+      </div>
+      <div class="estado-msg" id="estadoGuardar"></div>
     </div>
-  </main>
+  </div>
+
+  <!-- PASO 3: Tabla viva -->
+  <div class="panel">
+    <div class="panel-h"><span class="num">3</span> Órdenes en tránsito (visibilidad anticipada)</div>
+    <div class="panel-b">
+      <div class="filtros">
+        <div>
+          <label>Buscar</label>
+          <input type="text" id="fBuscar" placeholder="OC, renglón, proveedor, descripción...">
+        </div>
+        <div>
+          <label>Tipo</label>
+          <select id="fTipo"><option value="">Todos</option>
+            <option value="ORDEN_COMPRA">Orden de Compra</option>
+            <option value="SOLICITUD_ENTREGA">Solicitud de Entrega</option>
+            <option value="ADELANTO">Adelanto</option>
+          </select>
+        </div>
+        <div>
+          <label>Estado</label>
+          <select id="fEstado"><option value="">Todos</option>
+            <option value="EMITIDA">Emitida</option>
+            <option value="PARCIAL">Parcial</option>
+            <option value="COMPLETADA">Completada</option>
+          </select>
+        </div>
+        <div style="flex:0;">
+          <label>&nbsp;</label>
+          <button class="btn btn-sec" id="btnRefrescar" type="button">↻ Refrescar</button>
+        </div>
+      </div>
+      <div class="tabla-scroll">
+        <table id="tablaTransitos">
+          <thead><tr id="theadRow"></tr></thead>
+          <tbody id="tbodyTransitos"><tr><td colspan="17" style="text-align:center;color:#999;padding:20px;">Cargando…</td></tr></tbody>
+        </table>
+      </div>
+      <div class="hint" id="contadorFilas" style="margin-top:8px;"></div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+/* ====== CONFIGURACIÓN ====== */
+// Pegar aquí la URL del Web App de SEGUIRE (backend de tránsitos) tras desplegar:
+const API_URL = 'https://script.google.com/macros/s/AKfycbyLjga90kMJ4_4zB7P2vPh7xX-UOBUvuShPvHe0IdhG9iB0hHuvgeSGrcpO95k9LEP6/exec';
+
+/* ====== COLUMNAS DE LA TABLA ====== */
+const COLUMNAS = [
+  {k:'tipo',        t:'Tipo'},
+  {k:'n_documento', t:'N° Documento'},
+  {k:'proveedor',   t:'Proveedor'},
+  {k:'cedi',        t:'CEDI'},
+  {k:'cod_abasto_norm', t:'Cód. Abasto'},
+  {k:'cod_sap',     t:'Cód. SAP'},
+  {k:'descripcion', t:'Descripción'},
+  {k:'cantidad',    t:'Cantidad'},
+  {k:'pallets_equiv', t:'Pallets eq.'},
+  {k:'n_entrega',   t:'Entrega'},
+  {k:'saldo',       t:'Saldo'},
+  {k:'vencimiento_entrega', t:'Vence Entrega'},
+  {k:'vencimiento_oc', t:'Vence OC'},
+  {k:'planificador', t:'Planificador'},
+  {k:'fecha_ingesta', t:'Cargado'},
+  {k:'estado_transito', t:'Estado'},
+  {k:'_acciones',   t:'Acciones'}
+];
+
+let TRANSITOS = [];      // datos cargados de la hoja
+let _extraido = null;    // resultado de la última extracción
+let _pdfBase64 = null;   // PDF en base64 para subir
+let _pdfNombre = '';
+let _prefijoDoc = '';    // prefijo del subtipo DINALOG elegido en el paso 1
+let _editandoId = null;  // ID del renglón en edición (null = alta nueva)
+let _ordenCol = {k:null, asc:true};
+
+/* ====== UTILIDADES ====== */
+function $(id){ return document.getElementById(id); }
+function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+function fmtNum(n){ const v=Number(n); return isNaN(v)?(n||''):v.toLocaleString('es-PA'); }
+function hoyISO(){ const d=new Date(); d.setHours(0,0,0,0); return d.toISOString().slice(0,10); }
+function diasPara(fv){
+  if(!fv) return null;
+  const f=new Date(String(fv).slice(0,10)+'T00:00:00');
+  if(isNaN(f.getTime())) return null;
+  const h=new Date(); h.setHours(0,0,0,0);
+  return Math.round((f-h)/86400000);
+}
+function setMsg(el, tipo, html){ el.className='estado-msg '+tipo; el.innerHTML=html; }
+
+/* ====== PASO 1: SUBIR PDF ====== */
+const dz=$('dropzone'), fileInput=$('filePdf');
+dz.addEventListener('click',()=>fileInput.click());
+dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('drag');});
+dz.addEventListener('dragleave',()=>dz.classList.remove('drag'));
+dz.addEventListener('drop',e=>{e.preventDefault();dz.classList.remove('drag');if(e.dataTransfer.files[0])procesarArchivo(e.dataTransfer.files[0]);});
+fileInput.addEventListener('change',e=>{if(e.target.files[0])procesarArchivo(e.target.files[0]);});
+
+function procesarArchivo(file){
+  if(file.type!=='application/pdf'){ setMsg($('estadoCarga'),'err','El archivo debe ser PDF.'); return; }
+  const tipo=$('tipoDoc').value;
+  if(!tipo){ setMsg($('estadoCarga'),'err','Seleccione primero el tipo de documento.'); return; }
+  if(!$('planificador').value.trim()){ setMsg($('estadoCarga'),'err','Seleccione o indique el planificador antes de subir.'); return; }
+  // Prefijo del subtipo elegido (MED, L.C., R.M., O.M, M.Q., C.H.) para anteponer al N° de documento.
+  const _selOpt=$('tipoDoc').options[$('tipoDoc').selectedIndex];
+  _prefijoDoc=(_selOpt&&_selOpt.dataset.prefijo)||'';
+  _pdfNombre=file.name;
+  const reader=new FileReader();
+  reader.onload=()=>{ _pdfBase64=reader.result.split(',')[1]; extraerConIA(tipo); };
+  reader.onerror=()=>setMsg($('estadoCarga'),'err','No se pudo leer el archivo.');
+  reader.readAsDataURL(file);
+}
+
+function extraerConIA(tipoElegido){
+  setMsg($('estadoCarga'),'info','<span class="spinner"></span>Transcribiendo documento mediante algoritmo de reconocimiento… unos segundos.');
+  const cb='cbExtraer'+Date.now();
+  window[cb]=function(resp){
+    try{ delete window[cb]; }catch(e){}
+    if(!resp || !resp.ok){ setMsg($('estadoCarga'),'err','No se pudo extraer: '+((resp&&resp.error)||'error desconocido')); return; }
+    _extraido=resp.datos||{};
+    setMsg($('estadoCarga'),'ok','Documento transcrito. Revise los datos abajo antes de guardar.');
+    mostrarRevision(_extraido, tipoElegido);
+  };
+  // POST vía form oculto a doPost (JSONP no admite payloads grandes); usamos fetch no-cors no sirve para leer respuesta,
+  // por eso usamos un POST con text y callback simulado: aquí enviamos por fetch y procesamos JSON.
+  fetch(API_URL, {
+    method:'POST',
+    body:JSON.stringify({accion:'extraerDocumento', tipo:tipoElegido, pdf_base64:_pdfBase64, nombre:_pdfNombre})
+  }).then(r=>r.json()).then(j=>window[cb](j)).catch(err=>window[cb]({ok:false,error:String(err)}));
+}
+
+/* ====== PASO 2: REVISIÓN EDITABLE ====== */
+function mostrarConfianzaVenc(conf, fecha){
+  const box=$('confVencEnt');
+  if(!box) return;
+  // Sin fecha leída: no mostramos indicador (el planificador la captura a mano).
+  if(fecha==null || fecha===''){ box.style.display='none'; return; }
+  let c=Number(conf);
+  if(isNaN(c)) c=1;
+  let col,txt;
+  if(c>=0.85){ col='#2d5a1e'; txt='Lectura confiable de la fecha manuscrita.'; }
+  else if(c>=0.55){ col='#8a6a00'; txt='Lectura con dudas — verifique la fecha contra el documento.'; }
+  else { col='#a3331f'; txt='Lectura poco fiable — confirme la fecha manualmente.'; }
+  box.style.color=col;
+  box.textContent='Confianza '+Math.round(c*100)+'%: '+txt;
+  box.style.display='block';
+}
+
+function mostrarRevision(d, tipoElegido){
+  $('panelRevision').style.display='block';
+  const tipoIA=d.tipo||tipoElegido;
+  $('rTipo').value=tipoIA;
+  // Anteponer el prefijo del subtipo si el número extraído no lo trae ya.
+  var _numDoc=(d.n_documento||'').trim();
+  if(_prefijoDoc && _numDoc.indexOf(_prefijoDoc)!==0){
+    // Si el escaneo trajo solo el correlativo (ej. "982-2026"), se antepone el prefijo.
+    _numDoc = _numDoc ? (_prefijoDoc+_numDoc) : _prefijoDoc;
+  }
+  $('rDoc').value=_numDoc;
+  $('rFecha').value=d.fecha_emision||'';
+  $('rEntrega').value=d.n_entrega||'';
+  $('rProv').value=d.proveedor||'';
+  $('rVenc').value=d.vencimiento_oc||'';
+  $('rVencEnt').value=d.vencimiento_entrega||'';
+  $('rTermino').value=d.termino_entrega||'';
+  // Indicador de confianza de la lectura del dato manuscrito (vencimiento de entrega)
+  mostrarConfianzaVenc(d.confianza_venc_entrega, d.vencimiento_entrega);
+  // aviso si la IA detectó un tipo distinto al elegido
+  if(tipoIA && tipoElegido && tipoIA!==tipoElegido){
+    setMsg($('avisoTipo'),'info','El reconocimiento detectó este documento como <b>'+esc(tipoIA)+'</b>, pero usted eligió <b>'+esc(tipoElegido)+'</b>. Verifique cuál es correcto.');
+    $('avisoTipo').style.display='block';
+  } else { $('avisoTipo').style.display='none'; }
+  // renglones
+  const cont=$('renglones'); cont.innerHTML='';
+  const rengs=(d.renglones&&d.renglones.length)?d.renglones:[{}];
+  rengs.forEach(r=>cont.appendChild(filaRenglon(r)));
+  $('panelRevision').scrollIntoView({behavior:'smooth',block:'start'});
+}
+function filaRenglon(r){
+  const div=document.createElement('div');
+  div.className='reng-edit';
+  let marca='';
+  if(r._maestro===true){ marca=' <span style="color:#2d5a1e;font-weight:600;font-size:10.5px;">✓ validado</span>'; }
+  else if(r._maestro===false && (r.cod_abasto||r.cod_sap)){ marca=' <span style="color:#8a6a00;font-weight:600;font-size:10.5px;">sin match en maestro</span>'; }
+  // Precargar cantidades por CEDI si Gemini las extrajo en r.destinos
+  const dmap={PANAMA:'',DIVISA:'',CHIRIQUI:''};
+  (r.destinos||[]).forEach(d=>{
+    const c=normCedi(d&&d.cedi);
+    if(c && dmap.hasOwnProperty(c)) dmap[c]=(d.cantidad!=null&&d.cantidad!=='')?d.cantidad:'';
+  });
+  div.innerHTML=
+    '<div class="reng-campos">'+
+      '<div><label>Cód. Abasto'+marca+'</label><input type="text" data-f="cod_abasto" value="'+esc(r.cod_abasto||'')+'"></div>'+
+      '<div><label>Descripción</label><input type="text" data-f="descripcion" value="'+esc(r.descripcion||'')+'"></div>'+
+      '<div><label>Cantidad total</label><input type="number" data-f="cantidad" value="'+esc(r.cantidad||'')+'"></div>'+
+      '<div style="display:flex;gap:6px;align-items:end;"><div style="flex:1;"><label>Cód. SAP</label><input type="text" data-f="cod_sap" value="'+esc(r.cod_sap||'')+'"></div><button class="btn btn-sec mini" type="button" onclick="this.closest(\'.reng-edit\').remove()" style="height:32px;">✕</button></div>'+
+    '</div>'+
+    '<div class="reng-cedis">'+
+      '<div class="reng-cedis-tit">Reparto por CEDI <span style="font-weight:400;color:#888;">(deje en blanco si la entrega es a un solo CEDI; complete dos o más para segregar)</span></div>'+
+      '<div class="reng-cedis-grid">'+
+        '<div><label>CEDIS Panamá</label><input type="number" min="0" data-cedi="PANAMA" value="'+esc(dmap.PANAMA)+'" placeholder="cantidad"></div>'+
+        '<div><label>CEDIS Divisa</label><input type="number" min="0" data-cedi="DIVISA" value="'+esc(dmap.DIVISA)+'" placeholder="cantidad"></div>'+
+        '<div><label>CEDIS Chiriquí</label><input type="number" min="0" data-cedi="CHIRIQUI" value="'+esc(dmap.CHIRIQUI)+'" placeholder="cantidad"></div>'+
+        '<div style="display:flex;align-items:end;"><div class="reng-cedis-suma" data-suma>—</div></div>'+
+      '</div>'+
+    '</div>';
+  // Recalcular suma de CEDIS y avisar si no cuadra con la cantidad total
+  const inputsCedi=div.querySelectorAll('[data-cedi]');
+  const sumaBox=div.querySelector('[data-suma]');
+  const cantTotal=div.querySelector('[data-f="cantidad"]');
+  function recalc(){
+    let s=0,n=0;
+    inputsCedi.forEach(i=>{ const v=parseFloat(i.value)||0; if(v>0){s+=v;n++;} });
+    if(n===0){ sumaBox.textContent='—'; sumaBox.style.color='#888'; return; }
+    const tot=parseFloat(cantTotal.value)||0;
+    sumaBox.textContent='Σ '+s.toLocaleString('es-PA');
+    sumaBox.style.color=(tot && s!==tot)?'#a3331f':'#2d5a1e';
+    sumaBox.title=(tot && s!==tot)?('No cuadra con la cantidad total ('+tot.toLocaleString('es-PA')+')'):'Coincide con la cantidad total';
+  }
+  inputsCedi.forEach(i=>i.addEventListener('input',recalc));
+  cantTotal.addEventListener('input',recalc);
+  recalc();
+  return div;
+}
+function normCedi(s){
+  let t=String(s||'').toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+  if(/CHIRIQUI/.test(t)) return 'CHIRIQUI';
+  if(/DIVISA/.test(t)) return 'DIVISA';
+  if(/PANAMA/.test(t)) return 'PANAMA';
+  return '';
+}
+$('btnAddReng').addEventListener('click',()=>$('renglones').appendChild(filaRenglon({})));
+$('btnCancelar').addEventListener('click',()=>{ $('panelRevision').style.display='none'; _extraido=null; _pdfBase64=null; _editandoId=null; $('btnGuardar').textContent='Guardar en tránsitos'; $('estadoCarga').className='estado-msg'; });
+
+/* ====== EDITAR / ELIMINAR ====== */
+function editarTransito(id){
+  var t=TRANSITOS.filter(function(x){return String(x.id)===String(id);})[0];
+  if(!t){ alert('No se encontró el renglón.'); return; }
+  _editandoId=id;
+  // Rellenar el panel de revisión con los datos de la fila (edición de un solo renglón).
+  $('panelRevision').style.display='block';
+  $('rTipo').value=t.tipo||'';
+  $('rDoc').value=t.n_documento||'';
+  $('rFecha').value=t.fecha_emision||'';
+  $('rEntrega').value=t.n_entrega||'';
+  $('rProv').value=t.proveedor||'';
+  $('rVenc').value=t.vencimiento_oc||'';
+  $('rVencEnt').value=t.vencimiento_entrega||'';
+  $('rTermino').value=t.termino_entrega||'';
+  // Un único renglón editable con los datos de esta fila.
+  $('renglones').innerHTML='';
+  $('renglones').appendChild(filaRenglon({cod_abasto:t.cod_abasto, cod_sap:t.cod_sap,
+    descripcion:t.descripcion, cantidad:t.cantidad, monto:t.monto, n_requisicion:t.n_requisicion}));
+  $('btnGuardar').textContent='Guardar cambios';
+  setMsg($('estadoGuardar'),'info','Editando el renglón '+esc(t.n_documento)+' — CEDI '+esc(t.cedi||'—')+'. Los cambios afectan solo este renglón.');
+  $('panelRevision').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+function eliminarDocumento(nDoc){
+  if(!nDoc){ return; }
+  var filas=TRANSITOS.filter(function(x){return String(x.n_documento).trim()===String(nDoc).trim();}).length;
+  if(!confirm('Se eliminarán TODAS las filas del documento:\n\n'+nDoc+'\n\n('+filas+' renglón/es en total). Esta acción no se puede deshacer.\n\n¿Continuar?')) return;
+  fetch(API_URL,{method:'POST',body:JSON.stringify({accion:'eliminarTransito', n_documento:nDoc})})
+    .then(function(r){return r.json();}).then(function(j){
+      if(j&&j.ok){ setMsg($('estadoGuardar'),'ok','Eliminado: '+j.eliminadas+' renglón(es) del documento '+esc(nDoc)+'.'); cargarTransitos(); }
+      else { setMsg($('estadoGuardar'),'err','No se pudo eliminar: '+((j&&j.error)||'error')); }
+    }).catch(function(err){ setMsg($('estadoGuardar'),'err','Error de red: '+err); });
+}
+
+/* ====== GUARDAR ====== */
+$('btnGuardar').addEventListener('click',function(){
+  const renglones=[...$('renglones').querySelectorAll('.reng-edit')].map(div=>{
+    const o={}; div.querySelectorAll('[data-f]').forEach(i=>o[i.dataset.f]=i.value.trim());
+    // Reparto por CEDI: solo se incluyen los que tienen cantidad > 0
+    const destinos=[];
+    div.querySelectorAll('[data-cedi]').forEach(i=>{
+      const c=parseFloat(i.value)||0;
+      if(c>0) destinos.push({cedi:i.dataset.cedi, cantidad:c});
+    });
+    o.destinos=destinos;
+    return o;
+  }).filter(r=>r.cod_abasto||r.descripcion);
+  if(!renglones.length){ setMsg($('estadoGuardar'),'err','Debe haber al menos un renglón con datos.'); return; }
+
+  // ---- MODO EDICIÓN: actualiza un solo renglón por ID ----
+  if(_editandoId){
+    const r0=renglones[0];
+    const pEdit={
+      accion:'editarTransito', id:_editandoId,
+      n_documento:$('rDoc').value.trim(), proveedor:$('rProv').value.trim(),
+      fecha_emision:$('rFecha').value.trim(), n_entrega:$('rEntrega').value.trim(),
+      vencimiento_oc:$('rVenc').value.trim(), vencimiento_entrega:$('rVencEnt').value.trim(),
+      termino_entrega:$('rTermino').value.trim(), planificador:$('planificador').value.trim(),
+      cod_abasto:r0.cod_abasto, cod_sap:r0.cod_sap, descripcion:r0.descripcion,
+      cantidad:r0.cantidad, monto:r0.monto, n_requisicion:r0.n_requisicion
+    };
+    this.disabled=true;
+    setMsg($('estadoGuardar'),'info','<span class="spinner"></span>Guardando cambios…');
+    var btn=this;
+    fetch(API_URL,{method:'POST',body:JSON.stringify(pEdit)})
+      .then(function(r){return r.json();}).then(function(j){
+        btn.disabled=false;
+        if(j&&j.ok){
+          var m='Cambios guardados.';
+          if(j.avisos&&j.avisos.length){ m+=' '+j.avisos.join(' '); }
+          setMsg($('estadoGuardar'),'ok',m);
+          _editandoId=null; btn.textContent='Guardar en tránsitos';
+          $('panelRevision').style.display='none';
+          cargarTransitos();
+        } else { setMsg($('estadoGuardar'),'err','No se pudo guardar: '+((j&&j.error)||'error')); }
+      }).catch(function(err){ btn.disabled=false; setMsg($('estadoGuardar'),'err','Error de red: '+err); });
+    return;
+  }
+  // ---- MODO ALTA NUEVA ----
+  const payload={
+    accion:'guardarTransito',
+    tipo:$('rTipo').value, n_documento:$('rDoc').value.trim(),
+    fecha_emision:$('rFecha').value.trim(), n_entrega:$('rEntrega').value.trim(),
+    proveedor:$('rProv').value.trim(), vencimiento_oc:$('rVenc').value.trim(),
+    vencimiento_entrega:$('rVencEnt').value.trim(),
+    termino_entrega:$('rTermino').value.trim(),
+    analista:$('rAnalista').value.trim(),
+    planificador:$('planificador').value.trim(),
+    pdf_base64:_pdfBase64, nombre:_pdfNombre,
+    renglones:renglones
+  };
+  this.disabled=true;
+  setMsg($('estadoGuardar'),'info','<span class="spinner"></span>Guardando y subiendo el PDF a Drive…');
+  fetch(API_URL,{method:'POST',body:JSON.stringify(payload)})
+    .then(r=>r.json()).then(j=>{
+      this.disabled=false;
+      if(j&&j.ok){
+        var msg='Guardado: '+j.filas+' renglón(es) en tránsito. PDF en Drive.';
+        if(j.avisos && j.avisos.length){
+          msg+='<div style="margin-top:8px;padding:8px 10px;background:#fff6e0;border-left:3px solid #8a6a00;color:#5a4600;font-size:12px;">'+
+               '<b>Correcciones automáticas en la captura de datos:</b><ul style="margin:4px 0 0 16px;padding:0;">'+
+               j.avisos.map(function(a){return '<li>'+esc(a)+'</li>';}).join('')+'</ul></div>';
+        }
+        setMsg($('estadoGuardar'),'ok',msg);
+        $('panelRevision').style.display='none';
+        $('estadoCarga').className='estado-msg';
+        cargarTransitos();
+      } else {
+        setMsg($('estadoGuardar'),'err','No se pudo guardar: '+((j&&j.error)||'error'));
+      }
+    }).catch(err=>{ this.disabled=false; setMsg($('estadoGuardar'),'err','Error de red: '+err); });
+});
+
+/* ====== PASO 3: TABLA VIVA ====== */
+function cargarTransitos(){
+  $('tbodyTransitos').innerHTML='<tr><td colspan="17" style="text-align:center;color:#999;padding:20px;">Cargando…</td></tr>';
+  const cb='cbTr'+Date.now();
+  window[cb]=function(resp){
+    try{ delete window[cb]; }catch(e){}
+    TRANSITOS=(resp&&resp.transitos)?resp.transitos:[];
+    renderTabla(); renderKPIs();
+  };
+  const s=document.createElement('script');
+  s.src=API_URL+'?accion=listarTransitos&callback='+cb;
+  s.onerror=()=>{ $('tbodyTransitos').innerHTML='<tr><td colspan="17" style="text-align:center;color:#a3331f;padding:20px;">No se pudo cargar. Verifique la conexión.</td></tr>'; };
+  document.body.appendChild(s);
+}
+function estadoPill(est){
+  const e=String(est||'').toUpperCase();
+  let bg='#eee',fg='#555';
+  if(e==='EMITIDA'){bg='var(--ambar-bg)';fg='var(--ambar)';}
+  else if(e==='PARCIAL'){bg='#e7f1fb';fg='var(--azul)';}
+  else if(e==='COMPLETADA'){bg='var(--verde-bg)';fg='var(--verde)';}
+  return '<span class="pill" style="background:'+bg+';color:'+fg+';">'+esc(est||'—')+'</span>';
+}
+function vencCell(fv,est){
+  if(!fv) return '—';
+  const e=String(est||'').toUpperCase();
+  if(e==='COMPLETADA') return '<span style="color:#888;">'+esc(fv)+'</span>';
+  const d=diasPara(fv);
+  if(d==null) return esc(fv);
+  let col='#666';
+  if(d<0) col='var(--rojo)'; else if(d<=15) col='var(--rojo)'; else if(d<=30) col='var(--ambar)';
+  const txt=d<0?('vencida '+Math.abs(d)+'d'):(d+'d');
+  return '<span style="color:'+col+';">'+esc(fv)+'<br><small>'+txt+'</small></span>';
+}
+function renderTabla(){
+  const thead=$('theadRow');
+  thead.innerHTML=COLUMNAS.map(c=>(c.k==='_acciones'
+      ? '<th>'+c.t+'</th>'
+      : '<th data-k="'+c.k+'">'+c.t+(_ordenCol.k===c.k?(_ordenCol.asc?' ▲':' ▼'):'')+'</th>')).join('');
+  thead.querySelectorAll('th').forEach(th=>th.addEventListener('click',()=>{
+    const k=th.dataset.k;
+    if(_ordenCol.k===k) _ordenCol.asc=!_ordenCol.asc; else {_ordenCol.k=k;_ordenCol.asc=true;}
+    renderTabla();
+  }));
+  let filas=aplicarFiltros(TRANSITOS);
+  if(_ordenCol.k){
+    filas=[...filas].sort((a,b)=>{
+      let x=a[_ordenCol.k],y=b[_ordenCol.k];
+      const nx=parseFloat(x),ny=parseFloat(y);
+      if(!isNaN(nx)&&!isNaN(ny)){x=nx;y=ny;} else {x=String(x||'').toLowerCase();y=String(y||'').toLowerCase();}
+      return (x<y?-1:x>y?1:0)*(_ordenCol.asc?1:-1);
+    });
+  }
+  const tb=$('tbodyTransitos');
+  if(!filas.length){ tb.innerHTML='<tr><td colspan="17" style="text-align:center;color:#999;padding:20px;">Sin tránsitos que coincidan.</td></tr>'; }
+  else {
+    tb.innerHTML=filas.map(t=>'<tr>'+
+      '<td>'+esc(t.tipo)+'</td>'+
+      '<td class="mono">'+esc(t.n_documento)+'</td>'+
+      '<td>'+esc(t.proveedor)+'</td>'+
+      '<td style="text-align:center;font-weight:600;color:#0C447C;">'+esc(t.cedi||'—')+'</td>'+
+      '<td class="mono">'+esc(t.cod_abasto_norm||t.cod_abasto)+'</td>'+
+      '<td class="mono">'+esc(t.cod_sap)+'</td>'+
+      '<td>'+esc(t.descripcion)+'</td>'+
+      '<td class="mono" style="text-align:right;">'+fmtNum(t.cantidad)+'</td>'+
+      '<td class="mono" style="text-align:right;">'+(t.pallets_equiv!==''&&t.pallets_equiv!=null?fmtNum(t.pallets_equiv):'—')+'</td>'+
+      '<td style="text-align:center;">'+esc(t.n_entrega||'—')+'</td>'+
+      '<td class="mono" style="text-align:right;">'+fmtNum(t.saldo)+'</td>'+
+      '<td>'+vencCell(t.vencimiento_entrega,t.estado_transito)+'</td>'+
+      '<td>'+vencCell(t.vencimiento_oc,t.estado_transito)+'</td>'+
+      '<td>'+esc(t.planificador||'—')+'</td>'+
+      '<td class="mono" style="font-size:11px;">'+esc(t.fecha_ingesta||'—')+'</td>'+
+      '<td>'+estadoPill(t.estado_transito)+'</td>'+
+      '<td style="white-space:nowrap;text-align:center;">'+
+        '<button class="btn btn-sec mini" onclick="editarTransito(\''+esc(t.id)+'\')" title="Editar este renglón">Editar</button> '+
+        '<button class="btn btn-sec mini" onclick="eliminarDocumento(\''+esc(t.n_documento)+'\')" title="Eliminar todo el documento" style="color:#a3331f;border-color:#a3331f;">Eliminar</button>'+
+      '</td>'+
+      '</tr>').join('');
+  }
+  $('contadorFilas').textContent=filas.length+' de '+TRANSITOS.length+' renglón(es) en tránsito';
+}
+function aplicarFiltros(arr){
+  const q=$('fBuscar').value.toLowerCase().trim();
+  const ft=$('fTipo').value, fe=$('fEstado').value;
+  return arr.filter(t=>{
+    if(ft && t.tipo!==ft) return false;
+    if(fe && String(t.estado_transito||'').toUpperCase()!==fe) return false;
+    if(q){
+      const blob=(t.n_documento+' '+t.cod_abasto+' '+t.proveedor+' '+t.descripcion).toLowerCase();
+      if(blob.indexOf(q)===-1) return false;
+    }
+    return true;
+  });
+}
+function renderKPIs(){
+  $('kpiTotal').textContent=TRANSITOS.length;
+  $('kpiOC').textContent=new Set(TRANSITOS.map(t=>t.n_documento)).size;
+  $('kpiPend').textContent=TRANSITOS.filter(t=>String(t.estado_transito||'').toUpperCase()!=='COMPLETADA').length;
+  $('kpiVenc').textContent=TRANSITOS.filter(t=>{const d=diasPara(t.vencimiento_entrega||t.vencimiento_oc);return d!=null&&d>=0&&d<=15;}).length;
+  const totPal=TRANSITOS.reduce((s,t)=>s+(parseFloat(t.pallets_equiv)||0),0);
+  $('kpiPallets').textContent=totPal>0?fmtNum(Math.round(totPal*10)/10):'—';
+  renderGraficoPlanif();
+}
+
+/* Gráfico de barras: cantidad de OC (documentos únicos) por planificador */
+function renderGraficoPlanif(){
+  const cont=$('graficoPlanif');
+  if(!cont) return;
+  if(!TRANSITOS.length){ cont.innerHTML='<div style="font-size:12px;color:#999;padding:8px;">Sin datos para graficar.</div>'; return; }
+  const porP={};
+  TRANSITOS.forEach(t=>{
+    const p=String(t.planificador||'(sin planificador)').trim()||'(sin planificador)';
+    (porP[p]=porP[p]||new Set()).add(t.n_documento);
+  });
+  const filas=Object.keys(porP).map(p=>({p, n:porP[p].size})).sort((a,b)=>b.n-a.n);
+  const max=Math.max.apply(null,filas.map(f=>f.n))||1;
+  cont.innerHTML=filas.map(f=>{
+    const w=Math.round((f.n/max)*100);
+    return '<div style="display:flex;align-items:center;gap:8px;margin-bottom:5px;">'+
+      '<div style="flex:0 0 130px;font-size:11.5px;color:#333;text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="'+esc(f.p)+'">'+esc(f.p)+'</div>'+
+      '<div style="flex:1;background:#e7eef6;border-radius:3px;height:18px;position:relative;">'+
+        '<div style="width:'+w+'%;background:#0C447C;height:100%;border-radius:3px;"></div>'+
+      '</div>'+
+      '<div class="mono" style="flex:0 0 28px;font-size:12px;color:#0C447C;font-weight:700;">'+f.n+'</div>'+
+    '</div>';
+  }).join('');
+}
+['fBuscar','fTipo','fEstado'].forEach(id=>$(id).addEventListener('input',renderTabla));
+$('btnRefrescar').addEventListener('click',cargarTransitos);
+
+/* ====== CARGAR PLANIFICADORES (select paso 1 + datalist analista paso 2) ====== */
+function cargarAnalistas(){
+  const cb='cbAna'+Date.now();
+  window[cb]=function(resp){
+    try{ delete window[cb]; }catch(e){}
+    const lista=(resp&&resp.planificadores)?resp.planificadores:[];
+    // Datalist de analista (paso 2)
+    const dl=$('listaAnalistas');
+    if(dl) dl.innerHTML=lista.map(a=>'<option value="'+esc(a.nombre)+'">'+esc(a.iniciales)+'</option>').join('');
+    // Select de planificador que sube (paso 1)
+    const sel=$('planificadorSel');
+    if(sel){
+      const opts=['<option value="">— Seleccione —</option>']
+        .concat(lista.map(a=>'<option value="'+esc(a.nombre)+'">'+esc(a.nombre)+'</option>'))
+        .concat(['<option value="__OTRO__">Otro (escribir)</option>']);
+      sel.innerHTML=opts.join('');
+    }
+    renderGraficoPlanif();
+  };
+  const s=document.createElement('script');
+  s.src=API_URL+'?accion=listarPlanificadores&callback='+cb;
+  document.body.appendChild(s);
+}
+
+/* Select planificador -> input libre cuando elige "Otro"; mantiene #planificador como fuente del payload */
+(function(){
+  const sel=$('planificadorSel'), inp=$('planificador');
+  if(sel&&inp){
+    sel.addEventListener('change',function(){
+      if(this.value==='__OTRO__'){ inp.style.display='block'; inp.value=''; inp.focus(); }
+      else { inp.style.display='none'; inp.value=this.value; }
+    });
+  }
+})();
+
+/* ====== INICIO ====== */
+if(API_URL){ cargarTransitos(); cargarAnalistas(); }
+else { $('tbodyTransitos').innerHTML='<tr><td colspan="17" style="text-align:center;color:#a3331f;padding:20px;">Configure API_URL (línea superior del script) tras desplegar el backend.</td></tr>'; }
+</script>
 </body>
 </html>
