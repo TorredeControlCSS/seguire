@@ -144,7 +144,7 @@
     <div class="kpi off" id="kpiOCCard"><div class="n" id="kpiOC">—</div><div class="l">Órdenes de compra</div></div>
     <div class="kpi off" id="kpiPendCard"><div class="n" id="kpiPend">—</div><div class="l">Sin retirar / pendientes</div></div>
     <div class="kpi off" id="kpiVencCard"><div class="n" id="kpiVenc">—</div><div class="l">Vencen ≤ 15 días</div></div>
-    <div class="kpi off" id="kpiPalletsCard"><div class="n" id="kpiPallets">—</div><div class="l">Pallets equivalentes (total)</div></div>
+    <div class="kpi off" id="kpiCantCard"><div class="n" id="kpiCant">—</div><div class="l">Cantidad total (unidades)</div></div>
   </div>
 
   <!-- Gráfico rico multieje con selector de vistas -->
@@ -156,6 +156,10 @@
           <option value="urgencia">Urgencia × volumen</option>
           <option value="cedi">Carga por CEDI destino</option>
           <option value="semana">Llegada esperada por semana</option>
+          <option value="planificador">Carga por planificador</option>
+        </select>
+        <select id="filtroPlanifGraf" title="Filtrar el panorama por planificador">
+          <option value="">Todos los planificadores</option>
         </select>
       </div>
       <span class="graf-toggle" id="grafToggle">▼ ocultar</span>
@@ -172,7 +176,7 @@
   <!-- Carga compacta -->
   <div class="panel">
     <div class="carga-compacta">
-      <span class="num">1</span>
+      <span style="font-weight:700;color:var(--azul);font-size:13px;white-space:nowrap;">Cargar documento</span>
       <select id="tipoDoc" title="Tipo de documento">
         <option value="">— Tipo de documento —</option>
         <option value="ORDEN_COMPRA" data-prefijo="">Orden de Compra (OC)</option>
@@ -200,7 +204,7 @@
 
   <!-- PASO 2: Revisar y confirmar -->
   <div class="panel" id="panelRevision" style="display:none;">
-    <div class="panel-h"><span class="num">2</span> Revisar datos extraídos y confirmar</div>
+    <div class="panel-h">Revisar datos extraídos y confirmar</div>
     <div class="panel-b">
       <div class="estado-msg info" id="avisoTipo" style="display:none;"></div>
       <div class="grid g4" style="margin-bottom:12px;">
@@ -235,7 +239,7 @@
 
   <!-- PASO 3: Tarjetas -->
   <div class="panel">
-    <div class="panel-h"><span class="num">3</span> Órdenes en tránsito (visibilidad anticipada)</div>
+    <div class="panel-h">Órdenes en tránsito (visibilidad anticipada)</div>
     <div class="panel-b">
       <div class="filtros">
         <div class="campo crece">
@@ -288,15 +292,6 @@
       </div>
       <div id="tarjetas" class="tarjetas"><div style="text-align:center;color:#999;padding:20px;">Cargando…</div></div>
       <div class="hint" id="contadorFilas" style="margin-top:8px;"></div>
-    </div>
-  </div>
-
-  <!-- Gráfico horizontal de planificadores -->
-  <div class="panel">
-    <div class="panel-h">Documentos cargados por planificador</div>
-    <div class="panel-b">
-      <div style="font-size:12px;color:#666;margin-bottom:10px;">Órdenes de compra (documentos únicos) que cada planificador ha dado de alta en este sistema.</div>
-      <div id="graficoPlanif"><div style="font-size:12px;color:#999;padding:8px;">Cargando…</div></div>
     </div>
   </div>
 
@@ -710,13 +705,14 @@ function renderTarjetas(){
               '<span class="doc">'+esc(t.n_documento||'—')+'</span>'+estBadge(est)+
             '</div>'+
             '<div class="prov">'+esc(t.proveedor||'—')+(t.descripcion?(' · '+esc(t.descripcion)):'')+'</div>'+
+            '<div style="font-size:11px;color:#0C447C;font-family:Consolas,monospace;margin-top:3px;">Abasto: '+esc(t.cod_abasto_norm||t.cod_abasto||'—')+' · SAP: '+esc(t.cod_sap||'—')+'</div>'+
             sello+
           '</div>'+
           '<div class="tj-venc"><div class="cap">Vence entrega</div><div class="val" style="color:'+vc.c+';">'+(diasTxt||'—')+'</div></div>'+
         '</div>'+
         '<div class="tj-senal">'+
           '<div class="tj-col" style="background:'+vc.bg+';"><div class="cap" style="color:'+vc.fg+';">Vencimiento de entrega</div><div class="dato"><span class="n" style="color:'+vc.c+';">'+esc(fVenc||'—')+'</span> <span class="u" style="color:'+vc.fg+';">'+esc(diasTxt)+'</span></div></div>'+
-          '<div class="tj-col" style="background:var(--pastel-purpura);"><div class="cap" style="color:#534AB7;">Cantidad / pallets</div><div class="dato"><span class="n" style="color:#3C3489;">'+fmtNum(t.cantidad)+'</span> <span class="u" style="color:#534AB7;">und'+pal+'</span></div></div>'+
+          '<div class="tj-col" style="background:var(--pastel-purpura);"><div class="cap" style="color:#534AB7;">Cantidad</div><div class="dato"><span class="n" style="color:#3C3489;">'+fmtNum(t.cantidad)+'</span> <span class="u" style="color:#534AB7;">und'+pal+'</span></div></div>'+
           '<div class="tj-col" style="background:var(--pastel-azul);"><div class="cap" style="color:#185FA5;">CEDI destino</div><div class="dato"><span class="n" style="color:#0C447C;">'+esc(t.cedi||'—')+'</span></div></div>'+
         '</div>'+
         '<div class="tj-vermas" id="vermas_'+esc(t.id)+'" onclick="toggleDet(\''+esc(t.id)+'\')">'+chevron+' Ver detalle (código, SAP, requisición, monto, planificador, PDF)</div>'+
@@ -771,18 +767,18 @@ function renderKPIs(){
   const oc=new Set(TRANSITOS.map(t=>t.n_documento)).size;
   const pend=TRANSITOS.filter(t=>String(t.estado_transito||'').toUpperCase()!=='AGENDADA').length;
   const venc=TRANSITOS.filter(t=>{const d=diasPara(t.vencimiento_entrega||t.vencimiento_oc);return d!=null&&d>=0&&d<=15;}).length;
-  const totPal=TRANSITOS.reduce((s,t)=>s+(parseFloat(t.pallets_equiv)||0),0);
+  const totCant=TRANSITOS.reduce((s,t)=>s+(parseFloat(t.cantidad)||0),0);
   $('kpiTotal').textContent=total;
   $('kpiOC').textContent=oc;
   $('kpiPend').textContent=pend;
   $('kpiVenc').textContent=venc;
-  $('kpiPallets').textContent=totPal>0?fmtNum(Math.round(totPal*10)/10):'0';
+  $('kpiCant').textContent=totCant>0?fmtNum(Math.round(totCant)):'0';
   // Activación por contenido: la tarjeta toma color pastel si tiene valor; gris si es 0
   setKpiEstado('kpiTotalCard', total>0, 'on-azul');
   setKpiEstado('kpiOCCard', oc>0, 'on-teal');
   setKpiEstado('kpiPendCard', pend>0, 'on-ambar');
   setKpiEstado('kpiVencCard', venc>0, 'on-rojo');
-  setKpiEstado('kpiPalletsCard', totPal>0, 'on-purpura');
+  setKpiEstado('kpiCantCard', totCant>0, 'on-purpura');
   renderGraficoPlanif();
   renderGraficoRico();
 }
@@ -795,26 +791,7 @@ function setKpiEstado(cardId, activo, claseColor){
 
 /* Gráfico horizontal: cantidad de OC (documentos únicos) por planificador */
 function renderGraficoPlanif(){
-  const cont=$('graficoPlanif');
-  if(!cont) return;
-  if(!TRANSITOS.length){ cont.innerHTML='<div style="font-size:12px;color:#999;padding:8px;">Sin datos para graficar.</div>'; return; }
-  const porP={};
-  TRANSITOS.forEach(t=>{
-    const p=String(t.planificador||'(sin planificador)').trim()||'(sin planificador)';
-    (porP[p]=porP[p]||new Set()).add(t.n_documento);
-  });
-  const filas=Object.keys(porP).map(p=>({p, n:porP[p].size})).sort((a,b)=>b.n-a.n);
-  const max=Math.max.apply(null,filas.map(f=>f.n))||1;
-  cont.innerHTML=filas.map(f=>{
-    const w=Math.round((f.n/max)*100);
-    return '<div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">'+
-      '<div style="flex:0 0 140px;font-size:11.5px;color:#333;text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="'+esc(f.p)+'">'+esc(f.p)+'</div>'+
-      '<div style="flex:1;background:var(--pastel-azul);border-radius:3px;height:18px;position:relative;">'+
-        '<div style="width:'+w+'%;background:#0C447C;height:100%;border-radius:3px;"></div>'+
-      '</div>'+
-      '<div class="mono" style="flex:0 0 28px;font-size:12px;color:#0C447C;font-weight:700;">'+f.n+'</div>'+
-    '</div>';
-  }).join('');
+  return; // El gráfico de planificadores ahora es la 4a vista del panorama (renderGraficoRico).
 }
 
 /* ====== EXCEL ====== */
@@ -854,6 +831,14 @@ function cargarAnalistas(){
         .concat(['<option value="__OTRO__">Otro (escribir)</option>']);
       sel.innerHTML=opts.join('');
     }
+    // Poblar también el filtro por planificador del panorama
+    const fpg=$('filtroPlanifGraf');
+    if(fpg){
+      const cur=fpg.value;
+      fpg.innerHTML=['<option value="">Todos los planificadores</option>']
+        .concat(lista.map(a=>'<option value="'+esc(a.nombre)+'">'+esc(a.nombre)+'</option>')).join('');
+      fpg.value=cur;
+    }
     renderGraficoPlanif();
   };
   const s=document.createElement('script');
@@ -873,7 +858,7 @@ function cargarAnalistas(){
 
 /* ====== GRÁFICO RICO MULTIEJE (3 vistas) ====== */
 var _chartRico=null;
-var _grafColores={ emitida:{bg:'#FAC775',bd:'#BA7517'}, notificada:{bg:'#85B7EB',bd:'#185FA5'}, agendada:{bg:'#9FE1CB',bd:'#0F6E56'}, cant:'#A32D2D', oc:'#3C3489' };
+var _grafColores={ emitida:{bg:'#FAEEDA',bd:'#EF9F27'}, notificada:{bg:'#E6F1FB',bd:'#85B7EB'}, agendada:{bg:'#E1F5EE',bd:'#5DCAA5'}, cant:'#D4537E', oc:'#7F77DD' };
 
 function _estadoGrupo(est){
   var e=String(est||'EMITIDA').toUpperCase();
@@ -901,11 +886,14 @@ function _semanaISO(fv){
 function _datosVista(vista){
   var g={emitida:[],notificada:[],agendada:[],linea:[]};
   var labels=[], serieLineaLabel='Cantidad', serieLinea='cant';
+  // Filtro por planificador que reacciona a todo el panorama.
+  var fPlan=$('filtroPlanifGraf')?$('filtroPlanifGraf').value:'';
+  var base=fPlan?TRANSITOS.filter(function(t){return String(t.planificador||'').trim()===fPlan;}):TRANSITOS;
   if(vista==='cedi'){
     var cedis=['PANAMA','DIVISA','CHIRIQUI'];
     labels=['Panamá','Divisa','Chiriquí'];
     var acc=cedis.map(function(){return {emitida:0,notificada:0,agendada:0,cant:0};});
-    TRANSITOS.forEach(function(t){
+    base.forEach(function(t){
       var c=normCedi(t.cedi); var i=cedis.indexOf(c); if(i<0) return;
       var gr=_estadoGrupo(t.estado_transito); acc[i][gr]++; acc[i].cant+=Number(t.cantidad)||0;
     });
@@ -915,7 +903,7 @@ function _datosVista(vista){
     g.linea=acc.map(function(a){return a.cant;});
   } else if(vista==='semana'){
     var mapa={};
-    TRANSITOS.forEach(function(t){
+    base.forEach(function(t){
       var s=_semanaISO(t.vencimiento_entrega||t.vencimiento_oc); if(!s) s='Sin fecha';
       if(!mapa[s]) mapa[s]={emitida:0,notificada:0,agendada:0,oc:{}};
       var gr=_estadoGrupo(t.estado_transito); mapa[s][gr]++; mapa[s].oc[t.n_documento]=1;
@@ -926,10 +914,22 @@ function _datosVista(vista){
     g.agendada=labels.map(function(s){return mapa[s].agendada;});
     g.linea=labels.map(function(s){return Object.keys(mapa[s].oc).length;});
     serieLineaLabel='OC únicas'; serieLinea='oc';
+  } else if(vista==='planificador'){
+    var mp={};
+    base.forEach(function(t){
+      var p=String(t.planificador||'(sin planificador)').trim()||'(sin planificador)';
+      if(!mp[p]) mp[p]={emitida:0,notificada:0,agendada:0,cant:0};
+      var gr=_estadoGrupo(t.estado_transito); mp[p][gr]++; mp[p].cant+=Number(t.cantidad)||0;
+    });
+    labels=Object.keys(mp).sort(function(a,b){return (mp[b].emitida+mp[b].notificada+mp[b].agendada)-(mp[a].emitida+mp[a].notificada+mp[a].agendada);});
+    g.emitida=labels.map(function(p){return mp[p].emitida;});
+    g.notificada=labels.map(function(p){return mp[p].notificada;});
+    g.agendada=labels.map(function(p){return mp[p].agendada;});
+    g.linea=labels.map(function(p){return mp[p].cant;});
   } else { // urgencia
     labels=['Vencidas','≤ 7 días','≤ 15 días','≤ 30 días','+ 30 días'];
     var acc2=[0,1,2,3,4].map(function(){return {emitida:0,notificada:0,agendada:0,cant:0};});
-    TRANSITOS.forEach(function(t){
+    base.forEach(function(t){
       var d=diasPara(t.vencimiento_entrega||t.vencimiento_oc);
       var b=_cubetaVenc(d);
       var gr=_estadoGrupo(t.estado_transito); acc2[b][gr]++; acc2[b].cant+=Number(t.cantidad)||0;
@@ -949,10 +949,10 @@ function renderGraficoRico(){
   var d=_datosVista(vista);
   var lineaColor=d.serieLinea==='cant'?_grafColores.cant:_grafColores.oc;
   var ds=[
-    {type:'bar',label:'Emitida',data:d.g.emitida,stack:'st',backgroundColor:_grafColores.emitida.bg,borderColor:_grafColores.emitida.bd,borderWidth:1,yAxisID:'y'},
-    {type:'bar',label:'Notificada',data:d.g.notificada,stack:'st',backgroundColor:_grafColores.notificada.bg,borderColor:_grafColores.notificada.bd,borderWidth:1,yAxisID:'y'},
-    {type:'bar',label:'Agendada',data:d.g.agendada,stack:'st',backgroundColor:_grafColores.agendada.bg,borderColor:_grafColores.agendada.bd,borderWidth:1,yAxisID:'y'},
-    {type:'line',label:d.serieLineaLabel,data:d.g.linea,borderColor:lineaColor,backgroundColor:lineaColor,borderWidth:2,pointRadius:3,tension:0.2,yAxisID:'y1'}
+    {type:'bar',label:'Emitida',data:d.g.emitida,stack:'st',backgroundColor:_grafColores.emitida.bg,borderColor:_grafColores.emitida.bd,borderWidth:1,yAxisID:'y',order:3},
+    {type:'bar',label:'Notificada',data:d.g.notificada,stack:'st',backgroundColor:_grafColores.notificada.bg,borderColor:_grafColores.notificada.bd,borderWidth:1,yAxisID:'y',order:3},
+    {type:'bar',label:'Agendada',data:d.g.agendada,stack:'st',backgroundColor:_grafColores.agendada.bg,borderColor:_grafColores.agendada.bd,borderWidth:1,yAxisID:'y',order:3},
+    {type:'line',label:d.serieLineaLabel,data:d.g.linea,borderColor:lineaColor,backgroundColor:lineaColor,borderWidth:2,pointRadius:3,tension:0.2,yAxisID:'y1',order:0}
   ];
   if(_chartRico) _chartRico.destroy();
   _chartRico=new Chart(cv.getContext('2d'),{
@@ -972,10 +972,12 @@ function renderGraficoRico(){
   $('grafLeyenda').innerHTML=ley.map(function(l){return '<span class="it"><span class="sw" style="background:'+l[1]+';"></span>'+esc(l[0])+'</span>';}).join('');
   var notas={urgencia:'Barras: renglones por estado en cada cubeta de urgencia. Línea: cantidad total de unidades (eje derecho).',
              cedi:'Barras: renglones por estado en cada CEDI destino. Línea: cantidad total de unidades por CEDI (eje derecho).',
-             semana:'Barras: renglones por estado en la semana de vencimiento de entrega. Línea: número de OC únicas (eje derecho).'};
+             semana:'Barras: renglones por estado en la semana de vencimiento de entrega. Línea: número de OC únicas (eje derecho).',
+             planificador:'Barras: renglones por estado que cada planificador dio de alta. Línea: cantidad total de unidades (eje derecho).'};
   $('grafNota').textContent=notas[vista]||'';
 }
 if($('vistaGraf')) $('vistaGraf').addEventListener('change',renderGraficoRico);
+if($('filtroPlanifGraf')) $('filtroPlanifGraf').addEventListener('change',renderGraficoRico);
 if($('grafToggle')) $('grafToggle').addEventListener('click',function(){
   var b=$('grafBody');
   if(b.style.display==='none'){ b.style.display='block'; this.textContent='▼ ocultar'; renderGraficoRico(); }
