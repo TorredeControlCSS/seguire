@@ -6,6 +6,7 @@
 <title>Tránsitos de OC — SEGUIRE · CEDIS Panamá</title>
 <link rel="icon" href="https://torredecontrolcss.github.io/seguire/favicon.ico">
 <link rel="apple-touch-icon" href="https://torredecontrolcss.github.io/seguire/icons/icon-192.png">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
   :root{
     --azul:#0C447C; --azul2:#1e5a9e; --bg:#ececec; --linea:#a8a8a8;
@@ -106,8 +107,19 @@
   .tj-col .dato{margin-top:3px;}
   .tj-col .dato .n{font-size:16px;font-weight:700;font-family:Consolas,monospace;}
   .tj-col .dato .u{font-size:11px;}
+  .tj-vermas{display:flex;align-items:center;justify-content:center;gap:6px;padding:6px 14px;background:#eef4fb;border-top:1px solid #e2ecf5;font-size:11.5px;color:#0C447C;cursor:pointer;font-weight:600;user-select:none;}
+  .tj-vermas:hover{background:#e0ecf8;}
   .tj-detalle{padding:10px 14px;background:#f9fbfd;border-top:1px solid #e2ecf5;font-size:11.5px;display:none;}
   .tj-detalle.abierto{display:block;}
+  .graf-wrap{border:1px solid var(--linea);border-radius:4px;background:#fff;margin-bottom:14px;}
+  .graf-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 14px;background:#f4f8fc;border-bottom:1px solid var(--linea);flex-wrap:wrap;}
+  .graf-head .tit{font-weight:700;color:var(--azul);font-size:14px;}
+  .graf-head select{width:auto;padding:5px 8px;font-size:12px;}
+  .graf-toggle{font-size:12px;color:var(--azul);cursor:pointer;user-select:none;}
+  .graf-body{padding:12px 14px;}
+  .graf-leyenda{display:flex;flex-wrap:wrap;gap:14px;margin-bottom:10px;font-size:11.5px;color:#555;}
+  .graf-leyenda span.it{display:flex;align-items:center;gap:5px;}
+  .graf-leyenda .sw{width:11px;height:11px;border-radius:2px;}
   .tj-detalle .grid-det{display:grid;grid-template-columns:repeat(4,1fr);gap:8px 14px;font-family:Consolas,monospace;}
   @media(max-width:760px){.tj-detalle .grid-det{grid-template-columns:1fr 1fr;}}
   .tj-detalle .grid-det .k{color:#888;font-family:'Segoe UI',Arial,sans-serif;font-size:10px;}
@@ -133,6 +145,28 @@
     <div class="kpi off" id="kpiPendCard"><div class="n" id="kpiPend">—</div><div class="l">Sin retirar / pendientes</div></div>
     <div class="kpi off" id="kpiVencCard"><div class="n" id="kpiVenc">—</div><div class="l">Vencen ≤ 15 días</div></div>
     <div class="kpi off" id="kpiPalletsCard"><div class="n" id="kpiPallets">—</div><div class="l">Pallets equivalentes (total)</div></div>
+  </div>
+
+  <!-- Gráfico rico multieje con selector de vistas -->
+  <div class="graf-wrap">
+    <div class="graf-head">
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+        <span class="tit">Panorama de tránsitos</span>
+        <select id="vistaGraf">
+          <option value="urgencia">Urgencia × volumen</option>
+          <option value="cedi">Carga por CEDI destino</option>
+          <option value="semana">Llegada esperada por semana</option>
+        </select>
+      </div>
+      <span class="graf-toggle" id="grafToggle">▼ ocultar</span>
+    </div>
+    <div class="graf-body" id="grafBody">
+      <div class="graf-leyenda" id="grafLeyenda"></div>
+      <div style="position:relative;height:260px;">
+        <canvas id="grafTransitos" role="img" aria-label="Panorama de tránsitos por vista seleccionada"></canvas>
+      </div>
+      <div id="grafNota" class="hint" style="margin-top:8px;"></div>
+    </div>
   </div>
 
   <!-- Carga compacta -->
@@ -247,6 +281,7 @@
           <div style="display:flex;gap:6px;">
             <button class="btn btn-sec mini" id="btnOrdenDir" type="button" title="Invertir orden">▲</button>
             <button class="btn btn-sec" id="btnExcel" type="button" title="Descargar Excel institucional">⬇ Excel</button>
+            <button class="btn btn-sec" id="btnCorregirFechas" type="button" title="Corregir años mal escaneados en las fechas ya cargadas">⚑ Corregir fechas</button>
             <button class="btn btn-sec" id="btnRefrescar" type="button">↻ Refrescar</button>
           </div>
         </div>
@@ -679,13 +714,13 @@ function renderTarjetas(){
           '</div>'+
           '<div class="tj-venc"><div class="cap">Vence entrega</div><div class="val" style="color:'+vc.c+';">'+(diasTxt||'—')+'</div></div>'+
         '</div>'+
-        '<div class="tj-senal" onclick="toggleDet(\''+esc(t.id)+'\')">'+
+        '<div class="tj-senal">'+
           '<div class="tj-col" style="background:'+vc.bg+';"><div class="cap" style="color:'+vc.fg+';">Vencimiento de entrega</div><div class="dato"><span class="n" style="color:'+vc.c+';">'+esc(fVenc||'—')+'</span> <span class="u" style="color:'+vc.fg+';">'+esc(diasTxt)+'</span></div></div>'+
           '<div class="tj-col" style="background:var(--pastel-purpura);"><div class="cap" style="color:#534AB7;">Cantidad / pallets</div><div class="dato"><span class="n" style="color:#3C3489;">'+fmtNum(t.cantidad)+'</span> <span class="u" style="color:#534AB7;">und'+pal+'</span></div></div>'+
           '<div class="tj-col" style="background:var(--pastel-azul);"><div class="cap" style="color:#185FA5;">CEDI destino</div><div class="dato"><span class="n" style="color:#0C447C;">'+esc(t.cedi||'—')+'</span></div></div>'+
         '</div>'+
+        '<div class="tj-vermas" id="vermas_'+esc(t.id)+'" onclick="toggleDet(\''+esc(t.id)+'\')">'+chevron+' Ver detalle (código, SAP, requisición, monto, planificador, PDF)</div>'+
         '<div class="tj-detalle '+abierto+'" id="det_'+esc(t.id)+'">'+
-          '<div style="color:#888;margin-bottom:8px;font-size:10.5px;text-transform:uppercase;letter-spacing:.03em;">'+chevron+' Detalle</div>'+
           '<div class="grid-det">'+
             '<div><span class="k">Cód. Abasto</span><br>'+esc(t.cod_abasto_norm||t.cod_abasto||'—')+'</div>'+
             '<div><span class="k">Cód. SAP</span><br>'+esc(t.cod_sap||'—')+'</div>'+
@@ -709,6 +744,8 @@ function toggleDet(id){
   _detAbierto[id]=!_detAbierto[id];
   const d=$('det_'+id);
   if(d) d.classList.toggle('abierto');
+  const v=$('vermas_'+id);
+  if(v){ v.innerHTML=(_detAbierto[id]?'▲':'▼')+' '+(_detAbierto[id]?'Ocultar detalle':'Ver detalle (código, SAP, requisición, monto, planificador, PDF)'); }
 }
 
 function aplicarFiltros(arr){
@@ -747,6 +784,7 @@ function renderKPIs(){
   setKpiEstado('kpiVencCard', venc>0, 'on-rojo');
   setKpiEstado('kpiPalletsCard', totPal>0, 'on-purpura');
   renderGraficoPlanif();
+  renderGraficoRico();
 }
 function setKpiEstado(cardId, activo, claseColor){
   const el=$(cardId);
@@ -832,6 +870,177 @@ function cargarAnalistas(){
     });
   }
 })();
+
+/* ====== GRÁFICO RICO MULTIEJE (3 vistas) ====== */
+var _chartRico=null;
+var _grafColores={ emitida:{bg:'#FAC775',bd:'#BA7517'}, notificada:{bg:'#85B7EB',bd:'#185FA5'}, agendada:{bg:'#9FE1CB',bd:'#0F6E56'}, cant:'#A32D2D', oc:'#3C3489' };
+
+function _estadoGrupo(est){
+  var e=String(est||'EMITIDA').toUpperCase();
+  if(e==='NOTIFICADA') return 'notificada';
+  if(e==='AGENDADA') return 'agendada';
+  return 'emitida'; // EMITIDA, REVISAR y otros caen como "emitida"
+}
+function _cubetaVenc(dias){
+  if(dias==null) return 4;            // sin fecha -> +30 (menos urgente)
+  if(dias<0) return 0;                // vencida
+  if(dias<=7) return 1;
+  if(dias<=15) return 2;
+  if(dias<=30) return 3;
+  return 4;
+}
+function _semanaISO(fv){
+  if(!fv) return null;
+  var d=new Date(String(fv).slice(0,10)+'T00:00:00');
+  if(isNaN(d.getTime())) return null;
+  var onejan=new Date(d.getFullYear(),0,1);
+  var sem=Math.ceil((((d-onejan)/86400000)+onejan.getDay()+1)/7);
+  return 'Sem '+sem;
+}
+
+function _datosVista(vista){
+  var g={emitida:[],notificada:[],agendada:[],linea:[]};
+  var labels=[], serieLineaLabel='Cantidad', serieLinea='cant';
+  if(vista==='cedi'){
+    var cedis=['PANAMA','DIVISA','CHIRIQUI'];
+    labels=['Panamá','Divisa','Chiriquí'];
+    var acc=cedis.map(function(){return {emitida:0,notificada:0,agendada:0,cant:0};});
+    TRANSITOS.forEach(function(t){
+      var c=normCedi(t.cedi); var i=cedis.indexOf(c); if(i<0) return;
+      var gr=_estadoGrupo(t.estado_transito); acc[i][gr]++; acc[i].cant+=Number(t.cantidad)||0;
+    });
+    g.emitida=acc.map(function(a){return a.emitida;});
+    g.notificada=acc.map(function(a){return a.notificada;});
+    g.agendada=acc.map(function(a){return a.agendada;});
+    g.linea=acc.map(function(a){return a.cant;});
+  } else if(vista==='semana'){
+    var mapa={};
+    TRANSITOS.forEach(function(t){
+      var s=_semanaISO(t.vencimiento_entrega||t.vencimiento_oc); if(!s) s='Sin fecha';
+      if(!mapa[s]) mapa[s]={emitida:0,notificada:0,agendada:0,oc:{}};
+      var gr=_estadoGrupo(t.estado_transito); mapa[s][gr]++; mapa[s].oc[t.n_documento]=1;
+    });
+    labels=Object.keys(mapa).sort();
+    g.emitida=labels.map(function(s){return mapa[s].emitida;});
+    g.notificada=labels.map(function(s){return mapa[s].notificada;});
+    g.agendada=labels.map(function(s){return mapa[s].agendada;});
+    g.linea=labels.map(function(s){return Object.keys(mapa[s].oc).length;});
+    serieLineaLabel='OC únicas'; serieLinea='oc';
+  } else { // urgencia
+    labels=['Vencidas','≤ 7 días','≤ 15 días','≤ 30 días','+ 30 días'];
+    var acc2=[0,1,2,3,4].map(function(){return {emitida:0,notificada:0,agendada:0,cant:0};});
+    TRANSITOS.forEach(function(t){
+      var d=diasPara(t.vencimiento_entrega||t.vencimiento_oc);
+      var b=_cubetaVenc(d);
+      var gr=_estadoGrupo(t.estado_transito); acc2[b][gr]++; acc2[b].cant+=Number(t.cantidad)||0;
+    });
+    g.emitida=acc2.map(function(a){return a.emitida;});
+    g.notificada=acc2.map(function(a){return a.notificada;});
+    g.agendada=acc2.map(function(a){return a.agendada;});
+    g.linea=acc2.map(function(a){return a.cant;});
+  }
+  return {labels:labels, g:g, serieLineaLabel:serieLineaLabel, serieLinea:serieLinea};
+}
+
+function renderGraficoRico(){
+  if(typeof Chart==='undefined') return;
+  var cv=$('grafTransitos'); if(!cv) return;
+  var vista=$('vistaGraf')?$('vistaGraf').value:'urgencia';
+  var d=_datosVista(vista);
+  var lineaColor=d.serieLinea==='cant'?_grafColores.cant:_grafColores.oc;
+  var ds=[
+    {type:'bar',label:'Emitida',data:d.g.emitida,stack:'st',backgroundColor:_grafColores.emitida.bg,borderColor:_grafColores.emitida.bd,borderWidth:1,yAxisID:'y'},
+    {type:'bar',label:'Notificada',data:d.g.notificada,stack:'st',backgroundColor:_grafColores.notificada.bg,borderColor:_grafColores.notificada.bd,borderWidth:1,yAxisID:'y'},
+    {type:'bar',label:'Agendada',data:d.g.agendada,stack:'st',backgroundColor:_grafColores.agendada.bg,borderColor:_grafColores.agendada.bd,borderWidth:1,yAxisID:'y'},
+    {type:'line',label:d.serieLineaLabel,data:d.g.linea,borderColor:lineaColor,backgroundColor:lineaColor,borderWidth:2,pointRadius:3,tension:0.2,yAxisID:'y1'}
+  ];
+  if(_chartRico) _chartRico.destroy();
+  _chartRico=new Chart(cv.getContext('2d'),{
+    data:{labels:d.labels,datasets:ds},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{mode:'index',intersect:false,callbacks:{label:function(it){
+        var v=it.parsed.y; return it.dataset.label+': '+(v==null?'—':Number(v).toLocaleString('es-PA')); }}}},
+      scales:{
+        x:{stacked:true,grid:{display:false},ticks:{font:{size:11}}},
+        y:{stacked:true,position:'left',beginAtZero:true,title:{display:true,text:'Renglones',font:{size:11}},ticks:{font:{family:'Consolas,monospace'},precision:0}},
+        y1:{position:'right',beginAtZero:true,grid:{drawOnChartArea:false},title:{display:true,text:d.serieLineaLabel,font:{size:11}},ticks:{font:{family:'Consolas,monospace'}}}
+      }
+    }
+  });
+  // Leyenda HTML
+  var ley=[['Emitida',_grafColores.emitida.bg],['Notificada',_grafColores.notificada.bg],['Agendada',_grafColores.agendada.bg],[d.serieLineaLabel+' (eje der.)',lineaColor]];
+  $('grafLeyenda').innerHTML=ley.map(function(l){return '<span class="it"><span class="sw" style="background:'+l[1]+';"></span>'+esc(l[0])+'</span>';}).join('');
+  var notas={urgencia:'Barras: renglones por estado en cada cubeta de urgencia. Línea: cantidad total de unidades (eje derecho).',
+             cedi:'Barras: renglones por estado en cada CEDI destino. Línea: cantidad total de unidades por CEDI (eje derecho).',
+             semana:'Barras: renglones por estado en la semana de vencimiento de entrega. Línea: número de OC únicas (eje derecho).'};
+  $('grafNota').textContent=notas[vista]||'';
+}
+if($('vistaGraf')) $('vistaGraf').addEventListener('change',renderGraficoRico);
+if($('grafToggle')) $('grafToggle').addEventListener('click',function(){
+  var b=$('grafBody');
+  if(b.style.display==='none'){ b.style.display='block'; this.textContent='▼ ocultar'; renderGraficoRico(); }
+  else { b.style.display='none'; this.textContent='► mostrar'; }
+});
+
+/* ====== CORRECCIÓN DE FECHAS (simular / aplicar con reporte legible) ====== */
+$('btnCorregirFechas').addEventListener('click',function(){
+  setMsg($('estadoGuardar'),'info','<span class="spinner"></span>Analizando fechas cargadas…');
+  const cb='cbSim'+Date.now();
+  window[cb]=function(resp){
+    try{ delete window[cb]; }catch(e){}
+    if(!resp||!resp.success){ setMsg($('estadoGuardar'),'err','No se pudo analizar: '+((resp&&resp.error)||'error')); return; }
+    const r=resp.resumen||{};
+    if(!r.celdas_corregidas){ setMsg($('estadoGuardar'),'ok','No hay fechas con año anterior a '+r.anio_objetivo+' por corregir. Todo en orden.'); return; }
+    // Reporte legible (primeras 30 correcciones)
+    let filasHtml=(resp.cambios||[]).slice(0,30).map(function(c){
+      return c.correcciones.map(function(x){
+        return '<tr><td style="padding:2px 6px;border:1px solid #dce6f0;font-family:Consolas,monospace;font-size:10.5px;">'+esc(c.n_documento)+'</td>'+
+               '<td style="padding:2px 6px;border:1px solid #dce6f0;font-size:10.5px;">'+esc(x.campo)+'</td>'+
+               '<td style="padding:2px 6px;border:1px solid #dce6f0;font-family:Consolas,monospace;font-size:10.5px;color:#a3331f;">'+esc(x.antes)+'</td>'+
+               '<td style="padding:2px 6px;border:1px solid #dce6f0;font-family:Consolas,monospace;font-size:10.5px;color:#2d5a1e;">'+esc(x.despues)+'</td></tr>';
+      }).join('');
+    }).join('');
+    const extra=(resp.cambios||[]).length>30?'<div style="font-size:11px;color:#777;margin-top:4px;">… y '+((resp.cambios.length)-30)+' documento(s) más.</div>':'';
+    const html='<b>Simulación de corrección de fechas</b><br>'+
+      'Se corregirían <b>'+r.celdas_corregidas+'</b> fecha(s) en <b>'+r.filas_afectadas+'</b> renglón(es), subiendo el año a <b>'+r.anio_objetivo+'</b> (se conservan día y mes).'+
+      '<div style="max-height:220px;overflow:auto;margin-top:8px;border:1px solid #dce6f0;border-radius:3px;">'+
+        '<table style="width:100%;border-collapse:collapse;"><thead><tr>'+
+        '<th style="padding:3px 6px;background:#0C447C;color:#fff;font-size:10px;text-align:left;">Documento</th>'+
+        '<th style="padding:3px 6px;background:#0C447C;color:#fff;font-size:10px;text-align:left;">Campo</th>'+
+        '<th style="padding:3px 6px;background:#0C447C;color:#fff;font-size:10px;text-align:left;">Antes</th>'+
+        '<th style="padding:3px 6px;background:#0C447C;color:#fff;font-size:10px;text-align:left;">Después</th>'+
+        '</tr></thead><tbody>'+filasHtml+'</tbody></table>'+
+      '</div>'+extra+
+      '<div style="margin-top:10px;display:flex;gap:8px;">'+
+        '<button class="btn mini" id="btnAplicarFechas" type="button">Aplicar correcciones</button>'+
+        '<button class="btn btn-sec mini" id="btnCancelarFechas" type="button">Cancelar</button>'+
+      '</div>';
+    setMsg($('estadoGuardar'),'info',html);
+    $('btnAplicarFechas').addEventListener('click',aplicarCorreccionFechas);
+    $('btnCancelarFechas').addEventListener('click',function(){ $('estadoGuardar').className='estado-msg'; });
+  };
+  const s=document.createElement('script');
+  s.src=API_SIGUELO+'?action=corregirFechasSimular&callback='+cb;
+  s.onerror=()=>setMsg($('estadoGuardar'),'err','No se pudo conectar para analizar las fechas.');
+  document.body.appendChild(s);
+});
+
+function aplicarCorreccionFechas(){
+  setMsg($('estadoGuardar'),'info','<span class="spinner"></span>Aplicando correcciones…');
+  const cb='cbApl'+Date.now();
+  window[cb]=function(resp){
+    try{ delete window[cb]; }catch(e){}
+    if(resp&&resp.success){
+      const r=resp.resumen||{};
+      setMsg($('estadoGuardar'),'ok','Corrección aplicada: '+r.celdas_corregidas+' fecha(s) en '+r.filas_afectadas+' renglón(es) actualizadas al año '+r.anio_objetivo+'.');
+      cargarTransitos();
+    } else { setMsg($('estadoGuardar'),'err','No se pudo aplicar: '+((resp&&resp.error)||'error')); }
+  };
+  const s=document.createElement('script');
+  s.src=API_SIGUELO+'?action=corregirFechasAplicar&callback='+cb;
+  s.onerror=()=>setMsg($('estadoGuardar'),'err','No se pudo conectar para aplicar las correcciones.');
+  document.body.appendChild(s);
+}
 
 /* ====== INICIO ====== */
 cargarTransitos();
