@@ -11,6 +11,8 @@
     --azul:#0C447C; --azul2:#1e5a9e; --bg:#ececec; --linea:#a8a8a8;
     --rojo:#a3331f; --ambar:#8a6a00; --verde:#2d5a1e;
     --rojo-bg:#f8d7da; --ambar-bg:#fff3cd; --verde-bg:#d9ead3;
+    --pastel-azul:#E6F1FB; --pastel-teal:#E1F5EE; --pastel-ambar:#FAEEDA;
+    --pastel-rojo:#FCEBEB; --pastel-purpura:#EEEDFE; --pastel-gris:#F1EFE8;
   }
   *{box-sizing:border-box;}
   body{margin:0;font-family:'Segoe UI',Arial,sans-serif;background:var(--bg);color:#222;font-size:14px;}
@@ -18,7 +20,7 @@
   header img{width:46px;height:46px;object-fit:contain;flex-shrink:0;}
   header h1{font-size:16px;margin:0;line-height:1.2;}
   header .sub{font-size:11px;opacity:.85;margin-top:2px;}
-  .wrap{max-width:1600px;margin:0 auto;padding:16px;}
+  .wrap{max-width:1400px;margin:0 auto;padding:16px;}
   .panel{background:#fff;border:1px solid var(--linea);border-radius:4px;margin-bottom:16px;}
   .panel-h{background:#f4f8fc;border-bottom:1px solid var(--linea);padding:10px 14px;font-weight:700;color:var(--azul);font-size:14px;display:flex;align-items:center;gap:8px;}
   .panel-b{padding:14px;}
@@ -26,9 +28,6 @@
   label{display:block;font-size:12px;font-weight:600;color:#444;margin-bottom:4px;}
   select,input[type=text],input[type=number],input[type=date]{width:100%;padding:7px 9px;border:1px solid var(--linea);border-radius:3px;font-size:13px;font-family:inherit;}
   .grid{display:grid;gap:12px;}
-  .fila-carga{display:grid;grid-template-columns:3fr 2fr;gap:10px;align-items:start;}
-  .fila-carga .panel{margin-bottom:16px;}
-  @media(max-width:980px){.fila-carga{grid-template-columns:1fr;}}
   .g2{grid-template-columns:1fr 1fr;}
   .g3{grid-template-columns:1fr 1fr 1fr;}
   .g4{grid-template-columns:repeat(4,1fr);}
@@ -38,33 +37,21 @@
   .btn:disabled{opacity:.5;cursor:not-allowed;}
   .btn-sec{background:#fff;color:var(--azul);}
   .btn-sec:hover{background:#f0f6fc;}
-  .dropzone{display:flex;align-items:center;justify-content:center;gap:12px;border:2px dashed #c9a227;border-radius:6px;padding:18px;text-align:left;background:rgba(255,221,87,0.18);cursor:pointer;transition:.15s;}
+  .btn-peligro{background:#fff;color:var(--rojo);border-color:var(--rojo);}
+  .btn-peligro:hover{background:#fdf0f0;}
+  .dropzone{display:flex;align-items:center;justify-content:center;gap:10px;border:2px dashed #c9a227;border-radius:6px;padding:10px 14px;text-align:left;background:rgba(255,221,87,0.18);cursor:pointer;transition:.15s;}
   .dropzone:hover,.dropzone.drag{background:rgba(255,210,40,0.32);border-color:#a9851a;}
-  .dropzone .ico{font-size:26px;color:#8a6a00;line-height:1;}
-  .dropzone .t{font-weight:600;color:#6b5400;font-size:13.5px;}
-  .dropzone .s{font-size:11.5px;color:#8a7320;margin-top:1px;}
+  .dropzone .ico{font-size:20px;color:#8a6a00;line-height:1;}
+  .dropzone .t{font-weight:600;color:#6b5400;font-size:12.5px;}
+  .dropzone .s{font-size:11px;color:#8a7320;margin-top:1px;}
   .estado-msg{padding:9px 12px;border-radius:3px;font-size:13px;margin-top:10px;display:none;}
   .estado-msg.info{background:#e7f1fb;color:var(--azul);border:1px solid #b8d4ee;display:block;}
   .estado-msg.ok{background:var(--verde-bg);color:var(--verde);border:1px solid #b5d4a8;display:block;}
   .estado-msg.err{background:var(--rojo-bg);color:var(--rojo);border:1px solid #e3b0b0;display:block;}
   .spinner{display:inline-block;width:14px;height:14px;border:2px solid #b8d4ee;border-top-color:var(--azul);border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:6px;}
   @keyframes spin{to{transform:rotate(360deg);}}
-  table{width:100%;border-collapse:collapse;font-size:12.5px;}
-  th,td{border:1px solid #d6dde6;padding:6px 8px;text-align:left;vertical-align:top;}
-  th{background:var(--azul);color:#fff;font-weight:600;cursor:pointer;white-space:nowrap;position:sticky;top:0;}
-  th:hover{background:var(--azul2);}
-  tbody tr:nth-child(even){background:#f6f9fc;}
-  .pill{display:inline-block;font-size:10.5px;font-weight:700;padding:2px 7px;border-radius:3px;}
   .mono{font-family:Consolas,'Courier New',monospace;}
-  .tabla-scroll{max-height:480px;overflow:auto;border:1px solid var(--linea);border-radius:3px;}
-  .reng-row{border-top:1px solid #dce6f0;padding:8px 0;}
-  .filtros{display:flex;gap:10px;flex-wrap:wrap;align-items:end;margin-bottom:12px;}
-  .filtros>div{flex:1;min-width:160px;}
-  .kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:14px;}
-  @media(max-width:760px){.kpis{grid-template-columns:1fr 1fr;}}
-  .kpi{background:#fff;border:1px solid var(--linea);border-radius:4px;padding:10px 12px;}
-  .kpi .n{font-size:22px;font-weight:700;color:var(--azul);font-family:Consolas,monospace;}
-  .kpi .l{font-size:11px;color:#666;text-transform:uppercase;letter-spacing:.3px;}
+  .pill{display:inline-block;font-size:10.5px;font-weight:700;padding:2px 8px;border-radius:20px;}
   .reng-edit{padding:8px;border:1px solid #dce6f0;border-radius:3px;margin-bottom:8px;background:#fbfdff;}
   .reng-campos{display:grid;grid-template-columns:1.2fr 2.5fr .8fr .8fr;gap:8px;align-items:end;}
   @media(max-width:760px){.reng-campos{grid-template-columns:1fr 1fr;}}
@@ -75,6 +62,57 @@
   .reng-cedis-suma{font-family:Consolas,'Courier New',monospace;font-size:13px;font-weight:700;padding:6px 4px;white-space:nowrap;}
   .mini{font-size:11px;padding:4px 8px;}
   .hint{font-size:11px;color:#777;margin-top:3px;}
+
+  /* ===== KPIs pastel ===== */
+  .kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:14px;}
+  @media(max-width:760px){.kpis{grid-template-columns:1fr 1fr;}}
+  .kpi{border-radius:8px;padding:11px 13px;background:var(--pastel-gris);transition:.15s;}
+  .kpi .n{font-size:22px;font-weight:700;font-family:Consolas,monospace;line-height:1.1;}
+  .kpi .l{font-size:10.5px;line-height:1.3;margin-top:3px;}
+  .kpi.on-azul{background:var(--pastel-azul);} .kpi.on-azul .n{color:#0C447C;} .kpi.on-azul .l{color:#185FA5;}
+  .kpi.on-teal{background:var(--pastel-teal);} .kpi.on-teal .n{color:#085041;} .kpi.on-teal .l{color:#0F6E56;}
+  .kpi.on-ambar{background:var(--pastel-ambar);} .kpi.on-ambar .n{color:#633806;} .kpi.on-ambar .l{color:#854F0B;}
+  .kpi.on-rojo{background:var(--pastel-rojo);} .kpi.on-rojo .n{color:#791F1F;} .kpi.on-rojo .l{color:#A32D2D;}
+  .kpi.on-purpura{background:var(--pastel-purpura);} .kpi.on-purpura .n{color:#3C3489;} .kpi.on-purpura .l{color:#534AB7;}
+  .kpi.off{background:var(--pastel-gris);} .kpi.off .n{color:#888780;} .kpi.off .l{color:#5F5E5A;}
+
+  /* ===== Carga compacta ===== */
+  .carga-compacta{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:9px 12px;}
+  .carga-compacta select{width:auto;min-width:150px;max-width:260px;}
+  .carga-compacta .dz-inline{flex:1;min-width:220px;}
+
+  /* ===== Filtros ===== */
+  .filtros{display:flex;gap:8px;flex-wrap:wrap;align-items:end;margin-bottom:12px;}
+  .filtros .campo{display:flex;flex-direction:column;}
+  .filtros .campo.crece{flex:1;min-width:160px;}
+  .filtros input,.filtros select{width:auto;}
+
+  /* ===== Tarjetas de tránsito ===== */
+  .tarjetas{display:flex;flex-direction:column;gap:12px;}
+  .tj{border:1px solid var(--linea);border-left:3px solid #888;border-radius:0 6px 6px 0;overflow:hidden;background:#fff;}
+  .tj.st-emitida{border-left-color:#E24B4A;}
+  .tj.st-notificada{border-left-color:#378ADD;}
+  .tj.st-agendada{border-left-color:#1D9E75;opacity:.92;}
+  .tj-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;padding:11px 14px;}
+  .tj-head .doc{font-size:14px;font-weight:700;color:#222;font-family:Consolas,monospace;}
+  .tj-head .prov{font-size:12.5px;color:#555;margin-top:3px;}
+  .tj-head .sello{font-size:11px;margin-top:4px;}
+  .tj-venc{text-align:right;flex:none;}
+  .tj-venc .cap{font-size:10px;color:#888;}
+  .tj-venc .val{font-size:13px;font-weight:700;font-family:Consolas,monospace;}
+  .tj-senal{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--linea);cursor:pointer;}
+  .tj-col{padding:9px 12px;}
+  .tj-col .cap{font-size:10px;text-transform:uppercase;letter-spacing:.03em;}
+  .tj-col .dato{margin-top:3px;}
+  .tj-col .dato .n{font-size:16px;font-weight:700;font-family:Consolas,monospace;}
+  .tj-col .dato .u{font-size:11px;}
+  .tj-detalle{padding:10px 14px;background:#f9fbfd;border-top:1px solid #e2ecf5;font-size:11.5px;display:none;}
+  .tj-detalle.abierto{display:block;}
+  .tj-detalle .grid-det{display:grid;grid-template-columns:repeat(4,1fr);gap:8px 14px;font-family:Consolas,monospace;}
+  @media(max-width:760px){.tj-detalle .grid-det{grid-template-columns:1fr 1fr;}}
+  .tj-detalle .grid-det .k{color:#888;font-family:'Segoe UI',Arial,sans-serif;font-size:10px;}
+  .tj-acc{display:flex;align-items:center;gap:7px;padding:10px 14px;border-top:1px solid #e2ecf5;flex-wrap:wrap;}
+  .badge2{font-size:10px;padding:2px 8px;border-radius:20px;}
 </style>
 </head>
 <body>
@@ -88,62 +126,42 @@
 
 <div class="wrap">
 
-  <!-- KPIs -->
+  <!-- KPIs pastel -->
   <div class="kpis" id="kpis">
-    <div class="kpi"><div class="n" id="kpiTotal">—</div><div class="l">Renglones en tránsito</div></div>
-    <div class="kpi"><div class="n" id="kpiOC">—</div><div class="l">Órdenes de compra</div></div>
-    <div class="kpi"><div class="n" id="kpiPend">—</div><div class="l">Sin retirar / pendientes</div></div>
-    <div class="kpi"><div class="n" id="kpiVenc">—</div><div class="l">Vencen ≤ 15 días</div></div>
-    <div class="kpi"><div class="n" id="kpiPallets">—</div><div class="l">Pallets equivalentes (total)</div></div>
+    <div class="kpi off" id="kpiTotalCard"><div class="n" id="kpiTotal">—</div><div class="l">Renglones en tránsito</div></div>
+    <div class="kpi off" id="kpiOCCard"><div class="n" id="kpiOC">—</div><div class="l">Órdenes de compra</div></div>
+    <div class="kpi off" id="kpiPendCard"><div class="n" id="kpiPend">—</div><div class="l">Sin retirar / pendientes</div></div>
+    <div class="kpi off" id="kpiVencCard"><div class="n" id="kpiVenc">—</div><div class="l">Vencen ≤ 15 días</div></div>
+    <div class="kpi off" id="kpiPalletsCard"><div class="n" id="kpiPallets">—</div><div class="l">Pallets equivalentes (total)</div></div>
   </div>
 
-  <!-- PASO 1 + Gráfico, lado a lado -->
-  <div class="fila-carga">
-    <div class="panel">
-      <div class="panel-h"><span class="num">1</span> Cargar documento del planificador</div>
-      <div class="panel-b">
-        <div class="grid g2" style="margin-bottom:12px;">
-          <div>
-            <label>Tipo de documento</label>
-            <select id="tipoDoc">
-              <option value="">— Seleccione antes de subir —</option>
-              <option value="ORDEN_COMPRA" data-prefijo="">Orden de Compra (OC)</option>
-              <option value="SOLICITUD_ENTREGA" data-prefijo="DINALOG-P. de S. MED. N°">Solicitud de Entrega — Medicamentos (MED.)</option>
-              <option value="SOLICITUD_ENTREGA" data-prefijo="DINALOG-P. de S. L.C. N°">Solicitud de Entrega — Laboratorio Clínico (L.C.)</option>
-              <option value="SOLICITUD_ENTREGA" data-prefijo="DINALOG-P. de S. R.M. N°">Solicitud de Entrega — Radiología Médica (R.M.)</option>
-              <option value="SOLICITUD_ENTREGA" data-prefijo="DINALOG-P. de S. O.M°">Solicitud de Entrega — Odontología (O.M)</option>
-              <option value="SOLICITUD_ENTREGA" data-prefijo="DINALOG-P. de S. M.Q. N°">Solicitud de Entrega — Médico Quirúrgico (M.Q.)</option>
-              <option value="SOLICITUD_ENTREGA" data-prefijo="DINALOG-P. de S. C.H. N°">Solicitud de Entrega — Clínica de Heridas (C.H.)</option>
-              <option value="ADELANTO" data-prefijo="">Nota de Adelanto (DINALOG-N°)</option>
-            </select>
-            <div class="hint">El sistema verificará el tipo al procesar el documento; si difiere, se le notificará.</div>
-          </div>
-          <div>
-            <label>Planificador que sube</label>
-            <select id="planificadorSel"><option value="">— Seleccione —</option><option value="__OTRO__">Otro (escribir)</option></select>
-            <input type="text" id="planificador" placeholder="Su nombre y apellido" style="display:none;margin-top:6px;">
-            <div class="hint">Para registrar quién dio visibilidad al documento.</div>
-          </div>
+  <!-- Carga compacta -->
+  <div class="panel">
+    <div class="carga-compacta">
+      <span class="num">1</span>
+      <select id="tipoDoc" title="Tipo de documento">
+        <option value="">— Tipo de documento —</option>
+        <option value="ORDEN_COMPRA" data-prefijo="">Orden de Compra (OC)</option>
+        <option value="SOLICITUD_ENTREGA" data-prefijo="DINALOG-P. de S. MED. N°">Solicitud — Medicamentos (MED.)</option>
+        <option value="SOLICITUD_ENTREGA" data-prefijo="DINALOG-P. de S. L.C. N°">Solicitud — Laboratorio Clínico (L.C.)</option>
+        <option value="SOLICITUD_ENTREGA" data-prefijo="DINALOG-P. de S. R.M. N°">Solicitud — Radiología Médica (R.M.)</option>
+        <option value="SOLICITUD_ENTREGA" data-prefijo="DINALOG-P. de S. O.M°">Solicitud — Odontología (O.M)</option>
+        <option value="SOLICITUD_ENTREGA" data-prefijo="DINALOG-P. de S. M.Q. N°">Solicitud — Médico Quirúrgico (M.Q.)</option>
+        <option value="SOLICITUD_ENTREGA" data-prefijo="DINALOG-P. de S. C.H. N°">Solicitud — Clínica de Heridas (C.H.)</option>
+        <option value="ADELANTO" data-prefijo="">Nota de Adelanto (DINALOG-N°)</option>
+      </select>
+      <select id="planificadorSel" title="Planificador que sube"><option value="">— Planificador —</option><option value="__OTRO__">Otro (escribir)</option></select>
+      <input type="text" id="planificador" placeholder="Su nombre y apellido" style="display:none;width:auto;min-width:160px;">
+      <div class="dropzone dz-inline" id="dropzone">
+        <div class="ico">⬆</div>
+        <div>
+          <div class="t">Arrastre el PDF o haga clic para cargar</div>
+          <div class="s">OC, solicitud de entrega o nota de adelanto — PDF</div>
         </div>
-        <div class="dropzone" id="dropzone">
-          <div class="ico">⬆</div>
-          <div>
-            <div class="t">Arrastre el PDF aquí o haga clic para seleccionar</div>
-            <div class="s">Orden de compra, solicitud de entrega o nota de adelanto — formato PDF</div>
-          </div>
-          <input type="file" id="filePdf" accept="application/pdf" style="display:none;">
-        </div>
-        <div class="estado-msg" id="estadoCarga"></div>
+        <input type="file" id="filePdf" accept="application/pdf" style="display:none;">
       </div>
     </div>
-
-    <div class="panel">
-      <div class="panel-h">Documentos cargados por planificador</div>
-      <div class="panel-b">
-        <div style="font-size:12px;color:#666;margin-bottom:10px;">Órdenes de compra (documentos únicos) que cada planificador ha dado de alta en este sistema.</div>
-        <div id="graficoPlanif"><div style="font-size:12px;color:#999;padding:8px;">Cargando…</div></div>
-      </div>
-    </div>
+    <div style="padding:0 12px 10px;"><div class="estado-msg" id="estadoCarga"></div></div>
   </div>
 
   <!-- PASO 2: Revisar y confirmar -->
@@ -181,16 +199,24 @@
     </div>
   </div>
 
-  <!-- PASO 3: Tabla viva -->
+  <!-- PASO 3: Tarjetas -->
   <div class="panel">
     <div class="panel-h"><span class="num">3</span> Órdenes en tránsito (visibilidad anticipada)</div>
     <div class="panel-b">
       <div class="filtros">
-        <div>
+        <div class="campo crece">
           <label>Buscar</label>
-          <input type="text" id="fBuscar" placeholder="OC, renglón, proveedor, descripción...">
+          <input type="text" id="fBuscar" placeholder="OC, renglón, proveedor, descripción..." style="width:100%;">
         </div>
-        <div>
+        <div class="campo">
+          <label>Vence entrega desde</label>
+          <input type="date" id="fVencDesde">
+        </div>
+        <div class="campo">
+          <label>hasta</label>
+          <input type="date" id="fVencHasta">
+        </div>
+        <div class="campo">
           <label>Tipo</label>
           <select id="fTipo"><option value="">Todos</option>
             <option value="ORDEN_COMPRA">Orden de Compra</option>
@@ -198,64 +224,65 @@
             <option value="ADELANTO">Adelanto</option>
           </select>
         </div>
-        <div>
+        <div class="campo">
           <label>Estado</label>
           <select id="fEstado"><option value="">Todos</option>
             <option value="EMITIDA">Emitida</option>
-            <option value="PARCIAL">Parcial</option>
-            <option value="COMPLETADA">Completada</option>
+            <option value="NOTIFICADA">Notificada</option>
+            <option value="AGENDADA">Agendada</option>
+            <option value="REVISAR">Por revisar</option>
           </select>
         </div>
-        <div style="flex:0;">
+        <div class="campo">
+          <label>Ordenar por</label>
+          <select id="fOrden">
+            <option value="venc">Vencimiento de entrega</option>
+            <option value="doc">N° documento</option>
+            <option value="prov">Proveedor</option>
+            <option value="cant">Cantidad</option>
+          </select>
+        </div>
+        <div class="campo">
           <label>&nbsp;</label>
-          <button class="btn btn-sec" id="btnRefrescar" type="button">↻ Refrescar</button>
+          <div style="display:flex;gap:6px;">
+            <button class="btn btn-sec mini" id="btnOrdenDir" type="button" title="Invertir orden">▲</button>
+            <button class="btn btn-sec" id="btnExcel" type="button" title="Descargar Excel institucional">⬇ Excel</button>
+            <button class="btn btn-sec" id="btnRefrescar" type="button">↻ Refrescar</button>
+          </div>
         </div>
       </div>
-      <div class="tabla-scroll">
-        <table id="tablaTransitos">
-          <thead><tr id="theadRow"></tr></thead>
-          <tbody id="tbodyTransitos"><tr><td colspan="17" style="text-align:center;color:#999;padding:20px;">Cargando…</td></tr></tbody>
-        </table>
-      </div>
+      <div id="tarjetas" class="tarjetas"><div style="text-align:center;color:#999;padding:20px;">Cargando…</div></div>
       <div class="hint" id="contadorFilas" style="margin-top:8px;"></div>
+    </div>
+  </div>
+
+  <!-- Gráfico horizontal de planificadores -->
+  <div class="panel">
+    <div class="panel-h">Documentos cargados por planificador</div>
+    <div class="panel-b">
+      <div style="font-size:12px;color:#666;margin-bottom:10px;">Órdenes de compra (documentos únicos) que cada planificador ha dado de alta en este sistema.</div>
+      <div id="graficoPlanif"><div style="font-size:12px;color:#999;padding:8px;">Cargando…</div></div>
     </div>
   </div>
 
 </div>
 
 <script>
-/* ====== CONFIGURACIÓN ====== */
-// Pegar aquí la URL del Web App de SEGUIRE (backend de tránsitos) tras desplegar:
-const API_URL = 'https://script.google.com/macros/s/AKfycbyLjga90kMJ4_4zB7P2vPh7xX-UOBUvuShPvHe0IdhG9iB0hHuvgeSGrcpO95k9LEP6/exec';
+/* ====== CONFIGURACIÓN ======
+   Dos backends sobre la MISMA hoja TRANSITOS_OC:
+   - API_SEGUIRE: extracción (Gemini), guardado y listados. (backend de SEGUIRE)
+   - API_SIGUELO: notificar, editar, eliminar y Excel. (backend de SÍGUELO, módulo E1) */
+const API_SEGUIRE = 'https://script.google.com/macros/s/AKfycbyLjga90kMJ4_4zB7P2vPh7xX-UOBUvuShPvHe0IdhG9iB0hHuvgeSGrcpO95k9LEP6/exec';
+const API_SIGUELO = 'https://script.google.com/macros/s/AKfycbwVw0ACNMhdN6d-JsI1lyP2iKHBVgWXI5nK3rA6blEhF3l8t2Wuwk2TpRmaanB186Dk/exec';
 
-/* ====== COLUMNAS DE LA TABLA ====== */
-const COLUMNAS = [
-  {k:'tipo',        t:'Tipo'},
-  {k:'n_documento', t:'N° Documento'},
-  {k:'proveedor',   t:'Proveedor'},
-  {k:'cedi',        t:'CEDI'},
-  {k:'cod_abasto_norm', t:'Cód. Abasto'},
-  {k:'cod_sap',     t:'Cód. SAP'},
-  {k:'descripcion', t:'Descripción'},
-  {k:'cantidad',    t:'Cantidad'},
-  {k:'pallets_equiv', t:'Pallets eq.'},
-  {k:'n_entrega',   t:'Entrega'},
-  {k:'saldo',       t:'Saldo'},
-  {k:'vencimiento_entrega', t:'Vence Entrega'},
-  {k:'vencimiento_oc', t:'Vence OC'},
-  {k:'planificador', t:'Planificador'},
-  {k:'fecha_ingesta', t:'Cargado'},
-  {k:'estado_transito', t:'Estado'},
-  {k:'_acciones',   t:'Acciones'}
-];
-
-let TRANSITOS = [];      // datos cargados de la hoja
-let _extraido = null;    // resultado de la última extracción
-let _pdfBase64 = null;   // PDF en base64 para subir
+let TRANSITOS = [];
+let _extraido = null;
+let _pdfBase64 = null;
 let _pdfNombre = '';
-let _prefijoDoc = '';    // prefijo del subtipo DINALOG elegido en el paso 1
-let _editandoId = null;  // ID del renglón en edición (null = alta nueva)
-let _ordenCol = {k:null, asc:true};
+let _prefijoDoc = '';
+let _editandoId = null;
+let _ordenDir = true;   // true = ascendente
+let _detAbierto = {};   // id -> bool (detalle expandido)
 
 /* ====== UTILIDADES ====== */
 function $(id){ return document.getElementById(id); }
@@ -270,6 +297,9 @@ function diasPara(fv){
   return Math.round((f-h)/86400000);
 }
 function setMsg(el, tipo, html){ el.className='estado-msg '+tipo; el.innerHTML=html; }
+function postSiguelo(action,data){
+  return fetch(API_SIGUELO,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({action:action,data:data})}).then(r=>r.json());
+}
 
 /* ====== PASO 1: SUBIR PDF ====== */
 const dz=$('dropzone'), fileInput=$('filePdf');
@@ -284,7 +314,6 @@ function procesarArchivo(file){
   const tipo=$('tipoDoc').value;
   if(!tipo){ setMsg($('estadoCarga'),'err','Seleccione primero el tipo de documento.'); return; }
   if(!$('planificador').value.trim()){ setMsg($('estadoCarga'),'err','Seleccione o indique el planificador antes de subir.'); return; }
-  // Prefijo del subtipo elegido (MED, L.C., R.M., O.M, M.Q., C.H.) para anteponer al N° de documento.
   const _selOpt=$('tipoDoc').options[$('tipoDoc').selectedIndex];
   _prefijoDoc=(_selOpt&&_selOpt.dataset.prefijo)||'';
   _pdfNombre=file.name;
@@ -304,9 +333,7 @@ function extraerConIA(tipoElegido){
     setMsg($('estadoCarga'),'ok','Documento transcrito. Revise los datos abajo antes de guardar.');
     mostrarRevision(_extraido, tipoElegido);
   };
-  // POST vía form oculto a doPost (JSONP no admite payloads grandes); usamos fetch no-cors no sirve para leer respuesta,
-  // por eso usamos un POST con text y callback simulado: aquí enviamos por fetch y procesamos JSON.
-  fetch(API_URL, {
+  fetch(API_SEGUIRE, {
     method:'POST',
     body:JSON.stringify({accion:'extraerDocumento', tipo:tipoElegido, pdf_base64:_pdfBase64, nombre:_pdfNombre})
   }).then(r=>r.json()).then(j=>window[cb](j)).catch(err=>window[cb]({ok:false,error:String(err)}));
@@ -316,7 +343,6 @@ function extraerConIA(tipoElegido){
 function mostrarConfianzaVenc(conf, fecha){
   const box=$('confVencEnt');
   if(!box) return;
-  // Sin fecha leída: no mostramos indicador (el planificador la captura a mano).
   if(fecha==null || fecha===''){ box.style.display='none'; return; }
   let c=Number(conf);
   if(isNaN(c)) c=1;
@@ -333,10 +359,8 @@ function mostrarRevision(d, tipoElegido){
   $('panelRevision').style.display='block';
   const tipoIA=d.tipo||tipoElegido;
   $('rTipo').value=tipoIA;
-  // Anteponer el prefijo del subtipo si el número extraído no lo trae ya.
   var _numDoc=(d.n_documento||'').trim();
   if(_prefijoDoc && _numDoc.indexOf(_prefijoDoc)!==0){
-    // Si el escaneo trajo solo el correlativo (ej. "982-2026"), se antepone el prefijo.
     _numDoc = _numDoc ? (_prefijoDoc+_numDoc) : _prefijoDoc;
   }
   $('rDoc').value=_numDoc;
@@ -346,14 +370,11 @@ function mostrarRevision(d, tipoElegido){
   $('rVenc').value=d.vencimiento_oc||'';
   $('rVencEnt').value=d.vencimiento_entrega||'';
   $('rTermino').value=d.termino_entrega||'';
-  // Indicador de confianza de la lectura del dato manuscrito (vencimiento de entrega)
   mostrarConfianzaVenc(d.confianza_venc_entrega, d.vencimiento_entrega);
-  // aviso si la IA detectó un tipo distinto al elegido
   if(tipoIA && tipoElegido && tipoIA!==tipoElegido){
     setMsg($('avisoTipo'),'info','El reconocimiento detectó este documento como <b>'+esc(tipoIA)+'</b>, pero usted eligió <b>'+esc(tipoElegido)+'</b>. Verifique cuál es correcto.');
     $('avisoTipo').style.display='block';
   } else { $('avisoTipo').style.display='none'; }
-  // renglones
   const cont=$('renglones'); cont.innerHTML='';
   const rengs=(d.renglones&&d.renglones.length)?d.renglones:[{}];
   rengs.forEach(r=>cont.appendChild(filaRenglon(r)));
@@ -365,7 +386,6 @@ function filaRenglon(r){
   let marca='';
   if(r._maestro===true){ marca=' <span style="color:#2d5a1e;font-weight:600;font-size:10.5px;">✓ validado</span>'; }
   else if(r._maestro===false && (r.cod_abasto||r.cod_sap)){ marca=' <span style="color:#8a6a00;font-weight:600;font-size:10.5px;">sin match en maestro</span>'; }
-  // Precargar cantidades por CEDI si Gemini las extrajo en r.destinos
   const dmap={PANAMA:'',DIVISA:'',CHIRIQUI:''};
   (r.destinos||[]).forEach(d=>{
     const c=normCedi(d&&d.cedi);
@@ -387,7 +407,6 @@ function filaRenglon(r){
         '<div style="display:flex;align-items:end;"><div class="reng-cedis-suma" data-suma>—</div></div>'+
       '</div>'+
     '</div>';
-  // Recalcular suma de CEDIS y avisar si no cuadra con la cantidad total
   const inputsCedi=div.querySelectorAll('[data-cedi]');
   const sumaBox=div.querySelector('[data-suma]');
   const cantTotal=div.querySelector('[data-f="cantidad"]');
@@ -415,12 +434,13 @@ function normCedi(s){
 $('btnAddReng').addEventListener('click',()=>$('renglones').appendChild(filaRenglon({})));
 $('btnCancelar').addEventListener('click',()=>{ $('panelRevision').style.display='none'; _extraido=null; _pdfBase64=null; _editandoId=null; $('btnGuardar').textContent='Guardar en tránsitos'; $('estadoCarga').className='estado-msg'; });
 
-/* ====== EDITAR / ELIMINAR ====== */
+/* ====== EDITAR (abre panel de revisión) ====== */
 function editarTransito(id){
   var t=TRANSITOS.filter(function(x){return String(x.id)===String(id);})[0];
   if(!t){ alert('No se encontró el renglón.'); return; }
+  var estado=String(t.estado_transito||'').toUpperCase();
+  if(estado==='AGENDADA'){ setMsg($('estadoGuardar'),'err','El proveedor ya agendó cita con esta orden. No puede editarse.'); $('panelRevision').style.display='block'; $('panelRevision').scrollIntoView({behavior:'smooth'}); return; }
   _editandoId=id;
-  // Rellenar el panel de revisión con los datos de la fila (edición de un solo renglón).
   $('panelRevision').style.display='block';
   $('rTipo').value=t.tipo||'';
   $('rDoc').value=t.n_documento||'';
@@ -430,31 +450,65 @@ function editarTransito(id){
   $('rVenc').value=t.vencimiento_oc||'';
   $('rVencEnt').value=t.vencimiento_entrega||'';
   $('rTermino').value=t.termino_entrega||'';
-  // Un único renglón editable con los datos de esta fila.
   $('renglones').innerHTML='';
   $('renglones').appendChild(filaRenglon({cod_abasto:t.cod_abasto, cod_sap:t.cod_sap,
     descripcion:t.descripcion, cantidad:t.cantidad, monto:t.monto, n_requisicion:t.n_requisicion}));
   $('btnGuardar').textContent='Guardar cambios';
-  setMsg($('estadoGuardar'),'info','Editando el renglón '+esc(t.n_documento)+' — CEDI '+esc(t.cedi||'—')+'. Los cambios afectan solo este renglón.');
+  var aviso='Editando el renglón '+esc(t.n_documento)+' — CEDI '+esc(t.cedi||'—')+'.';
+  if(estado==='NOTIFICADA'){ aviso+=' <b>Este tránsito ya fue notificado</b>: al guardar se pedirá un motivo y se reenviará un correo de corrección al proveedor.'; }
+  setMsg($('estadoGuardar'),'info',aviso);
   $('panelRevision').scrollIntoView({behavior:'smooth',block:'start'});
 }
 
-function eliminarDocumento(nDoc){
+/* ====== ELIMINAR (con modelo de 3 estados) ====== */
+function eliminarDocumento(nDoc, estado){
   if(!nDoc){ return; }
+  var est=String(estado||'').toUpperCase();
+  if(est==='AGENDADA'){ alert('El proveedor ya agendó cita con esta orden. No puede eliminarse.'); return; }
   var filas=TRANSITOS.filter(function(x){return String(x.n_documento).trim()===String(nDoc).trim();}).length;
-  if(!confirm('Se eliminarán TODAS las filas del documento:\n\n'+nDoc+'\n\n('+filas+' renglón/es en total). Esta acción no se puede deshacer.\n\n¿Continuar?')) return;
-  fetch(API_URL,{method:'POST',body:JSON.stringify({accion:'eliminarTransito', n_documento:nDoc})})
-    .then(function(r){return r.json();}).then(function(j){
-      if(j&&j.ok){ setMsg($('estadoGuardar'),'ok','Eliminado: '+j.eliminadas+' renglón(es) del documento '+esc(nDoc)+'.'); cargarTransitos(); }
-      else { setMsg($('estadoGuardar'),'err','No se pudo eliminar: '+((j&&j.error)||'error')); }
+  var motivo='';
+  if(est==='NOTIFICADA'){
+    motivo=prompt('Este tránsito ya fue NOTIFICADO al proveedor.\nIndique el motivo de la anulación (se le enviará un correo de anulación):','');
+    if(motivo===null) return;
+    if(!motivo.trim()){ alert('Debe indicar un motivo para anular un tránsito notificado.'); return; }
+  } else {
+    if(!confirm('Se eliminarán TODAS las filas del documento:\n\n'+nDoc+'\n\n('+filas+' renglón/es). Esta acción no se puede deshacer.\n\n¿Continuar?')) return;
+  }
+  postSiguelo('eliminarTransitoOC',{n_documento:nDoc, motivo:motivo})
+    .then(function(j){
+      if(j&&j.success){
+        var m='Eliminado: '+j.eliminadas+' renglón(es) del documento '+esc(nDoc)+'.';
+        if(j.correo_anulacion==='enviado') m+=' Correo de anulación enviado al proveedor.';
+        else if(j.correo_anulacion==='sin_correo') m+=' (Sin correo del proveedor en el sistema.)';
+        setMsg($('estadoGuardar'),'ok',m); cargarTransitos();
+      } else { setMsg($('estadoGuardar'),'err','No se pudo eliminar: '+((j&&j.error)||'error')); }
     }).catch(function(err){ setMsg($('estadoGuardar'),'err','Error de red: '+err); });
+}
+
+/* ====== NOTIFICAR AL PROVEEDOR ====== */
+function notificarProveedor(nDoc, btn){
+  if(!nDoc) return;
+  if(!confirm('Se enviará un correo al proveedor informándole que tiene esta solicitud de entrega disponible para agendar su cita.\n\nDocumento: '+nDoc+'\n\n¿Enviar la notificación?')) return;
+  if(btn){ btn.disabled=true; btn.textContent='Enviando…'; }
+  postSiguelo('notificarTransitoProveedor',{n_documento:nDoc, usuario:($('planificador').value.trim()||'Torre de Control')})
+    .then(function(j){
+      if(j&&j.success){
+        setMsg($('estadoGuardar'),'ok','Notificación enviada al proveedor ('+esc(j.correo)+'). El documento pasó a NOTIFICADA.');
+        cargarTransitos();
+      } else if(j&&j.sin_correo){
+        setMsg($('estadoGuardar'),'err','No se pudo notificar: '+esc(j.error));
+        if(btn){ btn.disabled=false; btn.textContent='Notificar al proveedor'; }
+      } else {
+        setMsg($('estadoGuardar'),'err','No se pudo notificar: '+((j&&j.error)||'error'));
+        if(btn){ btn.disabled=false; btn.textContent='Notificar al proveedor'; }
+      }
+    }).catch(function(err){ setMsg($('estadoGuardar'),'err','Error de red: '+err); if(btn){ btn.disabled=false; btn.textContent='Notificar al proveedor'; } });
 }
 
 /* ====== GUARDAR ====== */
 $('btnGuardar').addEventListener('click',function(){
   const renglones=[...$('renglones').querySelectorAll('.reng-edit')].map(div=>{
     const o={}; div.querySelectorAll('[data-f]').forEach(i=>o[i.dataset.f]=i.value.trim());
-    // Reparto por CEDI: solo se incluyen los que tienen cantidad > 0
     const destinos=[];
     div.querySelectorAll('[data-cedi]').forEach(i=>{
       const c=parseFloat(i.value)||0;
@@ -465,11 +519,19 @@ $('btnGuardar').addEventListener('click',function(){
   }).filter(r=>r.cod_abasto||r.descripcion);
   if(!renglones.length){ setMsg($('estadoGuardar'),'err','Debe haber al menos un renglón con datos.'); return; }
 
-  // ---- MODO EDICIÓN: actualiza un solo renglón por ID ----
+  // ---- MODO EDICIÓN: va al backend de SÍGUELO (editarTransitoOC) ----
   if(_editandoId){
     const r0=renglones[0];
+    var tActual=TRANSITOS.filter(function(x){return String(x.id)===String(_editandoId);})[0]||{};
+    var estadoAct=String(tActual.estado_transito||'').toUpperCase();
+    var motivo='';
+    if(estadoAct==='NOTIFICADA'){
+      motivo=prompt('Este tránsito ya fue notificado. Indique el motivo del cambio (se reenviará un correo de corrección al proveedor):','');
+      if(motivo===null) return;
+      if(!motivo.trim()){ setMsg($('estadoGuardar'),'err','Debe indicar un motivo para editar un tránsito notificado.'); return; }
+    }
     const pEdit={
-      accion:'editarTransito', id:_editandoId,
+      id:_editandoId, motivo:motivo,
       n_documento:$('rDoc').value.trim(), proveedor:$('rProv').value.trim(),
       fecha_emision:$('rFecha').value.trim(), n_entrega:$('rEntrega').value.trim(),
       vencimiento_oc:$('rVenc').value.trim(), vencimiento_entrega:$('rVencEnt').value.trim(),
@@ -480,12 +542,12 @@ $('btnGuardar').addEventListener('click',function(){
     this.disabled=true;
     setMsg($('estadoGuardar'),'info','<span class="spinner"></span>Guardando cambios…');
     var btn=this;
-    fetch(API_URL,{method:'POST',body:JSON.stringify(pEdit)})
-      .then(function(r){return r.json();}).then(function(j){
+    postSiguelo('editarTransitoOC',pEdit)
+      .then(function(j){
         btn.disabled=false;
-        if(j&&j.ok){
+        if(j&&j.success){
           var m='Cambios guardados.';
-          if(j.avisos&&j.avisos.length){ m+=' '+j.avisos.join(' '); }
+          if(j.correo_correccion==='enviado') m+=' Correo de corrección enviado al proveedor.';
           setMsg($('estadoGuardar'),'ok',m);
           _editandoId=null; btn.textContent='Guardar en tránsitos';
           $('panelRevision').style.display='none';
@@ -494,7 +556,7 @@ $('btnGuardar').addEventListener('click',function(){
       }).catch(function(err){ btn.disabled=false; setMsg($('estadoGuardar'),'err','Error de red: '+err); });
     return;
   }
-  // ---- MODO ALTA NUEVA ----
+  // ---- MODO ALTA NUEVA: va al backend de SEGUIRE (guardarTransito) ----
   const payload={
     accion:'guardarTransito',
     tipo:$('rTipo').value, n_documento:$('rDoc').value.trim(),
@@ -509,7 +571,7 @@ $('btnGuardar').addEventListener('click',function(){
   };
   this.disabled=true;
   setMsg($('estadoGuardar'),'info','<span class="spinner"></span>Guardando y subiendo el PDF a Drive…');
-  fetch(API_URL,{method:'POST',body:JSON.stringify(payload)})
+  fetch(API_SEGUIRE,{method:'POST',body:JSON.stringify(payload)})
     .then(r=>r.json()).then(j=>{
       this.disabled=false;
       if(j&&j.ok){
@@ -529,92 +591,136 @@ $('btnGuardar').addEventListener('click',function(){
     }).catch(err=>{ this.disabled=false; setMsg($('estadoGuardar'),'err','Error de red: '+err); });
 });
 
-/* ====== PASO 3: TABLA VIVA ====== */
+/* ====== PASO 3: CARGA Y TARJETAS ====== */
 function cargarTransitos(){
-  $('tbodyTransitos').innerHTML='<tr><td colspan="17" style="text-align:center;color:#999;padding:20px;">Cargando…</td></tr>';
+  $('tarjetas').innerHTML='<div style="text-align:center;color:#999;padding:20px;">Cargando…</div>';
   const cb='cbTr'+Date.now();
   window[cb]=function(resp){
     try{ delete window[cb]; }catch(e){}
     TRANSITOS=(resp&&resp.transitos)?resp.transitos:[];
-    renderTabla(); renderKPIs();
+    renderTarjetas(); renderKPIs();
   };
   const s=document.createElement('script');
-  s.src=API_URL+'?accion=listarTransitos&callback='+cb;
-  s.onerror=()=>{ $('tbodyTransitos').innerHTML='<tr><td colspan="17" style="text-align:center;color:#a3331f;padding:20px;">No se pudo cargar. Verifique la conexión.</td></tr>'; };
+  s.src=API_SEGUIRE+'?accion=listarTransitos&callback='+cb;
+  s.onerror=()=>{ $('tarjetas').innerHTML='<div style="text-align:center;color:#a3331f;padding:20px;">No se pudo cargar. Verifique la conexión.</div>'; };
   document.body.appendChild(s);
 }
-function estadoPill(est){
+
+function estClase(est){
   const e=String(est||'').toUpperCase();
-  let bg='#eee',fg='#555';
-  if(e==='EMITIDA'){bg='var(--ambar-bg)';fg='var(--ambar)';}
-  else if(e==='PARCIAL'){bg='#e7f1fb';fg='var(--azul)';}
-  else if(e==='COMPLETADA'){bg='var(--verde-bg)';fg='var(--verde)';}
-  return '<span class="pill" style="background:'+bg+';color:'+fg+';">'+esc(est||'—')+'</span>';
+  if(e==='NOTIFICADA') return 'st-notificada';
+  if(e==='AGENDADA') return 'st-agendada';
+  return 'st-emitida';
 }
-function vencCell(fv,est){
-  if(!fv) return '—';
+function estBadge(est){
   const e=String(est||'').toUpperCase();
-  if(e==='COMPLETADA') return '<span style="color:#888;">'+esc(fv)+'</span>';
-  const d=diasPara(fv);
-  if(d==null) return esc(fv);
-  let col='#666';
-  if(d<0) col='var(--rojo)'; else if(d<=15) col='var(--rojo)'; else if(d<=30) col='var(--ambar)';
-  const txt=d<0?('vencida '+Math.abs(d)+'d'):(d+'d');
-  return '<span style="color:'+col+';">'+esc(fv)+'<br><small>'+txt+'</small></span>';
+  let bg='var(--pastel-ambar)',fg='#633806',txt=est||'EMITIDA';
+  if(e==='NOTIFICADA'){bg='var(--pastel-azul)';fg='#0C447C';}
+  else if(e==='AGENDADA'){bg='var(--pastel-teal)';fg='#085041';}
+  else if(e==='REVISAR'){bg='var(--pastel-rojo)';fg='#791F1F';}
+  return '<span class="pill" style="background:'+bg+';color:'+fg+';">'+esc(txt)+'</span>';
 }
-function renderTabla(){
-  const thead=$('theadRow');
-  thead.innerHTML=COLUMNAS.map(c=>(c.k==='_acciones'
-      ? '<th>'+c.t+'</th>'
-      : '<th data-k="'+c.k+'">'+c.t+(_ordenCol.k===c.k?(_ordenCol.asc?' ▲':' ▼'):'')+'</th>')).join('');
-  thead.querySelectorAll('th').forEach(th=>th.addEventListener('click',()=>{
-    const k=th.dataset.k;
-    if(_ordenCol.k===k) _ordenCol.asc=!_ordenCol.asc; else {_ordenCol.k=k;_ordenCol.asc=true;}
-    renderTabla();
-  }));
+function vencColor(dias){
+  if(dias==null) return {c:'#666',bg:'var(--pastel-gris)',fg:'#5F5E5A'};
+  if(dias<0||dias<=15) return {c:'#791F1F',bg:'var(--pastel-rojo)',fg:'#A32D2D'};
+  if(dias<=30) return {c:'#633806',bg:'var(--pastel-ambar)',fg:'#854F0B'};
+  return {c:'#085041',bg:'var(--pastel-teal)',fg:'#0F6E56'};
+}
+
+function renderTarjetas(){
   let filas=aplicarFiltros(TRANSITOS);
-  if(_ordenCol.k){
-    filas=[...filas].sort((a,b)=>{
-      let x=a[_ordenCol.k],y=b[_ordenCol.k];
-      const nx=parseFloat(x),ny=parseFloat(y);
-      if(!isNaN(nx)&&!isNaN(ny)){x=nx;y=ny;} else {x=String(x||'').toLowerCase();y=String(y||'').toLowerCase();}
-      return (x<y?-1:x>y?1:0)*(_ordenCol.asc?1:-1);
-    });
-  }
-  const tb=$('tbodyTransitos');
-  if(!filas.length){ tb.innerHTML='<tr><td colspan="17" style="text-align:center;color:#999;padding:20px;">Sin tránsitos que coincidan.</td></tr>'; }
+  const orden=$('fOrden').value;
+  filas=[...filas].sort((a,b)=>{
+    let x,y;
+    if(orden==='doc'){x=String(a.n_documento||'').toLowerCase();y=String(b.n_documento||'').toLowerCase();}
+    else if(orden==='prov'){x=String(a.proveedor||'').toLowerCase();y=String(b.proveedor||'').toLowerCase();}
+    else if(orden==='cant'){x=Number(a.cantidad)||0;y=Number(b.cantidad)||0;}
+    else {x=String(a.vencimiento_entrega||a.vencimiento_oc||'9999-12-31');y=String(b.vencimiento_entrega||b.vencimiento_oc||'9999-12-31');}
+    return (x<y?-1:x>y?1:0)*(_ordenDir?1:-1);
+  });
+  const cont=$('tarjetas');
+  if(!filas.length){ cont.innerHTML='<div style="text-align:center;color:#999;padding:20px;">Sin tránsitos que coincidan.</div>'; }
   else {
-    tb.innerHTML=filas.map(t=>'<tr>'+
-      '<td>'+esc(t.tipo)+'</td>'+
-      '<td class="mono">'+esc(t.n_documento)+'</td>'+
-      '<td>'+esc(t.proveedor)+'</td>'+
-      '<td style="text-align:center;font-weight:600;color:#0C447C;">'+esc(t.cedi||'—')+'</td>'+
-      '<td class="mono">'+esc(t.cod_abasto_norm||t.cod_abasto)+'</td>'+
-      '<td class="mono">'+esc(t.cod_sap)+'</td>'+
-      '<td>'+esc(t.descripcion)+'</td>'+
-      '<td class="mono" style="text-align:right;">'+fmtNum(t.cantidad)+'</td>'+
-      '<td class="mono" style="text-align:right;">'+(t.pallets_equiv!==''&&t.pallets_equiv!=null?fmtNum(t.pallets_equiv):'—')+'</td>'+
-      '<td style="text-align:center;">'+esc(t.n_entrega||'—')+'</td>'+
-      '<td class="mono" style="text-align:right;">'+fmtNum(t.saldo)+'</td>'+
-      '<td>'+vencCell(t.vencimiento_entrega,t.estado_transito)+'</td>'+
-      '<td>'+vencCell(t.vencimiento_oc,t.estado_transito)+'</td>'+
-      '<td>'+esc(t.planificador||'—')+'</td>'+
-      '<td class="mono" style="font-size:11px;">'+esc(t.fecha_ingesta||'—')+'</td>'+
-      '<td>'+estadoPill(t.estado_transito)+'</td>'+
-      '<td style="white-space:nowrap;text-align:center;">'+
-        '<button class="btn btn-sec mini" onclick="editarTransito(\''+esc(t.id)+'\')" title="Editar este renglón">Editar</button> '+
-        '<button class="btn btn-sec mini" onclick="eliminarDocumento(\''+esc(t.n_documento)+'\')" title="Eliminar todo el documento" style="color:#a3331f;border-color:#a3331f;">Eliminar</button>'+
-      '</td>'+
-      '</tr>').join('');
+    cont.innerHTML=filas.map(t=>{
+      const est=String(t.estado_transito||'EMITIDA').toUpperCase();
+      const fVenc=t.vencimiento_entrega||t.vencimiento_oc||'';
+      const dias=diasPara(fVenc);
+      const vc=vencColor(dias);
+      const diasTxt=dias==null?'':(dias<0?('vencida '+Math.abs(dias)+'d'):(dias+' días'));
+      const abierto=_detAbierto[t.id]?'abierto':'';
+      const chevron=_detAbierto[t.id]?'▲':'▼';
+      // Sello segun estado
+      let sello='';
+      if(est==='NOTIFICADA'){ sello='<div class="sello" style="color:#0F6E56;">✓ Notificado'+(t.notificado_en?(' el '+esc(t.notificado_en)):'')+(t.notificado_por?(' · '+esc(t.notificado_por)):'')+'</div>'; }
+      else if(est==='AGENDADA'){ sello='<div class="sello" style="color:#0F6E56;">✓ El proveedor ya agendó su cita de entrega</div>'; }
+      // Botones segun estado (modelo A)
+      let acc='';
+      if(est==='AGENDADA'){
+        acc='<button class="btn btn-sec mini" onclick="toggleDet(\''+esc(t.id)+'\')">Ver detalle</button>'+
+            '<span style="font-size:11px;color:#888;margin-left:4px;">Bloqueado: ya existe cita en firme</span>';
+      } else if(est==='NOTIFICADA'){
+        acc='<button class="btn btn-sec mini" onclick="editarTransito(\''+esc(t.id)+'\')">Editar <span style="font-size:9.5px;color:#888;">(reenvía aviso)</span></button>'+
+            '<button class="btn btn-peligro mini" onclick="eliminarDocumento(\''+esc(t.n_documento)+'\',\'NOTIFICADA\')">Anular <span style="font-size:9.5px;">(avisa)</span></button>'+
+            '<span style="font-size:11px;color:#0F6E56;margin-left:auto;">✓ Notificado</span>';
+      } else {
+        acc='<button class="btn btn-sec mini" onclick="editarTransito(\''+esc(t.id)+'\')">Editar</button>'+
+            '<button class="btn btn-peligro mini" onclick="eliminarDocumento(\''+esc(t.n_documento)+'\',\'EMITIDA\')">Eliminar</button>'+
+            '<button class="btn mini" style="margin-left:auto;" onclick="notificarProveedor(\''+esc(t.n_documento)+'\',this)">✉ Notificar al proveedor</button>';
+      }
+      const pal=(t.pallets_equiv!==''&&t.pallets_equiv!=null)?(' · '+fmtNum(t.pallets_equiv)+' pal'):'';
+      return '<div class="tj '+estClase(est)+'">'+
+        '<div class="tj-head">'+
+          '<div style="min-width:0;">'+
+            '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">'+
+              '<span class="doc">'+esc(t.n_documento||'—')+'</span>'+estBadge(est)+
+            '</div>'+
+            '<div class="prov">'+esc(t.proveedor||'—')+(t.descripcion?(' · '+esc(t.descripcion)):'')+'</div>'+
+            sello+
+          '</div>'+
+          '<div class="tj-venc"><div class="cap">Vence entrega</div><div class="val" style="color:'+vc.c+';">'+(diasTxt||'—')+'</div></div>'+
+        '</div>'+
+        '<div class="tj-senal" onclick="toggleDet(\''+esc(t.id)+'\')">'+
+          '<div class="tj-col" style="background:'+vc.bg+';"><div class="cap" style="color:'+vc.fg+';">Vencimiento de entrega</div><div class="dato"><span class="n" style="color:'+vc.c+';">'+esc(fVenc||'—')+'</span> <span class="u" style="color:'+vc.fg+';">'+esc(diasTxt)+'</span></div></div>'+
+          '<div class="tj-col" style="background:var(--pastel-purpura);"><div class="cap" style="color:#534AB7;">Cantidad / pallets</div><div class="dato"><span class="n" style="color:#3C3489;">'+fmtNum(t.cantidad)+'</span> <span class="u" style="color:#534AB7;">und'+pal+'</span></div></div>'+
+          '<div class="tj-col" style="background:var(--pastel-azul);"><div class="cap" style="color:#185FA5;">CEDI destino</div><div class="dato"><span class="n" style="color:#0C447C;">'+esc(t.cedi||'—')+'</span></div></div>'+
+        '</div>'+
+        '<div class="tj-detalle '+abierto+'" id="det_'+esc(t.id)+'">'+
+          '<div style="color:#888;margin-bottom:8px;font-size:10.5px;text-transform:uppercase;letter-spacing:.03em;">'+chevron+' Detalle</div>'+
+          '<div class="grid-det">'+
+            '<div><span class="k">Cód. Abasto</span><br>'+esc(t.cod_abasto_norm||t.cod_abasto||'—')+'</div>'+
+            '<div><span class="k">Cód. SAP</span><br>'+esc(t.cod_sap||'—')+'</div>'+
+            '<div><span class="k">Venc. OC</span><br>'+esc(t.vencimiento_oc||'—')+'</div>'+
+            '<div><span class="k">Término entrega</span><br>'+esc(t.termino_entrega||'—')+'</div>'+
+            '<div><span class="k">N° Entrega</span><br>'+esc(t.n_entrega||'—')+'</div>'+
+            '<div><span class="k">N° Requisición</span><br>'+esc(t.n_requisicion||'—')+'</div>'+
+            '<div><span class="k">Monto (B/.)</span><br>'+(t.monto!=null&&t.monto!==''?fmtNum(t.monto):'—')+'</div>'+
+            '<div><span class="k">Planificador</span><br><span style="font-family:\'Segoe UI\',Arial,sans-serif;">'+esc(t.planificador||'—')+'</span></div>'+
+          '</div>'+
+          (t.archivo_url?'<div style="margin-top:8px;"><a href="'+esc(t.archivo_url)+'" target="_blank" style="font-size:11px;color:#0C447C;">Ver PDF original</a></div>':'')+
+        '</div>'+
+        '<div class="tj-acc">'+acc+'</div>'+
+      '</div>';
+    }).join('');
   }
   $('contadorFilas').textContent=filas.length+' de '+TRANSITOS.length+' renglón(es) en tránsito';
 }
+
+function toggleDet(id){
+  _detAbierto[id]=!_detAbierto[id];
+  const d=$('det_'+id);
+  if(d) d.classList.toggle('abierto');
+}
+
 function aplicarFiltros(arr){
   const q=$('fBuscar').value.toLowerCase().trim();
   const ft=$('fTipo').value, fe=$('fEstado').value;
+  const fd=$('fVencDesde').value, fh=$('fVencHasta').value;
   return arr.filter(t=>{
     if(ft && t.tipo!==ft) return false;
     if(fe && String(t.estado_transito||'').toUpperCase()!==fe) return false;
+    const fv=String(t.vencimiento_entrega||t.vencimiento_oc||'').slice(0,10);
+    if(fd && (!fv || fv<fd)) return false;
+    if(fh && (!fv || fv>fh)) return false;
     if(q){
       const blob=(t.n_documento+' '+t.cod_abasto+' '+t.proveedor+' '+t.descripcion).toLowerCase();
       if(blob.indexOf(q)===-1) return false;
@@ -622,17 +728,34 @@ function aplicarFiltros(arr){
     return true;
   });
 }
+
 function renderKPIs(){
-  $('kpiTotal').textContent=TRANSITOS.length;
-  $('kpiOC').textContent=new Set(TRANSITOS.map(t=>t.n_documento)).size;
-  $('kpiPend').textContent=TRANSITOS.filter(t=>String(t.estado_transito||'').toUpperCase()!=='COMPLETADA').length;
-  $('kpiVenc').textContent=TRANSITOS.filter(t=>{const d=diasPara(t.vencimiento_entrega||t.vencimiento_oc);return d!=null&&d>=0&&d<=15;}).length;
+  const total=TRANSITOS.length;
+  const oc=new Set(TRANSITOS.map(t=>t.n_documento)).size;
+  const pend=TRANSITOS.filter(t=>String(t.estado_transito||'').toUpperCase()!=='AGENDADA').length;
+  const venc=TRANSITOS.filter(t=>{const d=diasPara(t.vencimiento_entrega||t.vencimiento_oc);return d!=null&&d>=0&&d<=15;}).length;
   const totPal=TRANSITOS.reduce((s,t)=>s+(parseFloat(t.pallets_equiv)||0),0);
-  $('kpiPallets').textContent=totPal>0?fmtNum(Math.round(totPal*10)/10):'—';
+  $('kpiTotal').textContent=total;
+  $('kpiOC').textContent=oc;
+  $('kpiPend').textContent=pend;
+  $('kpiVenc').textContent=venc;
+  $('kpiPallets').textContent=totPal>0?fmtNum(Math.round(totPal*10)/10):'0';
+  // Activación por contenido: la tarjeta toma color pastel si tiene valor; gris si es 0
+  setKpiEstado('kpiTotalCard', total>0, 'on-azul');
+  setKpiEstado('kpiOCCard', oc>0, 'on-teal');
+  setKpiEstado('kpiPendCard', pend>0, 'on-ambar');
+  setKpiEstado('kpiVencCard', venc>0, 'on-rojo');
+  setKpiEstado('kpiPalletsCard', totPal>0, 'on-purpura');
   renderGraficoPlanif();
 }
+function setKpiEstado(cardId, activo, claseColor){
+  const el=$(cardId);
+  if(!el) return;
+  el.classList.remove('on-azul','on-teal','on-ambar','on-rojo','on-purpura','off');
+  el.classList.add(activo?claseColor:'off');
+}
 
-/* Gráfico de barras: cantidad de OC (documentos únicos) por planificador */
+/* Gráfico horizontal: cantidad de OC (documentos únicos) por planificador */
 function renderGraficoPlanif(){
   const cont=$('graficoPlanif');
   if(!cont) return;
@@ -646,31 +769,49 @@ function renderGraficoPlanif(){
   const max=Math.max.apply(null,filas.map(f=>f.n))||1;
   cont.innerHTML=filas.map(f=>{
     const w=Math.round((f.n/max)*100);
-    return '<div style="display:flex;align-items:center;gap:8px;margin-bottom:5px;">'+
-      '<div style="flex:0 0 130px;font-size:11.5px;color:#333;text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="'+esc(f.p)+'">'+esc(f.p)+'</div>'+
-      '<div style="flex:1;background:#e7eef6;border-radius:3px;height:18px;position:relative;">'+
+    return '<div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">'+
+      '<div style="flex:0 0 140px;font-size:11.5px;color:#333;text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="'+esc(f.p)+'">'+esc(f.p)+'</div>'+
+      '<div style="flex:1;background:var(--pastel-azul);border-radius:3px;height:18px;position:relative;">'+
         '<div style="width:'+w+'%;background:#0C447C;height:100%;border-radius:3px;"></div>'+
       '</div>'+
       '<div class="mono" style="flex:0 0 28px;font-size:12px;color:#0C447C;font-weight:700;">'+f.n+'</div>'+
     '</div>';
   }).join('');
 }
-['fBuscar','fTipo','fEstado'].forEach(id=>$(id).addEventListener('input',renderTabla));
+
+/* ====== EXCEL ====== */
+$('btnExcel').addEventListener('click',function(){
+  var btn=this; btn.disabled=true; var txt=btn.textContent; btn.textContent='Generando…';
+  var w=window.open('','_blank');
+  const cb='cbXls'+Date.now();
+  window[cb]=function(resp){
+    try{ delete window[cb]; }catch(e){}
+    btn.disabled=false; btn.textContent=txt;
+    if(resp&&resp.success&&resp.url){ if(w) w.location.href=resp.url; else window.open(resp.url,'_blank'); setMsg($('estadoGuardar'),'ok','Excel generado ('+resp.total+' tránsitos).'); }
+    else { if(w) w.close(); setMsg($('estadoGuardar'),'err','No se pudo generar el Excel: '+((resp&&resp.error)||'error')); }
+  };
+  const s=document.createElement('script');
+  s.src=API_SIGUELO+'?action=generarExcelTransitos&callback='+cb;
+  s.onerror=()=>{ btn.disabled=false; btn.textContent=txt; if(w)w.close(); setMsg($('estadoGuardar'),'err','No se pudo generar el Excel.'); };
+  document.body.appendChild(s);
+});
+
+/* ====== FILTROS Y CONTROLES ====== */
+['fBuscar','fTipo','fEstado','fVencDesde','fVencHasta','fOrden'].forEach(id=>$(id).addEventListener('input',renderTarjetas));
+$('btnOrdenDir').addEventListener('click',function(){ _ordenDir=!_ordenDir; this.textContent=_ordenDir?'▲':'▼'; renderTarjetas(); });
 $('btnRefrescar').addEventListener('click',cargarTransitos);
 
-/* ====== CARGAR PLANIFICADORES (select paso 1 + datalist analista paso 2) ====== */
+/* ====== CARGAR PLANIFICADORES ====== */
 function cargarAnalistas(){
   const cb='cbAna'+Date.now();
   window[cb]=function(resp){
     try{ delete window[cb]; }catch(e){}
     const lista=(resp&&resp.planificadores)?resp.planificadores:[];
-    // Datalist de analista (paso 2)
     const dl=$('listaAnalistas');
     if(dl) dl.innerHTML=lista.map(a=>'<option value="'+esc(a.nombre)+'">'+esc(a.iniciales)+'</option>').join('');
-    // Select de planificador que sube (paso 1)
     const sel=$('planificadorSel');
     if(sel){
-      const opts=['<option value="">— Seleccione —</option>']
+      const opts=['<option value="">— Planificador —</option>']
         .concat(lista.map(a=>'<option value="'+esc(a.nombre)+'">'+esc(a.nombre)+'</option>'))
         .concat(['<option value="__OTRO__">Otro (escribir)</option>']);
       sel.innerHTML=opts.join('');
@@ -678,11 +819,10 @@ function cargarAnalistas(){
     renderGraficoPlanif();
   };
   const s=document.createElement('script');
-  s.src=API_URL+'?accion=listarPlanificadores&callback='+cb;
+  s.src=API_SEGUIRE+'?accion=listarPlanificadores&callback='+cb;
   document.body.appendChild(s);
 }
 
-/* Select planificador -> input libre cuando elige "Otro"; mantiene #planificador como fuente del payload */
 (function(){
   const sel=$('planificadorSel'), inp=$('planificador');
   if(sel&&inp){
@@ -694,8 +834,8 @@ function cargarAnalistas(){
 })();
 
 /* ====== INICIO ====== */
-if(API_URL){ cargarTransitos(); cargarAnalistas(); }
-else { $('tbodyTransitos').innerHTML='<tr><td colspan="17" style="text-align:center;color:#a3331f;padding:20px;">Configure API_URL (línea superior del script) tras desplegar el backend.</td></tr>'; }
+cargarTransitos();
+cargarAnalistas();
 </script>
 </body>
 </html>
