@@ -827,17 +827,19 @@ function tarjetaDoc(g){
   else if(est==='AGENDADA'){ sello='<div class="sello" style="color:#0F6E56;font-size:11px;margin-top:3px;">✓ El proveedor ya agendó su cita de entrega</div>'; }
 
   // Botones segun estado (modelo A) — operan sobre el documento completo
+  var btnPDF = t.archivo_url ? '<a class="btn btn-sec mini" href="'+esc(t.archivo_url)+'" target="_blank" style="text-decoration:none;">Ver PDF</a>' : '';
   let acc='';
   if(est==='AGENDADA'){
-    acc='<button class="btn btn-sec mini" onclick="toggleDet(\''+esc(idG)+'\')">Ver detalle</button>'+
-        '<span style="font-size:11px;color:#888;margin-left:4px;">Bloqueado: ya existe cita en firme</span>';
+    acc=btnPDF+'<span style="font-size:11px;color:#888;margin-left:8px;">Bloqueado: ya existe cita en firme</span>';
   } else if(est==='NOTIFICADA'){
     acc='<button class="btn btn-sec mini" onclick="editarTransito(\''+esc(idG)+'\')">Editar <span style="font-size:9.5px;color:#888;">(reenvía aviso)</span></button>'+
         '<button class="btn btn-peligro mini" onclick="eliminarDocumento(\''+esc(g.doc)+'\',\'NOTIFICADA\')">Anular <span style="font-size:9.5px;">(avisa)</span></button>'+
+        btnPDF+
         '<span style="font-size:11px;color:#0F6E56;margin-left:auto;">✓ Notificado</span>';
   } else {
     acc='<button class="btn btn-sec mini" onclick="editarTransito(\''+esc(idG)+'\')">Editar</button>'+
         '<button class="btn btn-peligro mini" onclick="eliminarDocumento(\''+esc(g.doc)+'\',\'EMITIDA\')">Eliminar</button>'+
+        btnPDF+
         '<button class="btn mini" style="margin-left:auto;" onclick="notificarProveedor(\''+esc(g.doc)+'\',this)">✉ Notificar al proveedor</button>';
   }
 
@@ -907,9 +909,8 @@ function tarjetaDoc(g){
       '<div><span class="k">Vence O/C</span><br>'+esc(t.vencimiento_oc||'—')+'</div>'+
       '<div><span class="k">Licitación</span><br><span style="font-family:\'Segoe UI\',Arial,sans-serif;">'+esc(t.licitacion||'—')+'</span></div>'+
       '<div><span class="k">Precio unitario (B/.)</span><br>'+(t.precio_unitario!=null&&t.precio_unitario!==''?fmtNum(t.precio_unitario):'—')+'</div>'+
-      '<div><span class="k">Cantidad total O/C</span><br>'+fmtNum(g.cantTotal)+'</div>'+
       '<div><span class="k">Importe total (B/.)</span><br>'+(g.montoTotal>0?fmtNum(Math.round(g.montoTotal*100)/100):'—')+'</div>'+
-      '<div><span class="k">1ª entrega</span><br>'+esc(t.cedi||'—')+(t.cantidad?(' · '+fmtNum(t.cantidad)+' und'):'')+'</div>'+
+      '<div><span class="k">1ª entrega</span><br>'+esc(t.cedi||'—')+((t.cantidad&&Number(t.cantidad)!==Number(g.cantTotal))?(' · '+fmtNum(t.cantidad)+' und'):'')+'</div>'+
       '<div><span class="k">Planificador</span><br><span style="font-family:\'Segoe UI\',Arial,sans-serif;">'+esc(t.planificador||'—')+'</span></div>';
   } else if(tipo==='ADELANTO'){
     detCampos=
@@ -930,13 +931,9 @@ function tarjetaDoc(g){
   return '<div class="tj '+estClase(est)+'" id="tj_'+esc(idG)+'">'+
     cabecera+
     franja+
-    '<div style="display:flex;align-items:center;justify-content:space-between;padding:5px 13px;background:#f4f8fc;font-size:11px;">'+
-      resumen+
-      '<span class="tj-vermas-inline" style="color:#0C447C;cursor:pointer;" onclick="toggleDet(\''+esc(idG)+'\')" id="vermas_'+esc(idG)+'">'+chevron+' detalle</span>'+
-    '</div>'+
-    '<div class="tj-detalle '+abierto+'" id="det_'+esc(idG)+'">'+
+    '<div style="padding:5px 13px;background:#f4f8fc;font-size:11px;color:#555;">'+resumen+'</div>'+
+    '<div class="tj-detalle abierto">'+
       '<div class="grid-det">'+detCampos+'</div>'+
-      (t.archivo_url?'<div style="margin-top:8px;"><a href="'+esc(t.archivo_url)+'" target="_blank" style="font-size:11px;color:#0C447C;">Ver PDF original</a></div>':'')+
     '</div>'+
     '<div class="tj-acc">'+acc+'</div>'+
   '</div>';
