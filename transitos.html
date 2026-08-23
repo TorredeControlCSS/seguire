@@ -1234,12 +1234,12 @@ function cargarAnalistas(){
     var html=res.map(function(a){
       return '<div class="combo-item" data-val="'+esc(a.nombre)+'"><span class="ini">'+esc(a.iniciales||'')+'</span>'+esc(a.nombre)+'</div>';
     }).join('');
-    // Si escribió algo que no coincide exacto, ofrecer usarlo tal cual
+    // Si escribió algo que no coincide exacto, ofrecer registrarlo como nuevo
     var exacto=_ANALISTAS.some(function(a){return String(a.nombre||'').toLowerCase()===f;});
     if(f && !exacto){
-      html+='<div class="combo-item otro" data-val="'+esc(filtro)+'">Usar "'+esc(filtro)+'"</div>';
+      html+='<div class="combo-item otro" data-val="'+esc(filtro)+'">➕ Agregar nuevo: "'+esc(filtro)+'"</div>';
     }
-    if(!html) html='<div class="combo-vacio">Sin coincidencias</div>';
+    if(!html) html='<div class="combo-vacio">Escriba un nombre para agregarlo</div>';
     caja.innerHTML=html;
     caja.style.display='block';
     items=[].slice.call(caja.querySelectorAll('.combo-item'));
@@ -1252,7 +1252,8 @@ function cargarAnalistas(){
   }
   function elegir(el){ if(!el) return; inp.value=el.getAttribute('data-val'); cerrar(); }
 
-  inp.addEventListener('focus',function(){ abrir(inp.value); });
+  inp.addEventListener('focus',function(){ this.select(); abrir(''); });
+  inp.addEventListener('click',function(){ this.select(); abrir(''); });
   inp.addEventListener('input',function(){ abrir(inp.value); });
   inp.addEventListener('keydown',function(e){
     if(caja.style.display==='none') return;
