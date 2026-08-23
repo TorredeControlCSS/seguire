@@ -150,6 +150,9 @@
   .graf-leyenda span.it{display:flex;align-items:center;gap:5px;}
   .graf-leyenda .sw{width:11px;height:11px;border-radius:2px;}
   .tj-detalle .grid-det{display:flex;flex-wrap:wrap;gap:4px 18px;font-family:Consolas,monospace;font-size:11px;}
+  .tj-compacto{padding:8px 13px;background:#f4f8fc;border-top:1px solid #e2e9f0;font-family:Consolas,monospace;font-size:11px;color:#444;line-height:1.9;}
+  .tj-compacto .k{color:#8a99a8;}
+  .tj-compacto b{color:#0C447C;}
   .tj-detalle .grid-det>div{white-space:nowrap;}
   .tj-detalle .grid-det .k{color:#888;font-family:'Segoe UI',Arial,sans-serif;font-size:10px;}
   .tj-detalle .grid-det .k::after{content:' ';}
@@ -935,20 +938,22 @@ function tarjetaDoc(g){
   const t=g.ref;
   const tipo=String(t.tipo||'').toUpperCase();
   const est=g.estado;
-  const fVenc=t.vencimiento_entrega||t.vencimiento_oc||'';
-  const dias=diasPara(fVenc);
+  // FECHA PROTAGONISTA por tipo (esquina superior derecha)
+  // OC: Término de entrega (urgencia operativa). Solicitud/Adelanto: Vencimiento de entrega.
+  var fechaProta, capProta;
+  if(tipo==='ORDEN_COMPRA'){ fechaProta=t.termino_entrega_oc||t.termino_entrega||''; capProta='Término de entrega'; }
+  else { fechaProta=t.vencimiento_entrega||''; capProta='Vence entrega'; }
+  const dias=diasPara(fechaProta);
   const vc=vencColor(dias);
-  const diasTxt=dias==null?'':(dias<0?('vencida '+Math.abs(dias)+'d'):(dias+' días'));
-  const idG=t.id; // usamos el id de la fila de referencia para el toggle de detalle
-  const abierto=_detAbierto[idG]?'abierto':'';
-  const chevron=_detAbierto[idG]?'▲':'▼';
+  const diasTxt=dias==null?'':(dias<0?('vencida '+Math.abs(dias)+'d'):('en '+dias+' días'));
+  const idG=t.id;
 
   // Sello segun estado
   let sello='';
   if(est==='NOTIFICADA'){ sello='<div class="sello" style="color:#0F6E56;font-size:11px;margin-top:3px;">✓ Notificado'+(t.notificado_en?(' el '+esc(t.notificado_en)):'')+(t.notificado_por?(' · '+esc(t.notificado_por)):'')+'</div>'; }
   else if(est==='AGENDADA'){ sello='<div class="sello" style="color:#0F6E56;font-size:11px;margin-top:3px;">✓ El proveedor ya agendó su cita de entrega</div>'; }
 
-  // Botones segun estado (modelo A) — operan sobre el documento completo
+  // Botones segun estado (modelo A)
   var btnPDF = t.archivo_url ? '<a class="btn btn-sec mini" href="'+esc(t.archivo_url)+'" target="_blank" style="text-decoration:none;">Ver PDF</a>' : '';
   let acc='';
   if(est==='AGENDADA'){
@@ -977,17 +982,17 @@ function tarjetaDoc(g){
         '<div style="font-size:10.5px;color:#0C447C;font-family:Consolas,monospace;margin-top:2px;">Abasto '+esc(t.cod_abasto_norm||t.cod_abasto||'—')+' · SAP '+esc(t.cod_sap||'—')+(t.n_entrega?(' · Entrega N° '+esc(t.n_entrega)):'')+'</div>'+
         sello+
       '</div>'+
-      '<div class="tj-venc"><div class="cap">'+(tipo==='ORDEN_COMPRA'?'Vence O/C':'Vence entrega')+'</div><div class="val" style="color:'+vc.c+';">'+esc(fVenc||'—')+'</div>'+(diasTxt?('<div style="font-size:9.5px;color:'+vc.fg+';">'+esc(diasTxt)+'</div>'):'')+'</div>'+
+      '<div class="tj-venc"><div class="cap">'+capProta+'</div><div class="val" style="color:'+vc.c+';">'+esc(fechaProta||'—')+'</div>'+(diasTxt?('<div style="font-size:9.5px;color:'+vc.fg+';">'+esc(diasTxt)+'</div>'):'')+'</div>'+
     '</div>';
 
-  // Franja segun tipo
+  // Franja de señal (3 tarjetas de color) segun tipo
   let franja='';
   if(tipo==='ORDEN_COMPRA'){
     franja=
       '<div class="tj-senal">'+
         '<div class="tj-col" style="background:var(--pastel-teal);"><div class="cap" style="color:#0F6E56;">Cantidad total O/C</div><div class="dato"><span class="n" style="color:#085041;">'+fmtNum(g.cantTotal)+'</span> <span class="u" style="color:#0F6E56;">und</span></div></div>'+
-        '<div class="tj-col" style="background:var(--pastel-purpura);"><div class="cap" style="color:#534AB7;">Monto total O/C</div><div class="dato"><span class="n" style="color:#3C3489;">'+(g.montoTotal>0?('B/.'+fmtNum(Math.round(g.montoTotal*100)/100)):'—')+'</span></div></div>'+
-        '<div class="tj-col" style="background:var(--pastel-ambar);"><div class="cap" style="color:#854F0B;">Fecha O/C</div><div class="dato"><span class="n" style="color:#633806;">'+esc(t.fecha_emision||'—')+'</span></div></div>'+
+        '<div class="tj-col" style="background:var(--pastel-purpura);"><div class="cap" style="color:#534AB7;">Importe total</div><div class="dato"><span class="n" style="color:#3C3489;">'+(g.montoTotal>0?('B/.'+fmtNum(Math.round(g.montoTotal*100)/100)):'—')+'</span></div></div>'+
+        '<div class="tj-col" style="background:var(--pastel-ambar);"><div class="cap" style="color:#854F0B;">Precio unitario</div><div class="dato"><span class="n" style="color:#633806;">'+(t.precio_unitario!=null&&t.precio_unitario!==''?('B/.'+fmtNum(t.precio_unitario)):'—')+'</span></div></div>'+
       '</div>';
   } else if(tipo==='ADELANTO'){
     franja=
@@ -997,7 +1002,7 @@ function tarjetaDoc(g){
         '<div class="tj-col" style="background:var(--pastel-gris);"><div class="cap" style="color:#5F5E5A;">Requisición</div><div class="dato"><span class="n" style="color:#555;font-size:13px;">'+esc(t.n_requisicion||'—')+'</span></div></div>'+
       '</div>';
   } else {
-    // SOLICITUD DE ENTREGA: mostrar hasta 3 CEDIS con cantidad y monto
+    // SOLICITUD DE ENTREGA: hasta 3 CEDIS con cantidad y monto
     const dst=g.filas.slice(0,3);
     let cols=dst.map(f=>{
       const m=Number(f.monto)||0;
@@ -1006,57 +1011,43 @@ function tarjetaDoc(g){
         '<div class="dato"><span class="n" style="color:#0C447C;">'+fmtNum(f.cantidad)+'</span> <span class="u" style="color:#185FA5;">und'+(m>0?(' · B/.'+fmtNum(Math.round(m*100)/100)):'')+'</span></div>'+
       '</div>';
     }).join('');
-    // Si hay menos de 3 CEDIS, rellenar con vacío para mantener grilla de 3
-    for(let i=dst.length;i<Math.min(g.filas.length<=1?1:3,3);i++){}
     franja='<div class="tj-senal" style="grid-template-columns:repeat('+Math.max(dst.length,1)+',1fr);">'+cols+'</div>';
   }
 
-  // Barra resumen (total + término entrega) — según tipo
-  let resumen='';
-  if(tipo==='SOLICITUD_ENTREGA'){
-    resumen='<span style="color:#555;">Total: <b style="font-family:Consolas,monospace;">'+fmtNum(g.cantTotal)+' und'+(g.montoTotal>0?(' · B/.'+fmtNum(Math.round(g.montoTotal*100)/100)):'')+'</b>'+(t.termino_entrega?(' · Término entrega: '+esc(t.termino_entrega)):'')+'</span>';
-  } else if(tipo==='ORDEN_COMPRA'){
-    resumen='<span style="color:#555;">Vence O/C: <b>'+esc(t.vencimiento_oc||'—')+'</b> · 1ª entrega según nota de solicitud</span>';
-  } else {
-    resumen='<span style="color:#555;">CEDI '+esc(t.cedi||'—')+'</span>';
-  }
-
-  // Detalle segun tipo (solo lo secundario, sin repetir abasto/SAP ni el reparto que ya están arriba)
-  let detCampos='';
+  // Bloque inferior COMPACTO (una línea fluida con separadores) — datos secundarios por tipo
+  var sep=' <span style="color:#c8d4e0;">│</span> ';
+  function campo(k,v){ return '<span><span class="k">'+k+':</span> '+esc(v||'—')+'</span>'; }
+  let compacto='';
   if(tipo==='ORDEN_COMPRA'){
-    detCampos=
-      '<div><span class="k">Fecha solicitud (encabezado)</span><br>'+esc(t.fecha_emision||'—')+'</div>'+
-      '<div><span class="k">Publicación O/C</span><br>'+esc(t.fecha_publicacion_oc||'—')+'</div>'+
-      '<div><span class="k">Término entrega O/C</span><br>'+esc(t.termino_entrega_oc||'—')+'</div>'+
-      '<div><span class="k">Vence O/C</span><br>'+esc(t.vencimiento_oc||'—')+'</div>'+
-      '<div><span class="k">Licitación</span><br><span style="font-family:\'Segoe UI\',Arial,sans-serif;">'+esc(t.licitacion||'—')+'</span></div>'+
-      '<div><span class="k">Precio unitario (B/.)</span><br>'+(t.precio_unitario!=null&&t.precio_unitario!==''?fmtNum(t.precio_unitario):'—')+'</div>'+
-      '<div><span class="k">Importe total (B/.)</span><br>'+(g.montoTotal>0?fmtNum(Math.round(g.montoTotal*100)/100):'—')+'</div>'+
-      '<div><span class="k">1ª entrega</span><br>'+esc(t.cedi||'—')+((t.cantidad&&Number(t.cantidad)!==Number(g.cantTotal))?(' · '+fmtNum(t.cantidad)+' und'):'')+'</div>'+
-      '<div><span class="k">Planificador</span><br><span style="font-family:\'Segoe UI\',Arial,sans-serif;">'+esc(t.planificador||'—')+'</span></div>';
+    compacto=[
+      campo('Solicitud', t.fecha_emision),
+      campo('Publicación O/C', t.fecha_publicacion_oc),
+      campo('Vencimiento O/C', t.vencimiento_oc),
+      campo('Licitación', t.licitacion),
+      campo('1ª entrega', t.cedi),
+      campo('Planificador', t.planificador)
+    ].join(sep);
   } else if(tipo==='ADELANTO'){
-    detCampos=
-      '<div><span class="k">Fecha</span><br>'+esc(t.fecha_emision||'—')+'</div>'+
-      '<div><span class="k">Término entrega</span><br>'+esc(t.termino_entrega||'—')+'</div>'+
-      '<div><span class="k">N° Requisición</span><br>'+esc(t.n_requisicion||'—')+'</div>'+
-      '<div><span class="k">Planificador</span><br><span style="font-family:\'Segoe UI\',Arial,sans-serif;">'+esc(t.planificador||'—')+'</span></div>';
+    compacto=[
+      campo('Fecha', t.fecha_emision),
+      campo('Término entrega', t.termino_entrega),
+      campo('Requisición', t.n_requisicion),
+      campo('Planificador', t.planificador)
+    ].join(sep);
   } else {
-    // Solicitud: sin tabla de reparto (ya está arriba en la franja). Solo campos secundarios.
-    detCampos=
-      '<div><span class="k">Fecha emisión</span><br>'+esc(t.fecha_emision||'—')+'</div>'+
-      '<div><span class="k">Venc. entrega</span><br>'+esc(t.vencimiento_entrega||'—')+'</div>'+
-      '<div><span class="k">Término entrega</span><br>'+esc(t.termino_entrega||'—')+'</div>'+
-      '<div><span class="k">N° Requisición</span><br>'+esc(t.n_requisicion||'—')+'</div>'+
-      '<div><span class="k">Planificador</span><br><span style="font-family:\'Segoe UI\',Arial,sans-serif;">'+esc(t.planificador||'—')+'</span></div>';
+    compacto=[
+      'Total: <b style="font-family:Consolas,monospace;">'+fmtNum(g.cantTotal)+' und'+(g.montoTotal>0?(' · B/.'+fmtNum(Math.round(g.montoTotal*100)/100)):'')+'</b>',
+      campo('Emisión', t.fecha_emision),
+      campo('Término entrega', t.termino_entrega),
+      campo('Requisición', t.n_requisicion),
+      campo('Planificador', t.planificador)
+    ].join(sep);
   }
 
   return '<div class="tj '+estClase(est)+'" id="tj_'+esc(idG)+'">'+
     cabecera+
     franja+
-    '<div style="padding:5px 13px;background:#f4f8fc;font-size:11px;color:#555;">'+resumen+'</div>'+
-    '<div class="tj-detalle abierto">'+
-      '<div class="grid-det">'+detCampos+'</div>'+
-    '</div>'+
+    '<div class="tj-compacto">'+compacto+'</div>'+
     '<div class="tj-acc">'+acc+'</div>'+
   '</div>';
 }
