@@ -286,6 +286,7 @@
             <button class="btn btn-sec mini" id="btnOrdenDir" type="button" title="Invertir orden">▲</button>
             <button class="btn btn-sec" id="btnExcel" type="button" title="Descargar Excel institucional">⬇ Excel</button>
             <button class="btn btn-sec" id="btnCorregirFechas" type="button" title="Corregir años mal escaneados en las fechas ya cargadas">⚑ Corregir fechas</button>
+            <button class="btn btn-sec" id="btnLimpiarDup" type="button" title="Quitar filas duplicadas (documento cargado varias veces)">⚑ Limpiar duplicados</button>
             <button class="btn btn-sec" id="btnRefrescar" type="button">↻ Refrescar</button>
           </div>
         </div>
@@ -463,16 +464,32 @@ function normCedi(s){
   return '';
 }
 $('btnAddReng').addEventListener('click',()=>$('renglones').appendChild(filaRenglon({})));
-$('btnCancelar').addEventListener('click',()=>{ $('panelRevision').style.display='none'; _extraido=null; _pdfBase64=null; _editandoId=null; $('btnGuardar').textContent='Guardar en tránsitos'; $('estadoCarga').className='estado-msg'; });
+$('btnCancelar').addEventListener('click',()=>{ restaurarPanel(); _extraido=null; _pdfBase64=null; _editandoId=null; $('btnGuardar').textContent='Guardar en tránsitos'; $('estadoCarga').className='estado-msg'; });
+
+// Ancla original del panel de revisión (para devolverlo tras una edición inline).
+var _panelAncla=document.getElementById('panelRevision').nextSibling;
+var _panelPadre=document.getElementById('panelRevision').parentNode;
+function restaurarPanel(){
+  const panel=$('panelRevision');
+  panel.style.display='none';
+  // Devolver el panel a su posición original en el DOM.
+  if(_panelPadre){ _panelPadre.insertBefore(panel, _panelAncla); }
+}
 
 /* ====== EDITAR (abre panel de revisión) ====== */
 function editarTransito(id){
   var t=TRANSITOS.filter(function(x){return String(x.id)===String(id);})[0];
   if(!t){ alert('No se encontró el renglón.'); return; }
   var estado=String(t.estado_transito||'').toUpperCase();
-  if(estado==='AGENDADA'){ setMsg($('estadoGuardar'),'err','El proveedor ya agendó cita con esta orden. No puede editarse.'); $('panelRevision').style.display='block'; $('panelRevision').scrollIntoView({behavior:'smooth'}); return; }
+  if(estado==='AGENDADA'){ alert('El proveedor ya agendó cita con esta orden. No puede editarse.'); return; }
   _editandoId=id;
-  $('panelRevision').style.display='block';
+  // Edición inline: mover el panel de revisión justo debajo de la tarjeta en edición.
+  const panel=$('panelRevision');
+  const tarjeta=document.getElementById('tj_'+id);
+  if(tarjeta && tarjeta.parentNode){
+    tarjeta.parentNode.insertBefore(panel, tarjeta.nextSibling);
+  }
+  panel.style.display='block';
   $('rTipo').value=t.tipo||'';
   $('rDoc').value=t.n_documento||'';
   $('rFecha').value=t.fecha_emision||'';
@@ -488,7 +505,7 @@ function editarTransito(id){
   var aviso='Editando el renglón '+esc(t.n_documento)+' — CEDI '+esc(t.cedi||'—')+'.';
   if(estado==='NOTIFICADA'){ aviso+=' <b>Este tránsito ya fue notificado</b>: al guardar se pedirá un motivo y se reenviará un correo de corrección al proveedor.'; }
   setMsg($('estadoGuardar'),'info',aviso);
-  $('panelRevision').scrollIntoView({behavior:'smooth',block:'start'});
+  panel.scrollIntoView({behavior:'smooth',block:'center'});
 }
 
 /* ====== ELIMINAR (con modelo de 3 estados) ====== */
@@ -581,7 +598,7 @@ $('btnGuardar').addEventListener('click',function(){
           if(j.correo_correccion==='enviado') m+=' Correo de corrección enviado al proveedor.';
           setMsg($('estadoGuardar'),'ok',m);
           _editandoId=null; btn.textContent='Guardar en tránsitos';
-          $('panelRevision').style.display='none';
+          restaurarPanel();
           cargarTransitos();
         } else { setMsg($('estadoGuardar'),'err','No se pudo guardar: '+((j&&j.error)||'error')); }
       }).catch(function(err){ btn.disabled=false; setMsg($('estadoGuardar'),'err','Error de red: '+err); });
@@ -597,6 +614,9 @@ $('btnGuardar').addEventListener('click',function(){
     termino_entrega:$('rTermino').value.trim(),
     analista:$('rAnalista').value.trim(),
     planificador:$('planificador').value.trim(),
+    fecha_publicacion_oc:(_extraido&&_extraido.fecha_publicacion_oc)||'',
+    termino_entrega_oc:(_extraido&&_extraido.termino_entrega_oc)||'',
+    licitacion:(_extraido&&_extraido.licitacion)||'',
     pdf_base64:_pdfBase64, nombre:_pdfNombre,
     renglones:renglones
   };
@@ -613,7 +633,7 @@ $('btnGuardar').addEventListener('click',function(){
                j.avisos.map(function(a){return '<li>'+esc(a)+'</li>';}).join('')+'</ul></div>';
         }
         setMsg($('estadoGuardar'),'ok',msg);
-        $('panelRevision').style.display='none';
+        restaurarPanel();
         $('estadoCarga').className='estado-msg';
         cargarTransitos();
       } else {
@@ -662,7 +682,12 @@ function vencColor(dias){
    sus filas-CEDI. Un documento puede tener 1..N destinos. */
 function agruparPorDocumento(filas){
   const mapa={};
+  const vistas={}; // de-duplicación: doc|cedi|abasto|cantidad
   filas.forEach(t=>{
+    const claveDup=[String(t.n_documento||'').trim(),String(t.cedi||'').trim(),
+                    String(t.cod_abasto||'').trim(),String(t.cantidad||'').trim()].join('|');
+    if(vistas[claveDup]) return; // salta duplicado exacto
+    vistas[claveDup]=true;
     const k=String(t.n_documento||'').trim()||('__'+t.id);
     if(!mapa[k]){
       mapa[k]={ doc:k, ref:t, filas:[], estado:String(t.estado_transito||'EMITIDA').toUpperCase(),
@@ -671,7 +696,6 @@ function agruparPorDocumento(filas){
     mapa[k].filas.push(t);
     mapa[k].cantTotal += Number(t.cantidad)||0;
     mapa[k].montoTotal += Number(t.monto)||0;
-    // Estado representativo: si alguna fila está AGENDADA/NOTIFICADA, prevalece la más avanzada
     const jer={EMITIDA:0,REVISAR:0,NOTIFICADA:1,AGENDADA:2};
     if((jer[String(t.estado_transito||'').toUpperCase()]||0) > (jer[mapa[k].estado]||0))
       mapa[k].estado=String(t.estado_transito||'').toUpperCase();
@@ -743,7 +767,7 @@ function tarjetaDoc(g){
   } else {
     acc='<button class="btn btn-sec mini" onclick="editarTransito(\''+esc(idG)+'\')">Editar</button>'+
         '<button class="btn btn-peligro mini" onclick="eliminarDocumento(\''+esc(g.doc)+'\',\'EMITIDA\')">Eliminar</button>'+
-        '<button class="btn mini" style="margin-left:auto;" onclick="notificarProveedor(\''+esc(g.doc)+'\',this)">✉ Notificar '+(tipo==='SOLICITUD_ENTREGA'?'(1 correo)':'')+'</button>';
+        '<button class="btn mini" style="margin-left:auto;" onclick="notificarProveedor(\''+esc(g.doc)+'\',this)">✉ Notificar al proveedor</button>';
   }
 
   const tc=tipoColor(tipo);
@@ -802,15 +826,19 @@ function tarjetaDoc(g){
     resumen='<span style="color:#555;">CEDI '+esc(t.cedi||'—')+'</span>';
   }
 
-  // Detalle segun tipo (solo lo secundario, sin repetir abasto/SAP que ya están arriba)
+  // Detalle segun tipo (solo lo secundario, sin repetir abasto/SAP ni el reparto que ya están arriba)
   let detCampos='';
   if(tipo==='ORDEN_COMPRA'){
     detCampos=
-      '<div><span class="k">Fecha O/C</span><br>'+esc(t.fecha_emision||'—')+'</div>'+
-      '<div><span class="k">Venc. O/C</span><br>'+esc(t.vencimiento_oc||'—')+'</div>'+
-      '<div><span class="k">Cantidad total</span><br>'+fmtNum(g.cantTotal)+'</div>'+
-      '<div><span class="k">Monto total (B/.)</span><br>'+(g.montoTotal>0?fmtNum(Math.round(g.montoTotal*100)/100):'—')+'</div>'+
-      '<div><span class="k">N° Requisición</span><br>'+esc(t.n_requisicion||'—')+'</div>'+
+      '<div><span class="k">Fecha solicitud (encabezado)</span><br>'+esc(t.fecha_emision||'—')+'</div>'+
+      '<div><span class="k">Publicación O/C</span><br>'+esc(t.fecha_publicacion_oc||'—')+'</div>'+
+      '<div><span class="k">Término entrega O/C</span><br>'+esc(t.termino_entrega_oc||'—')+'</div>'+
+      '<div><span class="k">Vence O/C</span><br>'+esc(t.vencimiento_oc||'—')+'</div>'+
+      '<div><span class="k">Licitación</span><br><span style="font-family:\'Segoe UI\',Arial,sans-serif;">'+esc(t.licitacion||'—')+'</span></div>'+
+      '<div><span class="k">Precio unitario (B/.)</span><br>'+(t.precio_unitario!=null&&t.precio_unitario!==''?fmtNum(t.precio_unitario):'—')+'</div>'+
+      '<div><span class="k">Cantidad total O/C</span><br>'+fmtNum(g.cantTotal)+'</div>'+
+      '<div><span class="k">Importe total (B/.)</span><br>'+(g.montoTotal>0?fmtNum(Math.round(g.montoTotal*100)/100):'—')+'</div>'+
+      '<div><span class="k">1ª entrega</span><br>'+esc(t.cedi||'—')+(t.cantidad?(' · '+fmtNum(t.cantidad)+' und'):'')+'</div>'+
       '<div><span class="k">Planificador</span><br><span style="font-family:\'Segoe UI\',Arial,sans-serif;">'+esc(t.planificador||'—')+'</span></div>';
   } else if(tipo==='ADELANTO'){
     detCampos=
@@ -819,20 +847,16 @@ function tarjetaDoc(g){
       '<div><span class="k">N° Requisición</span><br>'+esc(t.n_requisicion||'—')+'</div>'+
       '<div><span class="k">Planificador</span><br><span style="font-family:\'Segoe UI\',Arial,sans-serif;">'+esc(t.planificador||'—')+'</span></div>';
   } else {
-    // Solicitud: tabla de reparto por CEDI con cantidad y monto + campos secundarios
-    let repFilas=g.filas.map(f=>'<tr><td style="padding:2px 8px;border:1px solid #dce6f0;">'+esc(f.cedi||'—')+'</td><td style="padding:2px 8px;border:1px solid #dce6f0;text-align:right;font-family:Consolas,monospace;">'+fmtNum(f.cantidad)+'</td><td style="padding:2px 8px;border:1px solid #dce6f0;text-align:right;font-family:Consolas,monospace;">'+(Number(f.monto)>0?fmtNum(Math.round(f.monto*100)/100):'—')+'</td></tr>').join('');
+    // Solicitud: sin tabla de reparto (ya está arriba en la franja). Solo campos secundarios.
     detCampos=
-      '<div style="grid-column:1 / -1;">'+
-        '<div style="font-size:10px;color:#888;margin-bottom:3px;">REPARTO POR CEDI</div>'+
-        '<table style="border-collapse:collapse;font-size:11px;"><tr style="background:#eef4fb;"><th style="padding:2px 8px;border:1px solid #dce6f0;text-align:left;">CEDI</th><th style="padding:2px 8px;border:1px solid #dce6f0;">Cantidad</th><th style="padding:2px 8px;border:1px solid #dce6f0;">Monto B/.</th></tr>'+repFilas+'</table>'+
-      '</div>'+
+      '<div><span class="k">Fecha emisión</span><br>'+esc(t.fecha_emision||'—')+'</div>'+
       '<div><span class="k">Venc. entrega</span><br>'+esc(t.vencimiento_entrega||'—')+'</div>'+
       '<div><span class="k">Término entrega</span><br>'+esc(t.termino_entrega||'—')+'</div>'+
       '<div><span class="k">N° Requisición</span><br>'+esc(t.n_requisicion||'—')+'</div>'+
       '<div><span class="k">Planificador</span><br><span style="font-family:\'Segoe UI\',Arial,sans-serif;">'+esc(t.planificador||'—')+'</span></div>';
   }
 
-  return '<div class="tj '+estClase(est)+'">'+
+  return '<div class="tj '+estClase(est)+'" id="tj_'+esc(idG)+'">'+
     cabecera+
     franja+
     '<div style="display:flex;align-items:center;justify-content:space-between;padding:5px 13px;background:#f4f8fc;font-size:11px;">'+
@@ -1152,6 +1176,62 @@ function aplicarCorreccionFechas(){
   const s=document.createElement('script');
   s.src=API_SIGUELO+'?action=corregirFechasAplicar&callback='+cb;
   s.onerror=()=>setMsg($('estadoGuardar'),'err','No se pudo conectar para aplicar las correcciones.');
+  document.body.appendChild(s);
+}
+
+/* ====== LIMPIAR DUPLICADOS (simular / aplicar con reporte) ====== */
+$('btnLimpiarDup').addEventListener('click',function(){
+  setMsg($('estadoGuardar'),'info','<span class="spinner"></span>Analizando duplicados…');
+  const cb='cbDupSim'+Date.now();
+  window[cb]=function(resp){
+    try{ delete window[cb]; }catch(e){}
+    if(!resp||!resp.success){ setMsg($('estadoGuardar'),'err','No se pudo analizar: '+((resp&&resp.error)||'error')); return; }
+    const r=resp.resumen||{};
+    if(!r.filas_a_eliminar){ setMsg($('estadoGuardar'),'ok','No se encontraron filas duplicadas. Todo en orden.'); return; }
+    let filasHtml=(resp.duplicados||[]).slice(0,30).map(function(d){
+      return '<tr><td style="padding:2px 6px;border:1px solid #dce6f0;font-family:Consolas,monospace;font-size:10.5px;">'+esc(d.n_documento)+'</td>'+
+             '<td style="padding:2px 6px;border:1px solid #dce6f0;font-size:10.5px;">'+esc(d.cedi)+'</td>'+
+             '<td style="padding:2px 6px;border:1px solid #dce6f0;text-align:right;font-family:Consolas,monospace;font-size:10.5px;">'+fmtNum(d.cantidad)+'</td>'+
+             '<td style="padding:2px 6px;border:1px solid #dce6f0;font-size:10.5px;">fila '+esc(d.fila)+'</td></tr>';
+    }).join('');
+    const extra=(resp.duplicados||[]).length>30?'<div style="font-size:11px;color:#777;margin-top:4px;">… y '+((resp.duplicados.length)-30)+' fila(s) más.</div>':'';
+    const html='<b>Simulación de limpieza de duplicados</b><br>'+
+      'Se eliminarían <b>'+r.filas_a_eliminar+'</b> fila(s) duplicada(s), conservando la primera aparición de cada combinación (documento + CEDI + abasto + cantidad).'+
+      '<div style="max-height:220px;overflow:auto;margin-top:8px;border:1px solid #dce6f0;border-radius:3px;">'+
+        '<table style="width:100%;border-collapse:collapse;"><thead><tr>'+
+        '<th style="padding:3px 6px;background:#a3331f;color:#fff;font-size:10px;text-align:left;">Documento</th>'+
+        '<th style="padding:3px 6px;background:#a3331f;color:#fff;font-size:10px;text-align:left;">CEDI</th>'+
+        '<th style="padding:3px 6px;background:#a3331f;color:#fff;font-size:10px;text-align:right;">Cantidad</th>'+
+        '<th style="padding:3px 6px;background:#a3331f;color:#fff;font-size:10px;text-align:left;">Ubicación</th>'+
+        '</tr></thead><tbody>'+filasHtml+'</tbody></table>'+
+      '</div>'+extra+
+      '<div style="margin-top:10px;display:flex;gap:8px;">'+
+        '<button class="btn btn-peligro mini" id="btnAplicarDup" type="button">Eliminar duplicados</button>'+
+        '<button class="btn btn-sec mini" id="btnCancelarDup" type="button">Cancelar</button>'+
+      '</div>';
+    setMsg($('estadoGuardar'),'info',html);
+    $('btnAplicarDup').addEventListener('click',aplicarLimpiezaDup);
+    $('btnCancelarDup').addEventListener('click',function(){ $('estadoGuardar').className='estado-msg'; });
+  };
+  const s=document.createElement('script');
+  s.src=API_SIGUELO+'?action=limpiarDuplicadosSimular&callback='+cb;
+  s.onerror=()=>setMsg($('estadoGuardar'),'err','No se pudo conectar para analizar duplicados.');
+  document.body.appendChild(s);
+});
+function aplicarLimpiezaDup(){
+  setMsg($('estadoGuardar'),'info','<span class="spinner"></span>Eliminando duplicados…');
+  const cb='cbDupApl'+Date.now();
+  window[cb]=function(resp){
+    try{ delete window[cb]; }catch(e){}
+    if(resp&&resp.success){
+      const r=resp.resumen||{};
+      setMsg($('estadoGuardar'),'ok','Limpieza aplicada: '+r.filas_a_eliminar+' fila(s) duplicada(s) eliminada(s).');
+      cargarTransitos();
+    } else { setMsg($('estadoGuardar'),'err','No se pudo aplicar: '+((resp&&resp.error)||'error')); }
+  };
+  const s=document.createElement('script');
+  s.src=API_SIGUELO+'?action=limpiarDuplicadosAplicar&callback='+cb;
+  s.onerror=()=>setMsg($('estadoGuardar'),'err','No se pudo conectar para eliminar duplicados.');
   document.body.appendChild(s);
 }
 
