@@ -626,6 +626,7 @@ function editarTransito(id){
   $('rVenc').value=ref.vencimiento_oc||'';
   $('rVencEnt').value=ref.vencimiento_entrega||'';
   $('rTermino').value=ref.termino_entrega||'';
+  if($('rAnalista')) $('rAnalista').value=ref.planificador||'';
   // Un renglón por cada fila-CEDI del documento, con su monto
   $('renglones').innerHTML='';
   filasDoc.forEach(function(f){
@@ -746,7 +747,7 @@ $('btnGuardar').addEventListener('click',function(){
       n_documento:$('rDoc').value.trim(), proveedor:$('rProv').value.trim(),
       fecha_emision:$('rFecha').value.trim(), n_entrega:$('rEntrega').value.trim(),
       vencimiento_oc:$('rVenc').value.trim(), vencimiento_entrega:$('rVencEnt').value.trim(),
-      termino_entrega:$('rTermino').value.trim(), planificador:$('planificador').value.trim()
+      termino_entrega:$('rTermino').value.trim(), planificador:($('rAnalista').value.trim()||$('planificador').value.trim())
     };
     // Una carga por cada fila-CEDI (usa el data-fila-id de cada bloque)
     var bloques=[...$('renglones').querySelectorAll('.reng-edit')];
