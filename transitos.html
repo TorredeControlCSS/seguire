@@ -1234,12 +1234,14 @@ function cargarAnalistas(){
     var html=res.map(function(a){
       return '<div class="combo-item" data-val="'+esc(a.nombre)+'"><span class="ini">'+esc(a.iniciales||'')+'</span>'+esc(a.nombre)+'</div>';
     }).join('');
-    // Si escribió algo que no coincide exacto, ofrecer registrarlo como nuevo
+    // Opción SIEMPRE visible para registrar a alguien que no está en la lista.
+    // Si el usuario ya escribió un nombre nuevo, la etiqueta lo refleja.
     var exacto=_ANALISTAS.some(function(a){return String(a.nombre||'').toLowerCase()===f;});
     if(f && !exacto){
-      html+='<div class="combo-item otro" data-val="'+esc(filtro)+'">➕ Agregar nuevo: "'+esc(filtro)+'"</div>';
+      html+='<div class="combo-item otro" data-nuevo="1" data-val="'+esc(filtro)+'">➕ Agregar a "'+esc(filtro)+'" (no está en la lista)</div>';
+    } else {
+      html+='<div class="combo-item otro" data-nuevo="1" data-val="__ESCRIBIR__">➕ Otro (escribir un nombre nuevo)</div>';
     }
-    if(!html) html='<div class="combo-vacio">Escriba un nombre para agregarlo</div>';
     caja.innerHTML=html;
     caja.style.display='block';
     items=[].slice.call(caja.querySelectorAll('.combo-item'));
@@ -1250,7 +1252,19 @@ function cargarAnalistas(){
     items.forEach(function(el,k){ el.classList.toggle('activo',k===i); });
     if(i>=0&&items[i]) items[i].scrollIntoView({block:'nearest'});
   }
-  function elegir(el){ if(!el) return; inp.value=el.getAttribute('data-val'); cerrar(); }
+  function elegir(el){
+    if(!el) return;
+    var val=el.getAttribute('data-val');
+    if(val==='__ESCRIBIR__'){
+      // El usuario quiere teclear un nombre que no está en la lista.
+      inp.value='';
+      cerrar();
+      inp.focus();
+      inp.placeholder='Escriba el nombre completo de la persona…';
+      return;
+    }
+    inp.value=val; cerrar();
+  }
 
   inp.addEventListener('focus',function(){ this.select(); abrir(''); });
   inp.addEventListener('click',function(){ this.select(); abrir(''); });
