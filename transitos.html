@@ -523,12 +523,15 @@ function filaRenglon(r, confR){
     const c=normCedi(d&&d.cedi);
     if(c && dmap.hasOwnProperty(c)) dmap[c]=(d.cantidad!=null&&d.cantidad!=='')?d.cantidad:'';
   });
+  var _colPU = '<div><label>Precio unit. (B/.)</label><input type="number" step="0.0001" data-f="precio_unitario" value="'+esc(r.precio_unitario||'')+'"></div>';
+  var _grid = '1fr 2fr .7fr .7fr .7fr .7fr';
   div.innerHTML=
-    '<div class="reng-campos" style="grid-template-columns:1.1fr 2.2fr .8fr .8fr .8fr;">'+
+    '<div class="reng-campos" style="grid-template-columns:'+_grid+';">'+
       '<div><label>Cód. Abasto'+marca+'</label><input type="text" data-f="cod_abasto" value="'+esc(r.cod_abasto||'')+'"></div>'+
       '<div><label>Descripción</label><input type="text" data-f="descripcion" value="'+esc(r.descripcion||'')+'"></div>'+
       '<div><label>Cantidad total</label><input type="number" data-f="cantidad" value="'+esc(r.cantidad||'')+'"></div>'+
       '<div><label>Monto (B/.)</label><input type="number" step="0.01" data-f="monto" value="'+esc(r.monto||'')+'"></div>'+
+      _colPU+
       '<div style="display:flex;gap:6px;align-items:end;"><div style="flex:1;"><label>Cód. SAP</label><input type="text" data-f="cod_sap" value="'+esc(r.cod_sap||'')+'"></div><button class="btn btn-sec mini" type="button" onclick="this.closest(\'.reng-edit\').remove()" style="height:32px;">✕</button></div>'+
     '</div>'+
     '<div class="reng-cedis">'+
@@ -640,13 +643,16 @@ function filaRenglonEdicion(f){
   const div=document.createElement('div');
   div.className='reng-edit';
   div.setAttribute('data-fila-id', f.id);
+  var _colPU = '<div><label>Precio unit. (B/.)</label><input type="number" step="0.0001" data-f="precio_unitario" value="'+esc(f.precio_unitario||'')+'"></div>';
+  var _grid = '1fr 2fr .7fr .7fr .7fr .7fr';
   div.innerHTML=
     '<div style="font-size:11.5px;font-weight:600;color:#0C447C;margin-bottom:6px;">CEDI: '+esc(f.cedi||'—')+'</div>'+
-    '<div class="reng-campos" style="grid-template-columns:1.1fr 2.2fr .8fr .8fr .8fr;">'+
+    '<div class="reng-campos" style="grid-template-columns:'+_grid+';">'+
       '<div><label>Cód. Abasto</label><input type="text" data-f="cod_abasto" value="'+esc(f.cod_abasto||'')+'"></div>'+
       '<div><label>Descripción</label><input type="text" data-f="descripcion" value="'+esc(f.descripcion||'')+'"></div>'+
       '<div><label>Cantidad</label><input type="number" data-f="cantidad" value="'+esc(f.cantidad||'')+'"></div>'+
       '<div><label>Monto (B/.)</label><input type="number" step="0.01" data-f="monto" value="'+esc(f.monto||'')+'"></div>'+
+      _colPU+
       '<div><label>Cód. SAP</label><input type="text" data-f="cod_sap" value="'+esc(f.cod_sap||'')+'"></div>'+
     '</div>';
   return div;
