@@ -422,10 +422,11 @@ function filaRenglon(r){
     if(c && dmap.hasOwnProperty(c)) dmap[c]=(d.cantidad!=null&&d.cantidad!=='')?d.cantidad:'';
   });
   div.innerHTML=
-    '<div class="reng-campos">'+
+    '<div class="reng-campos" style="grid-template-columns:1.1fr 2.2fr .8fr .8fr .8fr;">'+
       '<div><label>Cód. Abasto'+marca+'</label><input type="text" data-f="cod_abasto" value="'+esc(r.cod_abasto||'')+'"></div>'+
       '<div><label>Descripción</label><input type="text" data-f="descripcion" value="'+esc(r.descripcion||'')+'"></div>'+
       '<div><label>Cantidad total</label><input type="number" data-f="cantidad" value="'+esc(r.cantidad||'')+'"></div>'+
+      '<div><label>Monto (B/.)</label><input type="number" step="0.01" data-f="monto" value="'+esc(r.monto||'')+'"></div>'+
       '<div style="display:flex;gap:6px;align-items:end;"><div style="flex:1;"><label>Cód. SAP</label><input type="text" data-f="cod_sap" value="'+esc(r.cod_sap||'')+'"></div><button class="btn btn-sec mini" type="button" onclick="this.closest(\'.reng-edit\').remove()" style="height:32px;">✕</button></div>'+
     '</div>'+
     '<div class="reng-cedis">'+
@@ -657,83 +658,193 @@ function vencColor(dias){
   return {c:'#085041',bg:'var(--pastel-teal)',fg:'#0F6E56'};
 }
 
+/* Agrupa las filas por N_DOCUMENTO en "grupos": cada grupo es un documento con
+   sus filas-CEDI. Un documento puede tener 1..N destinos. */
+function agruparPorDocumento(filas){
+  const mapa={};
+  filas.forEach(t=>{
+    const k=String(t.n_documento||'').trim()||('__'+t.id);
+    if(!mapa[k]){
+      mapa[k]={ doc:k, ref:t, filas:[], estado:String(t.estado_transito||'EMITIDA').toUpperCase(),
+                cantTotal:0, montoTotal:0 };
+    }
+    mapa[k].filas.push(t);
+    mapa[k].cantTotal += Number(t.cantidad)||0;
+    mapa[k].montoTotal += Number(t.monto)||0;
+    // Estado representativo: si alguna fila está AGENDADA/NOTIFICADA, prevalece la más avanzada
+    const jer={EMITIDA:0,REVISAR:0,NOTIFICADA:1,AGENDADA:2};
+    if((jer[String(t.estado_transito||'').toUpperCase()]||0) > (jer[mapa[k].estado]||0))
+      mapa[k].estado=String(t.estado_transito||'').toUpperCase();
+  });
+  return Object.keys(mapa).map(k=>mapa[k]);
+}
+
 function renderTarjetas(){
   let filas=aplicarFiltros(TRANSITOS);
+  let grupos=agruparPorDocumento(filas);
   const orden=$('fOrden').value;
-  filas=[...filas].sort((a,b)=>{
+  grupos.sort((ga,gb)=>{
+    const a=ga.ref, b=gb.ref;
     let x,y;
-    if(orden==='doc'){x=String(a.n_documento||'').toLowerCase();y=String(b.n_documento||'').toLowerCase();}
+    if(orden==='doc'){x=String(ga.doc||'').toLowerCase();y=String(gb.doc||'').toLowerCase();}
     else if(orden==='prov'){x=String(a.proveedor||'').toLowerCase();y=String(b.proveedor||'').toLowerCase();}
-    else if(orden==='cant'){x=Number(a.cantidad)||0;y=Number(b.cantidad)||0;}
+    else if(orden==='cant'){x=ga.cantTotal;y=gb.cantTotal;}
     else {x=String(a.vencimiento_entrega||a.vencimiento_oc||'9999-12-31');y=String(b.vencimiento_entrega||b.vencimiento_oc||'9999-12-31');}
     return (x<y?-1:x>y?1:0)*(_ordenDir?1:-1);
   });
   const cont=$('tarjetas');
-  if(!filas.length){ cont.innerHTML='<div style="text-align:center;color:#999;padding:20px;">Sin tránsitos que coincidan.</div>'; }
-  else {
-    cont.innerHTML=filas.map(t=>{
-      const est=String(t.estado_transito||'EMITIDA').toUpperCase();
-      const fVenc=t.vencimiento_entrega||t.vencimiento_oc||'';
-      const dias=diasPara(fVenc);
-      const vc=vencColor(dias);
-      const diasTxt=dias==null?'':(dias<0?('vencida '+Math.abs(dias)+'d'):(dias+' días'));
-      const abierto=_detAbierto[t.id]?'abierto':'';
-      const chevron=_detAbierto[t.id]?'▲':'▼';
-      // Sello segun estado
-      let sello='';
-      if(est==='NOTIFICADA'){ sello='<div class="sello" style="color:#0F6E56;">✓ Notificado'+(t.notificado_en?(' el '+esc(t.notificado_en)):'')+(t.notificado_por?(' · '+esc(t.notificado_por)):'')+'</div>'; }
-      else if(est==='AGENDADA'){ sello='<div class="sello" style="color:#0F6E56;">✓ El proveedor ya agendó su cita de entrega</div>'; }
-      // Botones segun estado (modelo A)
-      let acc='';
-      if(est==='AGENDADA'){
-        acc='<button class="btn btn-sec mini" onclick="toggleDet(\''+esc(t.id)+'\')">Ver detalle</button>'+
-            '<span style="font-size:11px;color:#888;margin-left:4px;">Bloqueado: ya existe cita en firme</span>';
-      } else if(est==='NOTIFICADA'){
-        acc='<button class="btn btn-sec mini" onclick="editarTransito(\''+esc(t.id)+'\')">Editar <span style="font-size:9.5px;color:#888;">(reenvía aviso)</span></button>'+
-            '<button class="btn btn-peligro mini" onclick="eliminarDocumento(\''+esc(t.n_documento)+'\',\'NOTIFICADA\')">Anular <span style="font-size:9.5px;">(avisa)</span></button>'+
-            '<span style="font-size:11px;color:#0F6E56;margin-left:auto;">✓ Notificado</span>';
-      } else {
-        acc='<button class="btn btn-sec mini" onclick="editarTransito(\''+esc(t.id)+'\')">Editar</button>'+
-            '<button class="btn btn-peligro mini" onclick="eliminarDocumento(\''+esc(t.n_documento)+'\',\'EMITIDA\')">Eliminar</button>'+
-            '<button class="btn mini" style="margin-left:auto;" onclick="notificarProveedor(\''+esc(t.n_documento)+'\',this)">✉ Notificar al proveedor</button>';
-      }
-      const pal=(t.pallets_equiv!==''&&t.pallets_equiv!=null)?(' · '+fmtNum(t.pallets_equiv)+' pal'):'';
-      return '<div class="tj '+estClase(est)+'">'+
-        '<div class="tj-head">'+
-          '<div style="min-width:0;">'+
-            '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">'+
-              '<span class="doc">'+esc(t.n_documento||'—')+'</span>'+estBadge(est)+
-            '</div>'+
-            '<div class="prov">'+esc(t.proveedor||'—')+(t.descripcion?(' · '+esc(t.descripcion)):'')+'</div>'+
-            '<div style="font-size:11px;color:#0C447C;font-family:Consolas,monospace;margin-top:3px;">Abasto: '+esc(t.cod_abasto_norm||t.cod_abasto||'—')+' · SAP: '+esc(t.cod_sap||'—')+'</div>'+
-            sello+
-          '</div>'+
-          '<div class="tj-venc"><div class="cap">Vence entrega</div><div class="val" style="color:'+vc.c+';">'+(diasTxt||'—')+'</div></div>'+
+  if(!grupos.length){ cont.innerHTML='<div style="text-align:center;color:#999;padding:20px;">Sin tránsitos que coincidan.</div>'; }
+  else { cont.innerHTML=grupos.map(g=>tarjetaDoc(g)).join(''); }
+  $('contadorFilas').textContent=grupos.length+' documento(s) · '+filas.length+' de '+TRANSITOS.length+' renglón(es)';
+}
+
+/* Etiqueta legible del tipo de documento. */
+function tipoLabel(tipo){
+  const t=String(tipo||'').toUpperCase();
+  if(t==='SOLICITUD_ENTREGA') return 'Solicitud de Entrega';
+  if(t==='ORDEN_COMPRA') return 'Orden de Compra';
+  if(t==='ADELANTO') return 'Nota de Adelanto';
+  return tipo||'—';
+}
+function tipoColor(tipo){
+  const t=String(tipo||'').toUpperCase();
+  if(t==='ORDEN_COMPRA') return {bg:'#E7EEF9',fg:'#2D4B79'};
+  if(t==='ADELANTO') return {bg:'#F0EAF7',fg:'#5E4488'};
+  return {bg:'#EEF1F5',fg:'#556'};
+}
+
+/* Renderiza una tarjeta de documento (con 1..N CEDIS y campos por tipo). */
+function tarjetaDoc(g){
+  const t=g.ref;
+  const tipo=String(t.tipo||'').toUpperCase();
+  const est=g.estado;
+  const fVenc=t.vencimiento_entrega||t.vencimiento_oc||'';
+  const dias=diasPara(fVenc);
+  const vc=vencColor(dias);
+  const diasTxt=dias==null?'':(dias<0?('vencida '+Math.abs(dias)+'d'):(dias+' días'));
+  const idG=t.id; // usamos el id de la fila de referencia para el toggle de detalle
+  const abierto=_detAbierto[idG]?'abierto':'';
+  const chevron=_detAbierto[idG]?'▲':'▼';
+
+  // Sello segun estado
+  let sello='';
+  if(est==='NOTIFICADA'){ sello='<div class="sello" style="color:#0F6E56;font-size:11px;margin-top:3px;">✓ Notificado'+(t.notificado_en?(' el '+esc(t.notificado_en)):'')+(t.notificado_por?(' · '+esc(t.notificado_por)):'')+'</div>'; }
+  else if(est==='AGENDADA'){ sello='<div class="sello" style="color:#0F6E56;font-size:11px;margin-top:3px;">✓ El proveedor ya agendó su cita de entrega</div>'; }
+
+  // Botones segun estado (modelo A) — operan sobre el documento completo
+  let acc='';
+  if(est==='AGENDADA'){
+    acc='<button class="btn btn-sec mini" onclick="toggleDet(\''+esc(idG)+'\')">Ver detalle</button>'+
+        '<span style="font-size:11px;color:#888;margin-left:4px;">Bloqueado: ya existe cita en firme</span>';
+  } else if(est==='NOTIFICADA'){
+    acc='<button class="btn btn-sec mini" onclick="editarTransito(\''+esc(idG)+'\')">Editar <span style="font-size:9.5px;color:#888;">(reenvía aviso)</span></button>'+
+        '<button class="btn btn-peligro mini" onclick="eliminarDocumento(\''+esc(g.doc)+'\',\'NOTIFICADA\')">Anular <span style="font-size:9.5px;">(avisa)</span></button>'+
+        '<span style="font-size:11px;color:#0F6E56;margin-left:auto;">✓ Notificado</span>';
+  } else {
+    acc='<button class="btn btn-sec mini" onclick="editarTransito(\''+esc(idG)+'\')">Editar</button>'+
+        '<button class="btn btn-peligro mini" onclick="eliminarDocumento(\''+esc(g.doc)+'\',\'EMITIDA\')">Eliminar</button>'+
+        '<button class="btn mini" style="margin-left:auto;" onclick="notificarProveedor(\''+esc(g.doc)+'\',this)">✉ Notificar '+(tipo==='SOLICITUD_ENTREGA'?'(1 correo)':'')+'</button>';
+  }
+
+  const tc=tipoColor(tipo);
+  const cabecera=
+    '<div class="tj-head">'+
+      '<div style="min-width:0;">'+
+        '<div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap;">'+
+          '<span class="doc">'+esc(g.doc||'—')+'</span>'+estBadge(est)+
+          '<span class="badge2" style="background:'+tc.bg+';color:'+tc.fg+';">'+esc(tipoLabel(tipo))+'</span>'+
         '</div>'+
-        '<div class="tj-senal">'+
-          '<div class="tj-col" style="background:'+vc.bg+';"><div class="cap" style="color:'+vc.fg+';">Vencimiento de entrega</div><div class="dato"><span class="n" style="color:'+vc.c+';">'+esc(fVenc||'—')+'</span> <span class="u" style="color:'+vc.fg+';">'+esc(diasTxt)+'</span></div></div>'+
-          '<div class="tj-col" style="background:var(--pastel-purpura);"><div class="cap" style="color:#534AB7;">Cantidad</div><div class="dato"><span class="n" style="color:#3C3489;">'+fmtNum(t.cantidad)+'</span> <span class="u" style="color:#534AB7;">und'+pal+'</span></div></div>'+
-          '<div class="tj-col" style="background:var(--pastel-azul);"><div class="cap" style="color:#185FA5;">CEDI destino</div><div class="dato"><span class="n" style="color:#0C447C;">'+esc(t.cedi||'—')+'</span></div></div>'+
-        '</div>'+
-        '<div class="tj-vermas" id="vermas_'+esc(t.id)+'" onclick="toggleDet(\''+esc(t.id)+'\')">'+chevron+' Ver detalle (código, SAP, requisición, monto, planificador, PDF)</div>'+
-        '<div class="tj-detalle '+abierto+'" id="det_'+esc(t.id)+'">'+
-          '<div class="grid-det">'+
-            '<div><span class="k">Cód. Abasto</span><br>'+esc(t.cod_abasto_norm||t.cod_abasto||'—')+'</div>'+
-            '<div><span class="k">Cód. SAP</span><br>'+esc(t.cod_sap||'—')+'</div>'+
-            '<div><span class="k">Venc. OC</span><br>'+esc(t.vencimiento_oc||'—')+'</div>'+
-            '<div><span class="k">Término entrega</span><br>'+esc(t.termino_entrega||'—')+'</div>'+
-            '<div><span class="k">N° Entrega</span><br>'+esc(t.n_entrega||'—')+'</div>'+
-            '<div><span class="k">N° Requisición</span><br>'+esc(t.n_requisicion||'—')+'</div>'+
-            '<div><span class="k">Monto (B/.)</span><br>'+(t.monto!=null&&t.monto!==''?fmtNum(t.monto):'—')+'</div>'+
-            '<div><span class="k">Planificador</span><br><span style="font-family:\'Segoe UI\',Arial,sans-serif;">'+esc(t.planificador||'—')+'</span></div>'+
-          '</div>'+
-          (t.archivo_url?'<div style="margin-top:8px;"><a href="'+esc(t.archivo_url)+'" target="_blank" style="font-size:11px;color:#0C447C;">Ver PDF original</a></div>':'')+
-        '</div>'+
-        '<div class="tj-acc">'+acc+'</div>'+
+        '<div class="prov">'+esc(t.proveedor||'—')+(t.descripcion?(' · '+esc(t.descripcion)):'')+'</div>'+
+        '<div style="font-size:10.5px;color:#0C447C;font-family:Consolas,monospace;margin-top:2px;">Abasto '+esc(t.cod_abasto_norm||t.cod_abasto||'—')+' · SAP '+esc(t.cod_sap||'—')+(t.n_entrega?(' · Entrega N° '+esc(t.n_entrega)):'')+'</div>'+
+        sello+
+      '</div>'+
+      '<div class="tj-venc"><div class="cap">'+(tipo==='ORDEN_COMPRA'?'Vence O/C':'Vence entrega')+'</div><div class="val" style="color:'+vc.c+';">'+esc(fVenc||'—')+'</div>'+(diasTxt?('<div style="font-size:9.5px;color:'+vc.fg+';">'+esc(diasTxt)+'</div>'):'')+'</div>'+
+    '</div>';
+
+  // Franja segun tipo
+  let franja='';
+  if(tipo==='ORDEN_COMPRA'){
+    franja=
+      '<div class="tj-senal">'+
+        '<div class="tj-col" style="background:var(--pastel-teal);"><div class="cap" style="color:#0F6E56;">Cantidad total O/C</div><div class="dato"><span class="n" style="color:#085041;">'+fmtNum(g.cantTotal)+'</span> <span class="u" style="color:#0F6E56;">und</span></div></div>'+
+        '<div class="tj-col" style="background:var(--pastel-purpura);"><div class="cap" style="color:#534AB7;">Monto total O/C</div><div class="dato"><span class="n" style="color:#3C3489;">'+(g.montoTotal>0?('B/.'+fmtNum(Math.round(g.montoTotal*100)/100)):'—')+'</span></div></div>'+
+        '<div class="tj-col" style="background:var(--pastel-ambar);"><div class="cap" style="color:#854F0B;">Fecha O/C</div><div class="dato"><span class="n" style="color:#633806;">'+esc(t.fecha_emision||'—')+'</span></div></div>'+
+      '</div>';
+  } else if(tipo==='ADELANTO'){
+    franja=
+      '<div class="tj-senal">'+
+        '<div class="tj-col" style="background:var(--pastel-purpura);"><div class="cap" style="color:#534AB7;">Cantidad de adelanto</div><div class="dato"><span class="n" style="color:#3C3489;">'+fmtNum(g.cantTotal)+'</span> <span class="u" style="color:#534AB7;">und</span></div></div>'+
+        '<div class="tj-col" style="background:var(--pastel-azul);"><div class="cap" style="color:#185FA5;">CEDI</div><div class="dato"><span class="n" style="color:#0C447C;">'+esc(t.cedi||'—')+'</span></div></div>'+
+        '<div class="tj-col" style="background:var(--pastel-gris);"><div class="cap" style="color:#5F5E5A;">Requisición</div><div class="dato"><span class="n" style="color:#555;font-size:13px;">'+esc(t.n_requisicion||'—')+'</span></div></div>'+
+      '</div>';
+  } else {
+    // SOLICITUD DE ENTREGA: mostrar hasta 3 CEDIS con cantidad y monto
+    const dst=g.filas.slice(0,3);
+    let cols=dst.map(f=>{
+      const m=Number(f.monto)||0;
+      return '<div class="tj-col" style="background:var(--pastel-azul);">'+
+        '<div class="cap" style="color:#185FA5;">'+esc(f.cedi||'—')+'</div>'+
+        '<div class="dato"><span class="n" style="color:#0C447C;">'+fmtNum(f.cantidad)+'</span> <span class="u" style="color:#185FA5;">und'+(m>0?(' · B/.'+fmtNum(Math.round(m*100)/100)):'')+'</span></div>'+
       '</div>';
     }).join('');
+    // Si hay menos de 3 CEDIS, rellenar con vacío para mantener grilla de 3
+    for(let i=dst.length;i<Math.min(g.filas.length<=1?1:3,3);i++){}
+    franja='<div class="tj-senal" style="grid-template-columns:repeat('+Math.max(dst.length,1)+',1fr);">'+cols+'</div>';
   }
-  $('contadorFilas').textContent=filas.length+' de '+TRANSITOS.length+' renglón(es) en tránsito';
+
+  // Barra resumen (total + término entrega) — según tipo
+  let resumen='';
+  if(tipo==='SOLICITUD_ENTREGA'){
+    resumen='<span style="color:#555;">Total: <b style="font-family:Consolas,monospace;">'+fmtNum(g.cantTotal)+' und'+(g.montoTotal>0?(' · B/.'+fmtNum(Math.round(g.montoTotal*100)/100)):'')+'</b>'+(t.termino_entrega?(' · Término entrega: '+esc(t.termino_entrega)):'')+'</span>';
+  } else if(tipo==='ORDEN_COMPRA'){
+    resumen='<span style="color:#555;">Vence O/C: <b>'+esc(t.vencimiento_oc||'—')+'</b> · 1ª entrega según nota de solicitud</span>';
+  } else {
+    resumen='<span style="color:#555;">CEDI '+esc(t.cedi||'—')+'</span>';
+  }
+
+  // Detalle segun tipo (solo lo secundario, sin repetir abasto/SAP que ya están arriba)
+  let detCampos='';
+  if(tipo==='ORDEN_COMPRA'){
+    detCampos=
+      '<div><span class="k">Fecha O/C</span><br>'+esc(t.fecha_emision||'—')+'</div>'+
+      '<div><span class="k">Venc. O/C</span><br>'+esc(t.vencimiento_oc||'—')+'</div>'+
+      '<div><span class="k">Cantidad total</span><br>'+fmtNum(g.cantTotal)+'</div>'+
+      '<div><span class="k">Monto total (B/.)</span><br>'+(g.montoTotal>0?fmtNum(Math.round(g.montoTotal*100)/100):'—')+'</div>'+
+      '<div><span class="k">N° Requisición</span><br>'+esc(t.n_requisicion||'—')+'</div>'+
+      '<div><span class="k">Planificador</span><br><span style="font-family:\'Segoe UI\',Arial,sans-serif;">'+esc(t.planificador||'—')+'</span></div>';
+  } else if(tipo==='ADELANTO'){
+    detCampos=
+      '<div><span class="k">Fecha</span><br>'+esc(t.fecha_emision||'—')+'</div>'+
+      '<div><span class="k">Término entrega</span><br>'+esc(t.termino_entrega||'—')+'</div>'+
+      '<div><span class="k">N° Requisición</span><br>'+esc(t.n_requisicion||'—')+'</div>'+
+      '<div><span class="k">Planificador</span><br><span style="font-family:\'Segoe UI\',Arial,sans-serif;">'+esc(t.planificador||'—')+'</span></div>';
+  } else {
+    // Solicitud: tabla de reparto por CEDI con cantidad y monto + campos secundarios
+    let repFilas=g.filas.map(f=>'<tr><td style="padding:2px 8px;border:1px solid #dce6f0;">'+esc(f.cedi||'—')+'</td><td style="padding:2px 8px;border:1px solid #dce6f0;text-align:right;font-family:Consolas,monospace;">'+fmtNum(f.cantidad)+'</td><td style="padding:2px 8px;border:1px solid #dce6f0;text-align:right;font-family:Consolas,monospace;">'+(Number(f.monto)>0?fmtNum(Math.round(f.monto*100)/100):'—')+'</td></tr>').join('');
+    detCampos=
+      '<div style="grid-column:1 / -1;">'+
+        '<div style="font-size:10px;color:#888;margin-bottom:3px;">REPARTO POR CEDI</div>'+
+        '<table style="border-collapse:collapse;font-size:11px;"><tr style="background:#eef4fb;"><th style="padding:2px 8px;border:1px solid #dce6f0;text-align:left;">CEDI</th><th style="padding:2px 8px;border:1px solid #dce6f0;">Cantidad</th><th style="padding:2px 8px;border:1px solid #dce6f0;">Monto B/.</th></tr>'+repFilas+'</table>'+
+      '</div>'+
+      '<div><span class="k">Venc. entrega</span><br>'+esc(t.vencimiento_entrega||'—')+'</div>'+
+      '<div><span class="k">Término entrega</span><br>'+esc(t.termino_entrega||'—')+'</div>'+
+      '<div><span class="k">N° Requisición</span><br>'+esc(t.n_requisicion||'—')+'</div>'+
+      '<div><span class="k">Planificador</span><br><span style="font-family:\'Segoe UI\',Arial,sans-serif;">'+esc(t.planificador||'—')+'</span></div>';
+  }
+
+  return '<div class="tj '+estClase(est)+'">'+
+    cabecera+
+    franja+
+    '<div style="display:flex;align-items:center;justify-content:space-between;padding:5px 13px;background:#f4f8fc;font-size:11px;">'+
+      resumen+
+      '<span class="tj-vermas-inline" style="color:#0C447C;cursor:pointer;" onclick="toggleDet(\''+esc(idG)+'\')" id="vermas_'+esc(idG)+'">'+chevron+' detalle</span>'+
+    '</div>'+
+    '<div class="tj-detalle '+abierto+'" id="det_'+esc(idG)+'">'+
+      '<div class="grid-det">'+detCampos+'</div>'+
+      (t.archivo_url?'<div style="margin-top:8px;"><a href="'+esc(t.archivo_url)+'" target="_blank" style="font-size:11px;color:#0C447C;">Ver PDF original</a></div>':'')+
+    '</div>'+
+    '<div class="tj-acc">'+acc+'</div>'+
+  '</div>';
 }
 
 function toggleDet(id){
@@ -741,7 +852,7 @@ function toggleDet(id){
   const d=$('det_'+id);
   if(d) d.classList.toggle('abierto');
   const v=$('vermas_'+id);
-  if(v){ v.innerHTML=(_detAbierto[id]?'▲':'▼')+' '+(_detAbierto[id]?'Ocultar detalle':'Ver detalle (código, SAP, requisición, monto, planificador, PDF)'); }
+  if(v){ v.innerHTML=(_detAbierto[id]?'▲':'▼')+' detalle'; }
 }
 
 function aplicarFiltros(arr){
