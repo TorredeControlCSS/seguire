@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Tránsitos de OC — SEGUIRE · CEDIS Panamá</title>
+<title>Trazabilidad de OC y Tránsitos — SEGUIRE · CEDIS Panamá</title>
 <link rel="icon" href="https://torredecontrolcss.github.io/seguire/favicon.ico">
 <link rel="apple-touch-icon" href="https://torredecontrolcss.github.io/seguire/icons/icon-192.png">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
@@ -120,18 +120,23 @@
   .graf-leyenda{display:flex;flex-wrap:wrap;gap:14px;margin-bottom:10px;font-size:11.5px;color:#555;}
   .graf-leyenda span.it{display:flex;align-items:center;gap:5px;}
   .graf-leyenda .sw{width:11px;height:11px;border-radius:2px;}
-  .tj-detalle .grid-det{display:grid;grid-template-columns:repeat(4,1fr);gap:8px 14px;font-family:Consolas,monospace;}
-  @media(max-width:760px){.tj-detalle .grid-det{grid-template-columns:1fr 1fr;}}
+  .tj-detalle .grid-det{display:flex;flex-wrap:wrap;gap:4px 18px;font-family:Consolas,monospace;font-size:11px;}
+  .tj-detalle .grid-det>div{white-space:nowrap;}
   .tj-detalle .grid-det .k{color:#888;font-family:'Segoe UI',Arial,sans-serif;font-size:10px;}
+  .tj-detalle .grid-det .k::after{content:' ';}
+  .tj-detalle .grid-det br{display:none;}
   .tj-acc{display:flex;align-items:center;gap:7px;padding:10px 14px;border-top:1px solid #e2ecf5;flex-wrap:wrap;}
   .badge2{font-size:10px;padding:2px 8px;border-radius:20px;}
+  .btn-menu-item{display:block;width:100%;text-align:left;padding:9px 14px;border:none;background:#fff;font-size:12.5px;color:#333;cursor:pointer;font-family:inherit;}
+  .btn-menu-item:hover{background:#f0f6fc;color:var(--azul);}
+  .btn-menu-item+.btn-menu-item{border-top:1px solid #eee;}
 </style>
 </head>
 <body>
 <header>
   <img src="icons/icon-192.png" alt="CSS" onerror="this.style.display='none'">
   <div>
-    <h1>Tránsitos de Órdenes de Compra</h1>
+    <h1>Trazabilidad de OC y Tránsitos</h1>
     <div class="sub">SEGUIRE · Dirección Nacional de Logística — CEDIS Panamá</div>
   </div>
 </header>
@@ -166,7 +171,7 @@
     </div>
     <div class="graf-body" id="grafBody">
       <div class="graf-leyenda" id="grafLeyenda"></div>
-      <div style="position:relative;height:260px;">
+      <div style="position:relative;height:150px;">
         <canvas id="grafTransitos" role="img" aria-label="Panorama de tránsitos por vista seleccionada"></canvas>
       </div>
       <div id="grafNota" class="hint" style="margin-top:8px;"></div>
@@ -239,7 +244,16 @@
 
   <!-- PASO 3: Tarjetas -->
   <div class="panel">
-    <div class="panel-h">Órdenes en tránsito (visibilidad anticipada)</div>
+    <div class="panel-h" style="display:flex;align-items:center;justify-content:space-between;">
+      <span>Órdenes en tránsito (visibilidad anticipada)</span>
+      <span style="position:relative;">
+        <button class="btn btn-sec" id="btnMantenimiento" type="button" style="font-size:11px;padding:4px 10px;font-weight:400;" title="Herramientas de mantenimiento de datos">⚙ Mantenimiento ▾</button>
+        <div id="menuMant" style="display:none;position:absolute;right:0;top:32px;background:#fff;border:1px solid var(--linea);border-radius:4px;box-shadow:0 2px 8px rgba(0,0,0,.12);z-index:20;min-width:210px;">
+          <button class="btn-menu-item" id="btnCorregirFechas" type="button">⚑ Corregir años en fechas</button>
+          <button class="btn-menu-item" id="btnLimpiarDup" type="button">⚑ Limpiar duplicados</button>
+        </div>
+      </span>
+    </div>
     <div class="panel-b">
       <div class="filtros">
         <div class="campo crece">
@@ -285,8 +299,6 @@
           <div style="display:flex;gap:6px;">
             <button class="btn btn-sec mini" id="btnOrdenDir" type="button" title="Invertir orden">▲</button>
             <button class="btn btn-sec" id="btnExcel" type="button" title="Descargar Excel institucional">⬇ Excel</button>
-            <button class="btn btn-sec" id="btnCorregirFechas" type="button" title="Corregir años mal escaneados en las fechas ya cargadas">⚑ Corregir fechas</button>
-            <button class="btn btn-sec" id="btnLimpiarDup" type="button" title="Quitar filas duplicadas (documento cargado varias veces)">⚑ Limpiar duplicados</button>
             <button class="btn btn-sec" id="btnRefrescar" type="button">↻ Refrescar</button>
           </div>
         </div>
@@ -312,6 +324,8 @@ let _pdfBase64 = null;
 let _pdfNombre = '';
 let _prefijoDoc = '';
 let _editandoId = null;
+let _editandoDoc = null;
+let _editandoFilas = [];
 let _ordenDir = true;   // true = ascendente
 let _detAbierto = {};   // id -> bool (detalle expandido)
 
@@ -476,36 +490,63 @@ function restaurarPanel(){
   if(_panelPadre){ _panelPadre.insertBefore(panel, _panelAncla); }
 }
 
-/* ====== EDITAR (abre panel de revisión) ====== */
+/* ====== EDITAR DOCUMENTO COMPLETO (todos los CEDIS con sus montos) ====== */
 function editarTransito(id){
-  var t=TRANSITOS.filter(function(x){return String(x.id)===String(id);})[0];
-  if(!t){ alert('No se encontró el renglón.'); return; }
-  var estado=String(t.estado_transito||'').toUpperCase();
+  // id puede venir como id de fila; resolvemos el documento y todas sus filas.
+  var ref=TRANSITOS.filter(function(x){return String(x.id)===String(id);})[0];
+  if(!ref){ alert('No se encontró el documento.'); return; }
+  var nDoc=String(ref.n_documento||'').trim();
+  var estado=String(ref.estado_transito||'').toUpperCase();
   if(estado==='AGENDADA'){ alert('El proveedor ya agendó cita con esta orden. No puede editarse.'); return; }
+  // De-duplicar filas del documento por CEDI
+  var filasDoc=[], vistos={};
+  TRANSITOS.forEach(function(x){
+    if(String(x.n_documento||'').trim()!==nDoc) return;
+    var k=String(x.cedi||'').trim()+'|'+String(x.cod_abasto||'').trim()+'|'+String(x.cantidad||'').trim();
+    if(vistos[k]) return; vistos[k]=true; filasDoc.push(x);
+  });
   _editandoId=id;
-  // Edición inline: mover el panel de revisión justo debajo de la tarjeta en edición.
+  _editandoDoc=nDoc;
+  _editandoFilas=filasDoc;
   const panel=$('panelRevision');
   const tarjeta=document.getElementById('tj_'+id);
-  if(tarjeta && tarjeta.parentNode){
-    tarjeta.parentNode.insertBefore(panel, tarjeta.nextSibling);
-  }
+  if(tarjeta && tarjeta.parentNode){ tarjeta.parentNode.insertBefore(panel, tarjeta.nextSibling); }
   panel.style.display='block';
-  $('rTipo').value=t.tipo||'';
-  $('rDoc').value=t.n_documento||'';
-  $('rFecha').value=t.fecha_emision||'';
-  $('rEntrega').value=t.n_entrega||'';
-  $('rProv').value=t.proveedor||'';
-  $('rVenc').value=t.vencimiento_oc||'';
-  $('rVencEnt').value=t.vencimiento_entrega||'';
-  $('rTermino').value=t.termino_entrega||'';
+  $('rTipo').value=ref.tipo||'';
+  $('rDoc').value=ref.n_documento||'';
+  $('rFecha').value=ref.fecha_emision||'';
+  $('rEntrega').value=ref.n_entrega||'';
+  $('rProv').value=ref.proveedor||'';
+  $('rVenc').value=ref.vencimiento_oc||'';
+  $('rVencEnt').value=ref.vencimiento_entrega||'';
+  $('rTermino').value=ref.termino_entrega||'';
+  // Un renglón por cada fila-CEDI del documento, con su monto
   $('renglones').innerHTML='';
-  $('renglones').appendChild(filaRenglon({cod_abasto:t.cod_abasto, cod_sap:t.cod_sap,
-    descripcion:t.descripcion, cantidad:t.cantidad, monto:t.monto, n_requisicion:t.n_requisicion}));
+  filasDoc.forEach(function(f){
+    $('renglones').appendChild(filaRenglonEdicion(f));
+  });
   $('btnGuardar').textContent='Guardar cambios';
-  var aviso='Editando el renglón '+esc(t.n_documento)+' — CEDI '+esc(t.cedi||'—')+'.';
-  if(estado==='NOTIFICADA'){ aviso+=' <b>Este tránsito ya fue notificado</b>: al guardar se pedirá un motivo y se reenviará un correo de corrección al proveedor.'; }
+  var aviso='Editando el documento '+esc(nDoc)+' — '+filasDoc.length+' CEDI(s).';
+  if(estado==='NOTIFICADA'){ aviso+=' <b>Ya fue notificado</b>: al guardar se pedirá un motivo y se reenviará un correo de corrección al proveedor.'; }
   setMsg($('estadoGuardar'),'info',aviso);
   panel.scrollIntoView({behavior:'smooth',block:'center'});
+}
+
+/* Fila de edición por CEDI: descripción/abasto compartidos + cantidad y monto de ESE CEDI. */
+function filaRenglonEdicion(f){
+  const div=document.createElement('div');
+  div.className='reng-edit';
+  div.setAttribute('data-fila-id', f.id);
+  div.innerHTML=
+    '<div style="font-size:11.5px;font-weight:600;color:#0C447C;margin-bottom:6px;">CEDI: '+esc(f.cedi||'—')+'</div>'+
+    '<div class="reng-campos" style="grid-template-columns:1.1fr 2.2fr .8fr .8fr .8fr;">'+
+      '<div><label>Cód. Abasto</label><input type="text" data-f="cod_abasto" value="'+esc(f.cod_abasto||'')+'"></div>'+
+      '<div><label>Descripción</label><input type="text" data-f="descripcion" value="'+esc(f.descripcion||'')+'"></div>'+
+      '<div><label>Cantidad</label><input type="number" data-f="cantidad" value="'+esc(f.cantidad||'')+'"></div>'+
+      '<div><label>Monto (B/.)</label><input type="number" step="0.01" data-f="monto" value="'+esc(f.monto||'')+'"></div>'+
+      '<div><label>Cód. SAP</label><input type="text" data-f="cod_sap" value="'+esc(f.cod_sap||'')+'"></div>'+
+    '</div>';
+  return div;
 }
 
 /* ====== ELIMINAR (con modelo de 3 estados) ====== */
@@ -528,9 +569,23 @@ function eliminarDocumento(nDoc, estado){
         var m='Eliminado: '+j.eliminadas+' renglón(es) del documento '+esc(nDoc)+'.';
         if(j.correo_anulacion==='enviado') m+=' Correo de anulación enviado al proveedor.';
         else if(j.correo_anulacion==='sin_correo') m+=' (Sin correo del proveedor en el sistema.)';
-        setMsg($('estadoGuardar'),'ok',m); cargarTransitos();
+        setMsg($('estadoGuardar'),'ok',m); removerLocalDoc(nDoc);
       } else { setMsg($('estadoGuardar'),'err','No se pudo eliminar: '+((j&&j.error)||'error')); }
     }).catch(function(err){ setMsg($('estadoGuardar'),'err','Error de red: '+err); });
+}
+
+/* Muta en memoria todas las filas de un documento y re-renderiza (sin ir al server). */
+function actualizarLocalDoc(nDoc, cambios){
+  TRANSITOS.forEach(function(t,i){
+    if(String(t.n_documento||'').trim()===String(nDoc).trim()){
+      TRANSITOS[i]=Object.assign({}, t, cambios||{});
+    }
+  });
+  renderTarjetas(); renderKPIs();
+}
+function removerLocalDoc(nDoc){
+  TRANSITOS=TRANSITOS.filter(function(t){ return String(t.n_documento||'').trim()!==String(nDoc).trim(); });
+  renderTarjetas(); renderKPIs();
 }
 
 /* ====== NOTIFICAR AL PROVEEDOR ====== */
@@ -542,7 +597,8 @@ function notificarProveedor(nDoc, btn){
     .then(function(j){
       if(j&&j.success){
         setMsg($('estadoGuardar'),'ok','Notificación enviada al proveedor ('+esc(j.correo)+'). El documento pasó a NOTIFICADA.');
-        cargarTransitos();
+        var ahora=new Date().toISOString().slice(0,10);
+        actualizarLocalDoc(nDoc,{ estado_transito:'NOTIFICADA', notificado_en:ahora, notificado_por:($('planificador').value.trim()||'Torre de Control') });
       } else if(j&&j.sin_correo){
         setMsg($('estadoGuardar'),'err','No se pudo notificar: '+esc(j.error));
         if(btn){ btn.disabled=false; btn.textContent='Notificar al proveedor'; }
@@ -567,41 +623,56 @@ $('btnGuardar').addEventListener('click',function(){
   }).filter(r=>r.cod_abasto||r.descripcion);
   if(!renglones.length){ setMsg($('estadoGuardar'),'err','Debe haber al menos un renglón con datos.'); return; }
 
-  // ---- MODO EDICIÓN: va al backend de SÍGUELO (editarTransitoOC) ----
+  // ---- MODO EDICIÓN MULTI-CEDI: una actualización por cada fila-CEDI ----
   if(_editandoId){
-    const r0=renglones[0];
-    var tActual=TRANSITOS.filter(function(x){return String(x.id)===String(_editandoId);})[0]||{};
-    var estadoAct=String(tActual.estado_transito||'').toUpperCase();
+    var estadoAct=String((TRANSITOS.filter(function(x){return String(x.id)===String(_editandoId);})[0]||{}).estado_transito||'').toUpperCase();
     var motivo='';
     if(estadoAct==='NOTIFICADA'){
-      motivo=prompt('Este tránsito ya fue notificado. Indique el motivo del cambio (se reenviará un correo de corrección al proveedor):','');
+      motivo=prompt('Este documento ya fue notificado. Indique el motivo del cambio (se reenviará un correo de corrección al proveedor):','');
       if(motivo===null) return;
-      if(!motivo.trim()){ setMsg($('estadoGuardar'),'err','Debe indicar un motivo para editar un tránsito notificado.'); return; }
+      if(!motivo.trim()){ setMsg($('estadoGuardar'),'err','Debe indicar un motivo para editar un documento notificado.'); return; }
     }
-    const pEdit={
-      id:_editandoId, motivo:motivo,
+    // Campos de cabecera compartidos por todas las filas del documento
+    var cab={
       n_documento:$('rDoc').value.trim(), proveedor:$('rProv').value.trim(),
       fecha_emision:$('rFecha').value.trim(), n_entrega:$('rEntrega').value.trim(),
       vencimiento_oc:$('rVenc').value.trim(), vencimiento_entrega:$('rVencEnt').value.trim(),
-      termino_entrega:$('rTermino').value.trim(), planificador:$('planificador').value.trim(),
-      cod_abasto:r0.cod_abasto, cod_sap:r0.cod_sap, descripcion:r0.descripcion,
-      cantidad:r0.cantidad, monto:r0.monto, n_requisicion:r0.n_requisicion
+      termino_entrega:$('rTermino').value.trim(), planificador:$('planificador').value.trim()
     };
+    // Una carga por cada fila-CEDI (usa el data-fila-id de cada bloque)
+    var bloques=[...$('renglones').querySelectorAll('.reng-edit')];
+    var cargas=bloques.map(function(div){
+      var filaId=div.getAttribute('data-fila-id');
+      var campos={}; div.querySelectorAll('[data-f]').forEach(function(i){ campos[i.dataset.f]=i.value.trim(); });
+      return Object.assign({ id:filaId, motivo:motivo }, cab, campos);
+    }).filter(function(c){ return c.id; });
+    if(!cargas.length){ setMsg($('estadoGuardar'),'err','No hay filas para guardar.'); return; }
     this.disabled=true;
-    setMsg($('estadoGuardar'),'info','<span class="spinner"></span>Guardando cambios…');
+    setMsg($('estadoGuardar'),'info','<span class="spinner"></span>Guardando '+cargas.length+' CEDI(s)…');
     var btn=this;
-    postSiguelo('editarTransitoOC',pEdit)
-      .then(function(j){
+    // Enviar secuencialmente (solo la primera con motivo, para un único correo de corrección)
+    var idxC=0, correoAvisado=false, huboError=null;
+    (function siguiente(){
+      if(idxC>=cargas.length){
         btn.disabled=false;
-        if(j&&j.success){
-          var m='Cambios guardados.';
-          if(j.correo_correccion==='enviado') m+=' Correo de corrección enviado al proveedor.';
+        if(huboError){ setMsg($('estadoGuardar'),'err','Algunos cambios fallaron: '+huboError); }
+        else {
+          var m='Cambios guardados en '+cargas.length+' CEDI(s).'+(correoAvisado?' Correo de corrección enviado al proveedor.':'');
           setMsg($('estadoGuardar'),'ok',m);
-          _editandoId=null; btn.textContent='Guardar en tránsitos';
+          _editandoId=null; _editandoDoc=null; _editandoFilas=[]; btn.textContent='Guardar en tránsitos';
           restaurarPanel();
           cargarTransitos();
-        } else { setMsg($('estadoGuardar'),'err','No se pudo guardar: '+((j&&j.error)||'error')); }
-      }).catch(function(err){ btn.disabled=false; setMsg($('estadoGuardar'),'err','Error de red: '+err); });
+        }
+        return;
+      }
+      var carga=cargas[idxC];
+      if(idxC>0) carga.motivo=''; // el correo solo se dispara una vez
+      postSiguelo('editarTransitoOC',carga).then(function(j){
+        if(j&&j.success){ if(j.correo_correccion==='enviado') correoAvisado=true; }
+        else { huboError=(j&&j.error)||'error'; }
+        idxC++; siguiente();
+      }).catch(function(err){ huboError=String(err); idxC++; siguiente(); });
+    })();
     return;
   }
   // ---- MODO ALTA NUEVA: va al backend de SEGUIRE (guardarTransito) ----
@@ -950,6 +1021,12 @@ $('btnExcel').addEventListener('click',function(){
 ['fBuscar','fTipo','fEstado','fVencDesde','fVencHasta','fOrden'].forEach(id=>$(id).addEventListener('input',renderTarjetas));
 $('btnOrdenDir').addEventListener('click',function(){ _ordenDir=!_ordenDir; this.textContent=_ordenDir?'▲':'▼'; renderTarjetas(); });
 $('btnRefrescar').addEventListener('click',cargarTransitos);
+// Menú de mantenimiento (discreto)
+$('btnMantenimiento').addEventListener('click',function(e){
+  e.stopPropagation();
+  const m=$('menuMant'); m.style.display=(m.style.display==='none'?'block':'none');
+});
+document.addEventListener('click',function(){ const m=$('menuMant'); if(m) m.style.display='none'; });
 
 /* ====== CARGAR PLANIFICADORES ====== */
 function cargarAnalistas(){
