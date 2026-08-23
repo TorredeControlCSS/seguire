@@ -131,6 +131,16 @@
   .btn-mes{padding:1px 8px;font-size:13px;border:1px solid var(--linea);background:#fff;border-radius:3px;cursor:pointer;color:var(--azul);}
   .btn-mes:hover{background:#f0f6fc;}
   .mes-rango{font-size:11px;color:#555;font-family:Consolas,monospace;min-width:90px;text-align:center;}
+  /* Combo predictivo de planificador (estilo institucional) */
+  .combo-lista{position:absolute;top:100%;left:0;right:0;z-index:60;background:#fff;border:1px solid var(--azul);border-top:none;border-radius:0 0 4px 4px;max-height:220px;overflow-y:auto;box-shadow:0 4px 10px rgba(12,68,124,.15);}
+  .combo-item{padding:8px 12px;font-size:13px;color:#333;cursor:pointer;border-bottom:1px solid #eef2f6;}
+  .combo-item:last-child{border-bottom:none;}
+  .combo-item:hover,.combo-item.activo{background:var(--azul);color:#fff;}
+  .combo-item .ini{font-family:Consolas,monospace;font-size:11px;color:#8aa;margin-right:8px;}
+  .combo-item:hover .ini,.combo-item.activo .ini{color:#cfe0f2;}
+  .combo-item.otro{font-style:italic;color:#0C447C;}
+  .combo-item.otro:hover,.combo-item.otro.activo{color:#fff;}
+  .combo-vacio{padding:8px 12px;font-size:12px;color:#999;font-style:italic;}
   .graf-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 14px;background:#f4f8fc;border-bottom:1px solid var(--linea);flex-wrap:wrap;}
   .graf-head .tit{font-weight:700;color:var(--azul);font-size:14px;}
   .graf-head select{width:auto;padding:5px 8px;font-size:12px;}
@@ -268,8 +278,10 @@
         <div><label>Término de entrega (inicio)</label><input type="text" id="rTermino" placeholder="AAAA-MM-DD"></div>
         <div>
           <label>Analista responsable</label>
-          <input type="text" id="rAnalista" list="listaAnalistas" placeholder="Escriba o seleccione...">
-          <datalist id="listaAnalistas"></datalist>
+          <div class="combo-wrap" style="position:relative;">
+            <input type="text" id="rAnalista" autocomplete="off" placeholder="Escriba para buscar…">
+            <div id="comboAnalista" class="combo-lista" style="display:none;"></div>
+          </div>
         </div>
       </div>
       <label style="margin-top:6px;">Renglones del documento</label>
@@ -1186,13 +1198,13 @@ $('btnMantenimiento').addEventListener('click',function(e){
 document.addEventListener('click',function(){ const m=$('menuMant'); if(m) m.style.display='none'; });
 
 /* ====== CARGAR PLANIFICADORES ====== */
+var _ANALISTAS=[]; // lista global para el combo predictivo
 function cargarAnalistas(){
   const cb='cbAna'+Date.now();
   window[cb]=function(resp){
     try{ delete window[cb]; }catch(e){}
     const lista=(resp&&resp.planificadores)?resp.planificadores:[];
-    const dl=$('listaAnalistas');
-    if(dl) dl.innerHTML=lista.map(a=>'<option value="'+esc(a.nombre)+'">'+esc(a.iniciales)+'</option>').join('');
+    _ANALISTAS=lista;
     const sel=$('planificadorSel');
     if(sel){
       const opts=['<option value="">— Planificador —</option>']
@@ -1206,6 +1218,56 @@ function cargarAnalistas(){
   s.src=API_SEGUIRE+'?accion=listarPlanificadores&callback='+cb;
   document.body.appendChild(s);
 }
+
+/* ====== COMBO PREDICTIVO DE PLANIFICADOR ====== */
+(function(){
+  var inp=$('rAnalista'), caja=$('comboAnalista');
+  if(!inp||!caja) return;
+  var idxActivo=-1, items=[];
+
+  function abrir(filtro){
+    var f=String(filtro||'').toLowerCase().trim();
+    var res=_ANALISTAS.filter(function(a){
+      return !f || String(a.nombre||'').toLowerCase().indexOf(f)>=0
+                || String(a.iniciales||'').toLowerCase().indexOf(f)>=0;
+    });
+    var html=res.map(function(a){
+      return '<div class="combo-item" data-val="'+esc(a.nombre)+'"><span class="ini">'+esc(a.iniciales||'')+'</span>'+esc(a.nombre)+'</div>';
+    }).join('');
+    // Si escribió algo que no coincide exacto, ofrecer usarlo tal cual
+    var exacto=_ANALISTAS.some(function(a){return String(a.nombre||'').toLowerCase()===f;});
+    if(f && !exacto){
+      html+='<div class="combo-item otro" data-val="'+esc(filtro)+'">Usar "'+esc(filtro)+'"</div>';
+    }
+    if(!html) html='<div class="combo-vacio">Sin coincidencias</div>';
+    caja.innerHTML=html;
+    caja.style.display='block';
+    items=[].slice.call(caja.querySelectorAll('.combo-item'));
+    idxActivo=-1;
+  }
+  function cerrar(){ caja.style.display='none'; idxActivo=-1; }
+  function marcar(i){
+    items.forEach(function(el,k){ el.classList.toggle('activo',k===i); });
+    if(i>=0&&items[i]) items[i].scrollIntoView({block:'nearest'});
+  }
+  function elegir(el){ if(!el) return; inp.value=el.getAttribute('data-val'); cerrar(); }
+
+  inp.addEventListener('focus',function(){ abrir(inp.value); });
+  inp.addEventListener('input',function(){ abrir(inp.value); });
+  inp.addEventListener('keydown',function(e){
+    if(caja.style.display==='none') return;
+    if(e.key==='ArrowDown'){ e.preventDefault(); idxActivo=Math.min(idxActivo+1,items.length-1); marcar(idxActivo); }
+    else if(e.key==='ArrowUp'){ e.preventDefault(); idxActivo=Math.max(idxActivo-1,0); marcar(idxActivo); }
+    else if(e.key==='Enter'){ if(idxActivo>=0){ e.preventDefault(); elegir(items[idxActivo]); } }
+    else if(e.key==='Escape'){ cerrar(); }
+  });
+  caja.addEventListener('mousedown',function(e){
+    var it=e.target.closest('.combo-item'); if(it){ e.preventDefault(); elegir(it); }
+  });
+  document.addEventListener('click',function(e){
+    if(!e.target.closest('.combo-wrap')) cerrar();
+  });
+})();
 
 (function(){
   const sel=$('planificadorSel'), inp=$('planificador');
