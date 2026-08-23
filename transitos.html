@@ -63,6 +63,18 @@
   .reng-cedis-suma{font-family:Consolas,'Courier New',monospace;font-size:13px;font-weight:700;padding:6px 4px;white-space:nowrap;}
   .mini{font-size:11px;padding:4px 8px;}
   .hint{font-size:11px;color:#777;margin-top:3px;}
+  /* Indicadores de confianza de lectura (Gemini) */
+  input.conf-media,select.conf-media{border-color:#c9a227 !important;background:#fffdf5;}
+  input.conf-baja,select.conf-baja{border-color:#c0392b !important;background:#fdf3f2;}
+  .conf-nota{font-size:10.5px;margin-top:2px;display:flex;align-items:center;gap:4px;}
+  .conf-nota.media{color:#8a6a00;}
+  .conf-nota.baja{color:#a3331f;}
+  .conf-badge{display:inline-block;font-size:9px;font-weight:700;padding:1px 5px;border-radius:8px;text-transform:uppercase;}
+  .conf-badge.media{background:#fff3cd;color:#8a6a00;}
+  .conf-badge.baja{background:#f8d7da;color:#a3331f;}
+  .leyenda-conf{display:flex;gap:14px;flex-wrap:wrap;font-size:11px;color:#666;margin:8px 0 4px;padding:6px 10px;background:#f6f8fb;border-radius:4px;}
+  .leyenda-conf span{display:flex;align-items:center;gap:5px;}
+  .leyenda-conf .sw{width:12px;height:12px;border-radius:2px;border:1px solid;}
 
   /* ===== KPIs pastel ===== */
   .kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:14px;}
@@ -400,6 +412,27 @@ function mostrarConfianzaVenc(conf, fecha){
   box.style.display='block';
 }
 
+/* Pinta un input segun el nivel de confianza de Gemini y agrega nota si aplica. */
+function aplicarConfianza(inputId, confCampo){
+  const el=$(inputId);
+  if(!el) return;
+  el.classList.remove('conf-media','conf-baja');
+  // limpiar nota previa
+  const notaPrev=el.parentNode.querySelector('.conf-nota');
+  if(notaPrev) notaPrev.remove();
+  if(!confCampo || !confCampo.nivel) return;
+  const nivel=String(confCampo.nivel).toLowerCase();
+  if(nivel==='alta') return;
+  if(nivel==='media') el.classList.add('conf-media');
+  else if(nivel==='baja') el.classList.add('conf-baja');
+  if(confCampo.nota){
+    const div=document.createElement('div');
+    div.className='conf-nota '+nivel;
+    div.innerHTML='<span class="conf-badge '+nivel+'">'+(nivel==='baja'?'revisar':'dudoso')+'</span> '+esc(confCampo.nota);
+    el.parentNode.appendChild(div);
+  }
+}
+
 function mostrarRevision(d, tipoElegido){
   $('panelRevision').style.display='block';
   const tipoIA=d.tipo||tipoElegido;
@@ -416,16 +449,41 @@ function mostrarRevision(d, tipoElegido){
   $('rVencEnt').value=d.vencimiento_entrega||'';
   $('rTermino').value=d.termino_entrega||'';
   mostrarConfianzaVenc(d.confianza_venc_entrega, d.vencimiento_entrega);
+  // Aplicar confianza por campo de cabecera
+  var cf=d.confianza||{};
+  aplicarConfianza('rDoc', cf.n_documento);
+  aplicarConfianza('rFecha', cf.fecha_emision);
+  aplicarConfianza('rEntrega', cf.n_entrega);
+  aplicarConfianza('rProv', cf.proveedor);
+  aplicarConfianza('rVenc', cf.vencimiento_oc);
+  aplicarConfianza('rVencEnt', cf.vencimiento_entrega);
+  aplicarConfianza('rTermino', cf.termino_entrega);
+  // Leyenda de confianza (una sola vez, arriba de los renglones)
+  var vieja=$('leyendaConf'); if(vieja) vieja.remove();
+  var hayDudas=Object.keys(cf).some(function(k){
+    if(k==='renglones') return (cf.renglones||[]).some(function(rc){ return Object.keys(rc||{}).some(function(kk){ return rc[kk]&&rc[kk].nivel&&rc[kk].nivel!=='alta'; }); });
+    return cf[k]&&cf[k].nivel&&cf[k].nivel!=='alta';
+  });
+  if(hayDudas){
+    var leg=document.createElement('div');
+    leg.className='leyenda-conf'; leg.id='leyendaConf';
+    leg.innerHTML='<b style="color:#0C447C;">Revisión asistida:</b> '+
+      '<span><span class="sw" style="border-color:#c9a227;background:#fffdf5;"></span>lectura con dudas</span>'+
+      '<span><span class="sw" style="border-color:#c0392b;background:#fdf3f2;"></span>lectura poco fiable — verifique con el documento</span>';
+    $('panelRevision').querySelector('.panel-b').insertBefore(leg, $('panelRevision').querySelector('.panel-b').firstChild);
+  }
   if(tipoIA && tipoElegido && tipoIA!==tipoElegido){
     setMsg($('avisoTipo'),'info','El reconocimiento detectó este documento como <b>'+esc(tipoIA)+'</b>, pero usted eligió <b>'+esc(tipoElegido)+'</b>. Verifique cuál es correcto.');
     $('avisoTipo').style.display='block';
   } else { $('avisoTipo').style.display='none'; }
   const cont=$('renglones'); cont.innerHTML='';
   const rengs=(d.renglones&&d.renglones.length)?d.renglones:[{}];
-  rengs.forEach(r=>cont.appendChild(filaRenglon(r)));
+  const confRengs=(d.confianza&&d.confianza.renglones)||[];
+  rengs.forEach((r,i)=>cont.appendChild(filaRenglon(r, confRengs[i]||{})));
   $('panelRevision').scrollIntoView({behavior:'smooth',block:'start'});
 }
-function filaRenglon(r){
+function filaRenglon(r, confR){
+  confR = confR || {};
   const div=document.createElement('div');
   div.className='reng-edit';
   let marca='';
@@ -453,6 +511,22 @@ function filaRenglon(r){
         '<div style="display:flex;align-items:end;"><div class="reng-cedis-suma" data-suma>—</div></div>'+
       '</div>'+
     '</div>';
+  // Aplicar confianza por campo del renglón (pinta borde + nota bajo el input)
+  ['cod_abasto','descripcion','cantidad','monto','cod_sap'].forEach(function(campo){
+    var cc=confR[campo];
+    if(!cc || !cc.nivel) return;
+    var nivel=String(cc.nivel).toLowerCase();
+    if(nivel==='alta') return;
+    var inp=div.querySelector('[data-f="'+campo+'"]');
+    if(!inp) return;
+    inp.classList.add(nivel==='baja'?'conf-baja':'conf-media');
+    if(cc.nota){
+      var nd=document.createElement('div');
+      nd.className='conf-nota '+nivel;
+      nd.innerHTML='<span class="conf-badge '+nivel+'">'+(nivel==='baja'?'revisar':'dudoso')+'</span> '+esc(cc.nota);
+      inp.parentNode.appendChild(nd);
+    }
+  });
   const inputsCedi=div.querySelectorAll('[data-cedi]');
   const sumaBox=div.querySelector('[data-suma]');
   const cantTotal=div.querySelector('[data-f="cantidad"]');
