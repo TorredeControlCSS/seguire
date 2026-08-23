@@ -150,9 +150,11 @@
   .graf-leyenda span.it{display:flex;align-items:center;gap:5px;}
   .graf-leyenda .sw{width:11px;height:11px;border-radius:2px;}
   .tj-detalle .grid-det{display:flex;flex-wrap:wrap;gap:4px 18px;font-family:Consolas,monospace;font-size:11px;}
-  .tj-compacto{padding:8px 13px;background:#f4f8fc;border-top:1px solid #e2e9f0;font-family:Consolas,monospace;font-size:11px;color:#444;line-height:1.9;}
-  .tj-compacto .k{color:#8a99a8;}
-  .tj-compacto b{color:#0C447C;}
+  .tj-compacto{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:#e2e9f0;border-top:1px solid #e2e9f0;}
+  .tj-compacto .ci{background:#f7fafd;padding:6px 12px;display:flex;flex-direction:column;gap:1px;}
+  .tj-compacto .ci .k{font-size:9px;color:#8a99a8;text-transform:uppercase;letter-spacing:.3px;}
+  .tj-compacto .ci .v{font-family:Consolas,monospace;font-size:12px;color:#0C447C;}
+  @media(max-width:640px){.tj-compacto{grid-template-columns:repeat(2,1fr);}}
   .tj-detalle .grid-det>div{white-space:nowrap;}
   .tj-detalle .grid-det .k{color:#888;font-family:'Segoe UI',Arial,sans-serif;font-size:10px;}
   .tj-detalle .grid-det .k::after{content:' ';}
@@ -991,8 +993,8 @@ function tarjetaDoc(g){
     franja=
       '<div class="tj-senal">'+
         '<div class="tj-col" style="background:var(--pastel-teal);"><div class="cap" style="color:#0F6E56;">Cantidad total O/C</div><div class="dato"><span class="n" style="color:#085041;">'+fmtNum(g.cantTotal)+'</span> <span class="u" style="color:#0F6E56;">und</span></div></div>'+
-        '<div class="tj-col" style="background:var(--pastel-purpura);"><div class="cap" style="color:#534AB7;">Importe total</div><div class="dato"><span class="n" style="color:#3C3489;">'+(g.montoTotal>0?('B/.'+fmtNum(Math.round(g.montoTotal*100)/100)):'—')+'</span></div></div>'+
         '<div class="tj-col" style="background:var(--pastel-ambar);"><div class="cap" style="color:#854F0B;">Precio unitario</div><div class="dato"><span class="n" style="color:#633806;">'+(t.precio_unitario!=null&&t.precio_unitario!==''?('B/.'+fmtNum(t.precio_unitario)):'—')+'</span></div></div>'+
+        '<div class="tj-col" style="background:var(--pastel-purpura);"><div class="cap" style="color:#534AB7;">Importe total</div><div class="dato"><span class="n" style="color:#3C3489;">'+(g.montoTotal>0?('B/.'+fmtNum(Math.round(g.montoTotal*100)/100)):'—')+'</span></div></div>'+
       '</div>';
   } else if(tipo==='ADELANTO'){
     franja=
@@ -1014,34 +1016,30 @@ function tarjetaDoc(g){
     franja='<div class="tj-senal" style="grid-template-columns:repeat('+Math.max(dst.length,1)+',1fr);">'+cols+'</div>';
   }
 
-  // Bloque inferior COMPACTO (una línea fluida con separadores) — datos secundarios por tipo
-  var sep=' <span style="color:#c8d4e0;">│</span> ';
-  function campo(k,v){ return '<span><span class="k">'+k+':</span> '+esc(v||'—')+'</span>'; }
+  // Bloque inferior en GRILLA ordenada (celdas con etiqueta) — datos secundarios por tipo
+  function celda(k,v){ return '<div class="ci"><span class="k">'+k+'</span><span class="v">'+esc(v||'—')+'</span></div>'; }
   let compacto='';
   if(tipo==='ORDEN_COMPRA'){
-    compacto=[
-      campo('Solicitud', t.fecha_emision),
-      campo('Publicación O/C', t.fecha_publicacion_oc),
-      campo('Vencimiento O/C', t.vencimiento_oc),
-      campo('Licitación', t.licitacion),
-      campo('1ª entrega', t.cedi),
-      campo('Planificador', t.planificador)
-    ].join(sep);
+    compacto=
+      celda('Solicitud', t.fecha_emision)+
+      celda('Publicación O/C', t.fecha_publicacion_oc)+
+      celda('Vencimiento O/C', t.vencimiento_oc)+
+      celda('Licitación', t.licitacion)+
+      celda('1ª entrega', t.cedi)+
+      celda('Planificador', t.planificador);
   } else if(tipo==='ADELANTO'){
-    compacto=[
-      campo('Fecha', t.fecha_emision),
-      campo('Término entrega', t.termino_entrega),
-      campo('Requisición', t.n_requisicion),
-      campo('Planificador', t.planificador)
-    ].join(sep);
+    compacto=
+      celda('Fecha', t.fecha_emision)+
+      celda('Término entrega', t.termino_entrega)+
+      celda('Requisición', t.n_requisicion)+
+      celda('Planificador', t.planificador);
   } else {
-    compacto=[
-      'Total: <b style="font-family:Consolas,monospace;">'+fmtNum(g.cantTotal)+' und'+(g.montoTotal>0?(' · B/.'+fmtNum(Math.round(g.montoTotal*100)/100)):'')+'</b>',
-      campo('Emisión', t.fecha_emision),
-      campo('Término entrega', t.termino_entrega),
-      campo('Requisición', t.n_requisicion),
-      campo('Planificador', t.planificador)
-    ].join(sep);
+    compacto=
+      celda('Total', fmtNum(g.cantTotal)+' und'+(g.montoTotal>0?(' · B/.'+fmtNum(Math.round(g.montoTotal*100)/100)):''))+
+      celda('Emisión', t.fecha_emision)+
+      celda('Término entrega', t.termino_entrega)+
+      celda('Requisición', t.n_requisicion)+
+      celda('Planificador', t.planificador);
   }
 
   return '<div class="tj '+estClase(est)+'" id="tj_'+esc(idG)+'">'+
