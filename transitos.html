@@ -174,6 +174,19 @@
   .btn-menu-item{display:block;width:100%;text-align:left;padding:9px 14px;border:none;background:#fff;font-size:12.5px;color:#333;cursor:pointer;font-family:inherit;}
   .btn-menu-item:hover{background:#f0f6fc;color:var(--azul);}
   .btn-menu-item+.btn-menu-item{border-top:1px solid #eee;}
+  /* Tutorial guiado */
+  #tourOverlay{position:fixed;inset:0;z-index:1000;}
+  #tourBackdrop{position:absolute;inset:0;background:rgba(12,68,124,.55);}
+  .tour-spot{position:absolute;border:3px solid var(--azul2);border-radius:4px;box-shadow:0 0 0 9999px rgba(12,68,124,.35);transition:all .25s ease;pointer-events:none;}
+  #tourBox{position:absolute;z-index:1002;background:#fff;border:1px solid #a8a8a8;border-radius:6px;padding:14px 16px;max-width:340px;box-shadow:0 8px 30px rgba(0,0,0,.28);border-top:4px solid var(--azul);}
+  #tourTitulo{font-size:14px;font-weight:700;color:var(--azul2);margin-bottom:6px;font-family:'Segoe UI',Arial,sans-serif;}
+  #tourTexto{font-size:12.5px;line-height:1.5;color:#333;}
+  #tourNav{display:flex;align-items:center;gap:8px;margin-top:12px;}
+  #tourPaso{font-size:11px;color:#888;}
+  #tourNav button{font-size:12px;padding:5px 10px;border-radius:4px;border:1px solid #a8a8a8;background:#fff;cursor:pointer;}
+  #tourNav .sep{margin-left:auto;}
+  #tourNext{background:var(--azul) !important;color:#fff;font-weight:700;border-color:var(--azul) !important;padding:7px 14px !important;}
+  #tourSkip,#tourPrev{color:#555;}
 </style>
 </head>
 <body>
@@ -183,6 +196,7 @@
     <h1>Trazabilidad de OC y Tránsitos</h1>
     <div class="sub">SEGUIRE · Dirección Nacional de Logística — CEDIS Panamá</div>
   </div>
+  <button id="btnTutorial" type="button" style="margin-left:auto;background:#fff;color:var(--azul);font-weight:700;border:none;border-radius:4px;padding:7px 14px;cursor:pointer;font-size:12px;">▶ Ver tutorial guiado</button>
 </header>
 
 <div class="wrap">
@@ -384,6 +398,21 @@
     </div>
   </div>
 
+</div>
+
+<div id="tourOverlay" style="display:none;">
+  <div id="tourBackdrop"></div>
+  <div id="tourBox">
+    <div id="tourTitulo"></div>
+    <div id="tourTexto"></div>
+    <div id="tourNav">
+      <span id="tourPaso"></span>
+      <span class="sep"></span>
+      <button id="tourSkip" type="button">Saltar</button>
+      <button id="tourPrev" type="button">◂ Atrás</button>
+      <button id="tourNext" type="button">Siguiente ▸</button>
+    </div>
+  </div>
 </div>
 
 <div class="modal-ov" id="modalConfirm">
@@ -1701,6 +1730,81 @@ function aplicarLimpiezaDup(){
   s.onerror=()=>setMsg($('estadoGuardar'),'err','No se pudo conectar para eliminar duplicados.');
   document.body.appendChild(s);
 }
+
+/* ====== TUTORIAL GUIADO ======
+   Mismo patrón del dashboard de reposición: overlay + spotlight + caja que avanza.
+   Algunos pasos preparan el estado (abrir un documento en edición) para mostrar campos. */
+var TOUR_STEPS = [
+  { sel:'#kpis', tit:'1. Resumen general', txt:'Estas tarjetas le muestran, de un vistazo, cuántas Órdenes de Compra, Solicitudes de Entrega y Notas de Adelanto hay en tránsito, cuántas están pendientes y cuántas vencen pronto.' },
+  { sel:'#dropzone', tit:'2. Cargar un documento', txt:'Arrastre aquí el PDF de una Orden de Compra, Solicitud de Entrega o Nota de Adelanto (o haga clic para elegirlo). El sistema lee el documento automáticamente y extrae sus datos.' },
+  { sel:'#tipoDoc', tit:'3. Indique el tipo', txt:'Antes de cargar, elija qué tipo de documento es. Esto ayuda al reconocimiento a interpretarlo correctamente.' },
+  { sel:'#planificadorSel', tit:'4. Su nombre', txt:'Seleccione su nombre como planificador. Así queda registrado quién dio de alta cada documento.' },
+  { sel:'#fBuscar', tit:'5. Buscar', txt:'Escriba un número de OC, un renglón, un proveedor o parte de la descripción para encontrar un documento sin recorrer toda la lista.' },
+  { sel:'#fPlanif', tit:'6. Filtrar por planificador', txt:'Puede filtrar la lista para ver solo los documentos de un planificador. También hay filtros por tipo, estado y rango de fechas.' },
+  { sel:'#tarjetas', tit:'7. Las tarjetas de documento', txt:'Cada documento aparece como una tarjeta. Arriba, el número de Orden de Compra (lo trazable) y la fecha más urgente. La franja de color muestra las cifras clave, y abajo el detalle.', prep:'lista' },
+  { sel:'#tarjetas .tj-acc', tit:'8. Acciones', txt:'En cada tarjeta puede Editar los datos, Ver el PDF original, y Notificar al proveedor para avisarle que retire. Si ya lo notificó, podrá revertir la notificación en caso de error.', prep:'lista' },
+  { sel:'#btnExcel', tit:'9. Descargar Excel', txt:'Genera un reporte en Excel con todos los tránsitos, para revisarlo o compartirlo.' },
+  { sel:'#toggleGraficos', tit:'10. Análisis visual', txt:'Los gráficos de arriba resumen la carga por urgencia y por planificador. Puede ocultarlos con este botón si desea más espacio para la lista.' }
+];
+var TOUR_I = 0;
+
+function tourPrepararLista(){
+  // asegura que haya al menos una tarjeta visible; si no, no pasa nada
+  return;
+}
+function iniciarTour(){
+  TOUR_I = 0;
+  $('tourOverlay').style.display='block';
+  setTimeout(function(){ mostrarPasoTour(); }, 200);
+}
+function cerrarTour(){
+  $('tourOverlay').style.display='none';
+  var sp=document.querySelector('.tour-spot'); if(sp) sp.remove();
+}
+function mostrarPasoTour(){
+  var step = TOUR_STEPS[TOUR_I];
+  if(!step){ cerrarTour(); return; }
+  if (step.prep==='lista') tourPrepararLista();
+  setTimeout(function(){ posicionarTour(step); }, step.prep? 150 : 0);
+}
+function posicionarTour(step){
+  var target = document.querySelector(step.sel);
+  var box = $('tourBox');
+  var sp = document.querySelector('.tour-spot');
+  if(!sp){ sp=document.createElement('div'); sp.className='tour-spot'; $('tourOverlay').appendChild(sp); }
+  if (target){
+    target.scrollIntoView({block:'center', behavior:'smooth'});
+    setTimeout(function(){
+      var r = target.getBoundingClientRect();
+      sp.style.top=(r.top-6)+'px'; sp.style.left=(r.left-6)+'px';
+      sp.style.width=(r.width+12)+'px'; sp.style.height=(r.height+12)+'px';
+      sp.style.display='block';
+      box.style.transform='none';
+      var bh=box.offsetHeight||160, bw=box.offsetWidth||340;
+      var top = r.bottom+14; if (top+bh > window.innerHeight-10) top = Math.max(10, r.top-bh-14);
+      var left = Math.min(Math.max(10, r.left), window.innerWidth-bw-10);
+      box.style.top=top+'px'; box.style.left=left+'px';
+    }, 300);
+  } else {
+    sp.style.display='none';
+    box.style.top='50%'; box.style.left='50%'; box.style.transform='translate(-50%,-50%)';
+  }
+  $('tourTitulo').textContent = step.tit;
+  $('tourTexto').textContent = step.txt;
+  $('tourPaso').textContent = 'Paso '+(TOUR_I+1)+' de '+TOUR_STEPS.length;
+  $('tourPrev').style.visibility = TOUR_I===0 ? 'hidden' : 'visible';
+  $('tourNext').textContent = TOUR_I===TOUR_STEPS.length-1 ? 'Terminar' : 'Siguiente ▸';
+}
+(function(){
+  var b=$('btnTutorial'); if(b) b.addEventListener('click', iniciarTour);
+  var n=$('tourNext'); if(n) n.addEventListener('click', function(){
+    if(TOUR_I>=TOUR_STEPS.length-1){ cerrarTour(); return; }
+    TOUR_I++; mostrarPasoTour();
+  });
+  var p=$('tourPrev'); if(p) p.addEventListener('click', function(){ if(TOUR_I>0){ TOUR_I--; mostrarPasoTour(); } });
+  var s=$('tourSkip'); if(s) s.addEventListener('click', cerrarTour);
+  window.addEventListener('resize', function(){ if($('tourOverlay').style.display==='block') posicionarTour(TOUR_STEPS[TOUR_I]); });
+})();
 
 /* ====== INICIO ====== */
 cargarTransitos();
