@@ -131,6 +131,16 @@
   .btn-mes{padding:1px 8px;font-size:13px;border:1px solid var(--linea);background:#fff;border-radius:3px;cursor:pointer;color:var(--azul);}
   .btn-mes:hover{background:#f0f6fc;}
   .mes-rango{font-size:11px;color:#555;font-family:Consolas,monospace;min-width:90px;text-align:center;}
+  /* Modal institucional */
+  .modal-ov{position:fixed;inset:0;background:rgba(12,68,124,.35);display:none;align-items:center;justify-content:center;z-index:200;}
+  .modal-ov.activo{display:flex;}
+  .modal-bx{background:#fff;border-radius:6px;max-width:460px;width:92%;box-shadow:0 8px 30px rgba(0,0,0,.25);overflow:hidden;border-top:4px solid var(--azul);}
+  .modal-bx.peligro{border-top-color:#c0392b;}
+  .modal-hd{padding:14px 20px 6px;font-size:15px;font-weight:600;color:var(--azul);font-family:'Segoe UI',Arial,sans-serif;}
+  .modal-bx.peligro .modal-hd{color:#c0392b;}
+  .modal-bd{padding:6px 20px 16px;font-size:13px;color:#444;line-height:1.5;}
+  .modal-bd b{color:#0C447C;font-family:Consolas,monospace;}
+  .modal-ft{padding:12px 20px;background:#f4f8fc;display:flex;justify-content:flex-end;gap:8px;border-top:1px solid #e2e9f0;}
   /* Combo predictivo de planificador (estilo institucional) */
   .combo-lista{position:absolute;top:100%;left:0;right:0;z-index:60;background:#fff;border:1px solid var(--azul);border-top:none;border-radius:0 0 4px 4px;max-height:220px;overflow-y:auto;box-shadow:0 4px 10px rgba(12,68,124,.15);}
   .combo-item{padding:8px 12px;font-size:13px;color:#333;cursor:pointer;border-bottom:1px solid #eef2f6;}
@@ -359,6 +369,7 @@
             <button class="btn btn-sec mini" id="btnOrdenDir" type="button" title="Invertir orden">▲</button>
             <button class="btn btn-sec" id="btnExcel" type="button" title="Descargar Excel institucional">⬇ Excel</button>
             <button class="btn btn-sec" id="btnRefrescar" type="button">↻ Refrescar</button>
+            <button class="btn btn-sec" id="btnLimpiar" type="button" title="Limpiar todos los filtros">✕ Limpiar</button>
           </div>
         </div>
       </div>
@@ -369,7 +380,39 @@
 
 </div>
 
+<div class="modal-ov" id="modalConfirm">
+  <div class="modal-bx" id="modalBox">
+    <div class="modal-hd" id="modalTit">Confirmar</div>
+    <div class="modal-bd" id="modalMsg"></div>
+    <div class="modal-ft">
+      <button class="btn btn-sec" id="modalNo" type="button">Cancelar</button>
+      <button class="btn" id="modalSi" type="button">Confirmar</button>
+    </div>
+  </div>
+</div>
+
 <script>
+/* Modal de confirmación institucional (reemplaza confirm() nativo). Devuelve Promise<boolean>. */
+function modalConfirm(opts){
+  opts=opts||{};
+  return new Promise(function(resolve){
+    var ov=$('modalConfirm'), box=$('modalBox');
+    $('modalTit').textContent=opts.titulo||'Confirmar';
+    $('modalMsg').innerHTML=opts.mensaje||'';
+    $('modalSi').textContent=opts.textoOK||'Confirmar';
+    box.className='modal-bx'+(opts.peligro?' peligro':'');
+    ov.classList.add('activo');
+    function cerrar(val){
+      ov.classList.remove('activo');
+      $('modalSi').onclick=null; $('modalNo').onclick=null; ov.onclick=null;
+      resolve(val);
+    }
+    $('modalSi').onclick=function(){ cerrar(true); };
+    $('modalNo').onclick=function(){ cerrar(false); };
+    ov.onclick=function(e){ if(e.target===ov) cerrar(false); };
+  });
+}
+
 /* ====== CONFIGURACIÓN ======
    Dos backends sobre la MISMA hoja TRANSITOS_OC:
    - API_SEGUIRE: extracción (Gemini), guardado y listados. (backend de SEGUIRE)
@@ -542,15 +585,16 @@ function filaRenglon(r, confR){
     if(c && dmap.hasOwnProperty(c)) dmap[c]=(d.cantidad!=null&&d.cantidad!=='')?d.cantidad:'';
   });
   var _colPU = '<div><label>Precio unit. (B/.)</label><input type="number" step="0.0001" data-f="precio_unitario" value="'+esc(r.precio_unitario||'')+'"></div>';
-  var _grid = '1fr 2fr .7fr .7fr .7fr .7fr';
+  var _grid = '1fr 1fr 2fr .8fr .8fr .8fr auto';
   div.innerHTML=
     '<div class="reng-campos" style="grid-template-columns:'+_grid+';">'+
       '<div><label>Cód. Abasto'+marca+'</label><input type="text" data-f="cod_abasto" value="'+esc(r.cod_abasto||'')+'"></div>'+
+      '<div><label>Cód. SAP</label><input type="text" data-f="cod_sap" value="'+esc(r.cod_sap||'')+'"></div>'+
       '<div><label>Descripción</label><input type="text" data-f="descripcion" value="'+esc(r.descripcion||'')+'"></div>'+
       '<div><label>Cantidad total</label><input type="number" data-f="cantidad" value="'+esc(r.cantidad||'')+'"></div>'+
-      '<div><label>Monto (B/.)</label><input type="number" step="0.01" data-f="monto" value="'+esc(r.monto||'')+'"></div>'+
       _colPU+
-      '<div style="display:flex;gap:6px;align-items:end;"><div style="flex:1;"><label>Cód. SAP</label><input type="text" data-f="cod_sap" value="'+esc(r.cod_sap||'')+'"></div><button class="btn btn-sec mini" type="button" onclick="this.closest(\'.reng-edit\').remove()" style="height:32px;">✕</button></div>'+
+      '<div><label>Monto (B/.)</label><input type="number" step="0.01" data-f="monto" value="'+esc(r.monto||'')+'"></div>'+
+      '<div style="display:flex;align-items:end;"><button class="btn btn-sec mini" type="button" onclick="this.closest(\'.reng-edit\').remove()" style="height:32px;">✕</button></div>'+
     '</div>'+
     '<div class="reng-cedis">'+
       '<div class="reng-cedis-tit">Reparto por CEDI <span style="font-weight:400;color:#888;">(deje en blanco si la entrega es a un solo CEDI; complete dos o más para segregar)</span></div>'+
@@ -664,16 +708,16 @@ function filaRenglonEdicion(f){
   div.className='reng-edit';
   div.setAttribute('data-fila-id', f.id);
   var _colPU = '<div><label>Precio unit. (B/.)</label><input type="number" step="0.0001" data-f="precio_unitario" value="'+esc(f.precio_unitario||'')+'"></div>';
-  var _grid = '1fr 2fr .7fr .7fr .7fr .7fr';
+  var _grid = '1fr 1fr 2fr .8fr .8fr .8fr';
   div.innerHTML=
     '<div style="font-size:11.5px;font-weight:600;color:#0C447C;margin-bottom:6px;">CEDI: '+esc(f.cedi||'—')+'</div>'+
     '<div class="reng-campos" style="grid-template-columns:'+_grid+';">'+
       '<div><label>Cód. Abasto</label><input type="text" data-f="cod_abasto" value="'+esc(f.cod_abasto||'')+'"></div>'+
+      '<div><label>Cód. SAP</label><input type="text" data-f="cod_sap" value="'+esc(f.cod_sap||'')+'"></div>'+
       '<div><label>Descripción</label><input type="text" data-f="descripcion" value="'+esc(f.descripcion||'')+'"></div>'+
       '<div><label>Cantidad</label><input type="number" data-f="cantidad" value="'+esc(f.cantidad||'')+'"></div>'+
-      '<div><label>Monto (B/.)</label><input type="number" step="0.01" data-f="monto" value="'+esc(f.monto||'')+'"></div>'+
       _colPU+
-      '<div><label>Cód. SAP</label><input type="text" data-f="cod_sap" value="'+esc(f.cod_sap||'')+'"></div>'+
+      '<div><label>Monto (B/.)</label><input type="number" step="0.01" data-f="monto" value="'+esc(f.monto||'')+'"></div>'+
     '</div>';
   return div;
 }
@@ -690,8 +734,15 @@ function eliminarDocumento(nDoc, estado){
     if(motivo===null) return;
     if(!motivo.trim()){ alert('Debe indicar un motivo para anular un tránsito notificado.'); return; }
   } else {
-    if(!confirm('Se eliminarán TODAS las filas del documento:\n\n'+nDoc+'\n\n('+filas+' renglón/es). Esta acción no se puede deshacer.\n\n¿Continuar?')) return;
+    modalConfirm({
+      titulo:'Eliminar documento', peligro:true, textoOK:'Eliminar',
+      mensaje:'Se eliminarán TODAS las filas del documento:<br><br><b>'+esc(nDoc)+'</b><br><br>('+filas+' renglón/es). Esta acción no se puede deshacer.'
+    }).then(function(ok){ if(ok) _ejecutarEliminar(nDoc, motivo); });
+    return;
   }
+  _ejecutarEliminar(nDoc, motivo);
+}
+function _ejecutarEliminar(nDoc, motivo){
   postSiguelo('eliminarTransitoOC',{n_documento:nDoc, motivo:motivo})
     .then(function(j){
       if(j&&j.success){
@@ -716,11 +767,33 @@ function removerLocalDoc(nDoc){
   TRANSITOS=TRANSITOS.filter(function(t){ return String(t.n_documento||'').trim()!==String(nDoc).trim(); });
   renderTarjetas(); renderKPIs();
 }
+/* Aplica los cambios de edición en memoria, fila por fila (por id), sin recargar del server.
+   Esto evita la latencia de "borrar y recargar todo" (patrón de panel_confirmacion). */
+function actualizarLocalFilas(cargas){
+  (cargas||[]).forEach(function(c){
+    var i=TRANSITOS.findIndex(function(t){ return String(t.id)===String(c.id); });
+    if(i>=0){
+      var cambios={};
+      Object.keys(c).forEach(function(k){
+        if(k==='id'||k==='motivo') return;
+        cambios[k]=c[k];
+      });
+      TRANSITOS[i]=Object.assign({}, TRANSITOS[i], cambios);
+    }
+  });
+  renderTarjetas(); renderKPIs();
+  renderGraficoRico(); renderGraficoPlanif();
+}
 
 /* ====== NOTIFICAR AL PROVEEDOR ====== */
 function notificarProveedor(nDoc, btn){
   if(!nDoc) return;
-  if(!confirm('Se enviará un correo al proveedor informándole que tiene esta solicitud de entrega disponible para agendar su cita.\n\nDocumento: '+nDoc+'\n\n¿Enviar la notificación?')) return;
+  modalConfirm({
+    titulo:'Notificar al proveedor', textoOK:'Enviar notificación',
+    mensaje:'Se enviará un correo al proveedor informándole que tiene este documento disponible para retiro y agendamiento de cita.<br><br>Documento: <b>'+esc(nDoc)+'</b>'
+  }).then(function(ok){ if(ok) _ejecutarNotificar(nDoc, btn); });
+}
+function _ejecutarNotificar(nDoc, btn){
   if(btn){ btn.disabled=true; btn.textContent='Enviando…'; }
   postSiguelo('notificarTransitoProveedor',{n_documento:nDoc, usuario:($('planificador').value.trim()||'Torre de Control')})
     .then(function(j){
@@ -791,7 +864,7 @@ $('btnGuardar').addEventListener('click',function(){
           setMsg($('estadoGuardar'),'ok',m);
           _editandoId=null; _editandoDoc=null; _editandoFilas=[]; btn.textContent='Guardar en tránsitos';
           restaurarPanel();
-          cargarTransitos();
+          actualizarLocalFilas(cargas);
         }
         return;
       }
@@ -1183,6 +1256,18 @@ $('btnExcel').addEventListener('click',function(){
 ['fBuscar','fTipo','fEstado','fVencDesde','fVencHasta','fOrden'].forEach(id=>$(id).addEventListener('input',renderTarjetas));
 $('btnOrdenDir').addEventListener('click',function(){ _ordenDir=!_ordenDir; this.textContent=_ordenDir?'▲':'▼'; renderTarjetas(); });
 $('btnRefrescar').addEventListener('click',cargarTransitos);
+$('btnLimpiar').addEventListener('click',function(){
+  $('fBuscar').value='';
+  $('fVencDesde').value='';
+  $('fVencHasta').value='';
+  $('fTipo').value='';
+  $('fEstado').value='';
+  if($('fOrden')) $('fOrden').selectedIndex=0;
+  _mesPanorama=null; if($('mesRangoP')) $('mesRangoP').textContent='Todos';
+  _mesPlanif=null; if($('mesRangoG')) $('mesRangoG').textContent='Todos';
+  renderTarjetas(); renderKPIs();
+  renderGraficoRico(); renderGraficoPlanif();
+});
 // Menú de mantenimiento (discreto)
 $('btnMantenimiento').addEventListener('click',function(e){
   e.stopPropagation();
