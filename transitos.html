@@ -875,6 +875,39 @@ function _ejecutarNotificar(nDoc, btn){
     }).catch(function(err){ setMsg($('estadoGuardar'),'err','Error de red: '+err); if(btn){ btn.disabled=false; btn.textContent='Notificar al proveedor'; } });
 }
 
+/* ====== CITA TOMADA (cierre manual del ciclo por el planificador) ====== */
+function marcarCitaTomada(nDoc){
+  if(!nDoc) return;
+  modalConfirm({
+    titulo:'Marcar cita tomada', textoOK:'Sí, ya tiene cita',
+    mensaje:'Confirme que el proveedor <b>ya solicitó su cita de entrega</b> para este documento.<br><br>El documento pasará a <b>AGENDADA</b> y dejará de mostrarse como disponible en el formulario de solicitud de citas.<br><br>Documento: <b>'+esc(nDoc)+'</b>'
+  }).then(function(ok){ if(!ok) return;
+    postSiguelo('marcarCitaTomadaTransito',{n_documento:nDoc})
+      .then(function(j){
+        if(j&&j.success){
+          if(j.ya_agendada){ setMsg($('estadoGuardar'),'ok','Este documento ya estaba en estado AGENDADA.'); }
+          else { setMsg($('estadoGuardar'),'ok','Cita registrada. El documento '+esc(nDoc)+' pasó a AGENDADA.'); }
+          actualizarLocalDoc(nDoc,{ estado_transito:'AGENDADA' });
+        } else { setMsg($('estadoGuardar'),'err','No se pudo marcar: '+((j&&j.error)||'error')); }
+      }).catch(function(err){ setMsg($('estadoGuardar'),'err','Error de red: '+err); });
+  });
+}
+function revertirCitaTomada(nDoc){
+  if(!nDoc) return;
+  modalConfirm({
+    titulo:'Revertir cita tomada', peligro:true, textoOK:'Revertir',
+    mensaje:'El documento saldrá del estado AGENDADA y volverá a su estado anterior (NOTIFICADA si ya se había notificado, o EMITIDA en caso contrario).<br><br>Documento: <b>'+esc(nDoc)+'</b>'
+  }).then(function(ok){ if(!ok) return;
+    postSiguelo('revertirCitaTomadaTransito',{n_documento:nDoc})
+      .then(function(j){
+        if(j&&j.success){
+          setMsg($('estadoGuardar'),'ok','Cita revertida. El documento '+esc(nDoc)+' volvió a '+esc(j.estado)+'.');
+          actualizarLocalDoc(nDoc,{ estado_transito:j.estado });
+        } else { setMsg($('estadoGuardar'),'err','No se pudo revertir: '+((j&&j.error)||'error')); }
+      }).catch(function(err){ setMsg($('estadoGuardar'),'err','Error de red: '+err); });
+  });
+}
+
 /* ====== GUARDAR ====== */
 $('btnGuardar').addEventListener('click',function(){
   const renglones=[...$('renglones').querySelectorAll('.reng-edit')].map(div=>{
@@ -1111,18 +1144,21 @@ function tarjetaDoc(g){
   var btnPDF = t.archivo_url ? '<a class="btn btn-sec mini" href="'+esc(t.archivo_url)+'" target="_blank" style="text-decoration:none;">Ver PDF</a>' : '';
   let acc='';
   if(est==='AGENDADA'){
-    acc=btnPDF+'<span style="font-size:11px;color:#888;margin-left:8px;">Bloqueado: ya existe cita en firme</span>';
+    acc=btnPDF+
+        '<span style="font-size:11px;color:#888;margin-left:8px;">Bloqueado: ya existe cita en firme</span>'+
+        '<button class="btn btn-sec mini" style="margin-left:auto;" onclick="revertirCitaTomada(\''+esc(g.doc)+'\')">↩ Revertir cita</button>';
   } else if(est==='NOTIFICADA'){
     acc='<button class="btn btn-sec mini" onclick="editarTransito(\''+esc(idG)+'\')">Editar <span style="font-size:9.5px;color:#888;">(reenvía aviso)</span></button>'+
         '<button class="btn btn-sec mini" onclick="revertirNotificacion(\''+esc(g.doc)+'\')">↩ Revertir notificación</button>'+
         '<button class="btn btn-peligro mini" onclick="eliminarDocumento(\''+esc(g.doc)+'\',\'NOTIFICADA\')">Anular <span style="font-size:9.5px;">(avisa)</span></button>'+
         btnPDF+
-        '<span style="font-size:11px;color:#0F6E56;margin-left:auto;">✓ Notificado</span>';
+        '<button class="btn mini" style="margin-left:auto;" onclick="marcarCitaTomada(\''+esc(g.doc)+'\')">✓ Cita tomada</button>';
   } else {
     acc='<button class="btn btn-sec mini" onclick="editarTransito(\''+esc(idG)+'\')">Editar</button>'+
         '<button class="btn btn-peligro mini" onclick="eliminarDocumento(\''+esc(g.doc)+'\',\'EMITIDA\')">Eliminar</button>'+
         btnPDF+
-        '<button class="btn mini" style="margin-left:auto;" onclick="notificarProveedor(\''+esc(g.doc)+'\',this)">✉ Notificar al proveedor</button>';
+        '<button class="btn btn-sec mini" style="margin-left:auto;" onclick="marcarCitaTomada(\''+esc(g.doc)+'\')">✓ Cita tomada</button>'+
+        '<button class="btn mini" onclick="notificarProveedor(\''+esc(g.doc)+'\',this)">✉ Notificar al proveedor</button>';
   }
 
   const tc=tipoColor(tipo);
