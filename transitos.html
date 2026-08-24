@@ -506,6 +506,10 @@ function procesarArchivo(file){
 }
 
 function extraerConIA(tipoElegido){
+  // Una carga NUEVA nunca es una edición: limpiar el modo edición para que el
+  // guardado vaya SIEMPRE por la rama de alta (guardarTransito), no por editarTransitoOC.
+  _editandoId=null; _editandoDoc=null; _editandoFilas=[];
+  if($('btnGuardar')) $('btnGuardar').textContent='Guardar en tránsitos';
   setMsg($('estadoCarga'),'info','<span class="spinner"></span>Transcribiendo documento mediante algoritmo de reconocimiento… unos segundos.');
   const cb='cbExtraer'+Date.now();
   window[cb]=function(resp){
