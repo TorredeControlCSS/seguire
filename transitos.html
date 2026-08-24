@@ -1818,6 +1818,8 @@ function posicionarTour(step){
       box.style.transform='none';
       var bh=box.offsetHeight||160, bw=box.offsetWidth||340;
       var top = r.bottom+14; if (top+bh > window.innerHeight-10) top = Math.max(10, r.top-bh-14);
+      // Clamp final: la caja (y su botón Siguiente) SIEMPRE debe quedar dentro del viewport.
+      top = Math.min(Math.max(10, top), Math.max(10, window.innerHeight-bh-10));
       var left = Math.min(Math.max(10, r.left), window.innerWidth-bw-10);
       box.style.top=top+'px'; box.style.left=left+'px';
     }, 300);
