@@ -198,7 +198,11 @@
   </div>
 
   <!-- Dos gráficos lado a lado: panorama + planificadores -->
-  <div class="graf-fila">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+    <span style="font-size:12px;font-weight:600;color:#0C447C;">Análisis visual</span>
+    <button class="btn btn-sec" id="toggleGraficos" type="button" style="font-size:11px;padding:3px 10px;font-weight:400;">▲ Ocultar gráficos</button>
+  </div>
+  <div class="graf-fila" id="grafFila">
     <!-- Panorama -->
     <div class="graf-wrap">
       <div class="graf-head">
@@ -313,15 +317,8 @@
 
   <!-- PASO 3: Tarjetas -->
   <div class="panel">
-    <div class="panel-h" style="display:flex;align-items:center;justify-content:space-between;">
+    <div class="panel-h">
       <span>Órdenes en tránsito (visibilidad anticipada)</span>
-      <span style="position:relative;">
-        <button class="btn btn-sec" id="btnMantenimiento" type="button" style="font-size:11px;padding:4px 10px;font-weight:400;" title="Herramientas de mantenimiento de datos">⚙ Mantenimiento ▾</button>
-        <div id="menuMant" style="display:none;position:absolute;right:0;top:32px;background:#fff;border:1px solid var(--linea);border-radius:4px;box-shadow:0 2px 8px rgba(0,0,0,.12);z-index:20;min-width:210px;">
-          <button class="btn-menu-item" id="btnCorregirFechas" type="button">⚑ Corregir años en fechas</button>
-          <button class="btn-menu-item" id="btnLimpiarDup" type="button">⚑ Limpiar duplicados</button>
-        </div>
-      </span>
     </div>
     <div class="panel-b">
       <div class="filtros">
@@ -353,6 +350,10 @@
             <option value="AGENDADA">Agendada</option>
             <option value="REVISAR">Por revisar</option>
           </select>
+        </div>
+        <div class="campo">
+          <label>Planificador</label>
+          <select id="fPlanif"><option value="">Todos</option></select>
         </div>
         <div class="campo">
           <label>Ordenar por</label>
@@ -786,6 +787,24 @@ function actualizarLocalFilas(cargas){
 }
 
 /* ====== NOTIFICAR AL PROVEEDOR ====== */
+function revertirNotificacion(nDoc){
+  if(!nDoc) return;
+  modalConfirm({
+    titulo:'Revertir notificación', peligro:true, textoOK:'Revertir y avisar',
+    mensaje:'El documento volverá a estado EMITIDA y se enviará un correo de <b>rectificación</b> al proveedor indicándole que ignore la notificación anterior.<br><br>Documento: <b>'+esc(nDoc)+'</b>'
+  }).then(function(ok){ if(!ok) return;
+    postSiguelo('revertirNotificacionTransito',{n_documento:nDoc, usuario:($('planificador').value.trim()||'Torre de Control')})
+      .then(function(j){
+        if(j&&j.success){
+          var m='Notificación revertida. El documento volvió a EMITIDA.';
+          if(j.correo_rectificacion==='enviado') m+=' Correo de rectificación enviado al proveedor.';
+          setMsg($('estadoGuardar'),'ok',m);
+          actualizarLocalDoc(nDoc,{ estado_transito:'EMITIDA', notificado_en:'', notificado_por:'' });
+        } else { setMsg($('estadoGuardar'),'err','No se pudo revertir: '+((j&&j.error)||'error')); }
+      }).catch(function(err){ setMsg($('estadoGuardar'),'err','Error de red: '+err); });
+  });
+}
+
 function notificarProveedor(nDoc, btn){
   if(!nDoc) return;
   modalConfirm({
@@ -1043,6 +1062,7 @@ function tarjetaDoc(g){
     acc=btnPDF+'<span style="font-size:11px;color:#888;margin-left:8px;">Bloqueado: ya existe cita en firme</span>';
   } else if(est==='NOTIFICADA'){
     acc='<button class="btn btn-sec mini" onclick="editarTransito(\''+esc(idG)+'\')">Editar <span style="font-size:9.5px;color:#888;">(reenvía aviso)</span></button>'+
+        '<button class="btn btn-sec mini" onclick="revertirNotificacion(\''+esc(g.doc)+'\')">↩ Revertir notificación</button>'+
         '<button class="btn btn-peligro mini" onclick="eliminarDocumento(\''+esc(g.doc)+'\',\'NOTIFICADA\')">Anular <span style="font-size:9.5px;">(avisa)</span></button>'+
         btnPDF+
         '<span style="font-size:11px;color:#0F6E56;margin-left:auto;">✓ Notificado</span>';
@@ -1120,6 +1140,7 @@ function tarjetaDoc(g){
       celda('Solicitud de Entrega', t.n_documento)+
       celda('Emisión', t.fecha_emision)+
       celda('Término entrega', t.termino_entrega)+
+      celda('Precio unitario', (t.precio_unitario!=null&&t.precio_unitario!==''?('B/.'+fmtNum(t.precio_unitario)):'—'))+
       celda('Total consolidado', fmtNum(g.cantTotal)+' und'+(g.montoTotal>0?(' · B/.'+fmtNum(Math.round(g.montoTotal*100)/100)):''))+
       celda('Planificador', t.planificador);
   }
@@ -1144,9 +1165,11 @@ function aplicarFiltros(arr){
   const q=$('fBuscar').value.toLowerCase().trim();
   const ft=$('fTipo').value, fe=$('fEstado').value;
   const fd=$('fVencDesde').value, fh=$('fVencHasta').value;
+  const fp=$('fPlanif')?$('fPlanif').value:'';
   return arr.filter(t=>{
     if(ft && t.tipo!==ft) return false;
     if(fe && String(t.estado_transito||'').toUpperCase()!==fe) return false;
+    if(fp && String(t.planificador||'').trim()!==fp) return false;
     const fv=String(t.vencimiento_entrega||t.vencimiento_oc||'').slice(0,10);
     if(fd && (!fv || fv<fd)) return false;
     if(fh && (!fv || fv>fh)) return false;
@@ -1258,7 +1281,7 @@ $('btnExcel').addEventListener('click',function(){
 });
 
 /* ====== FILTROS Y CONTROLES ====== */
-['fBuscar','fTipo','fEstado','fVencDesde','fVencHasta','fOrden'].forEach(id=>$(id).addEventListener('input',renderTarjetas));
+['fBuscar','fTipo','fEstado','fPlanif','fVencDesde','fVencHasta','fOrden'].forEach(id=>{var el=$(id); if(el) el.addEventListener('input',renderTarjetas);});
 $('btnOrdenDir').addEventListener('click',function(){ _ordenDir=!_ordenDir; this.textContent=_ordenDir?'▲':'▼'; renderTarjetas(); });
 $('btnRefrescar').addEventListener('click',cargarTransitos);
 $('btnLimpiar').addEventListener('click',function(){
@@ -1267,6 +1290,7 @@ $('btnLimpiar').addEventListener('click',function(){
   $('fVencHasta').value='';
   $('fTipo').value='';
   $('fEstado').value='';
+  if($('fPlanif')) $('fPlanif').value='';
   if($('fOrden')) $('fOrden').selectedIndex=0;
   _mesPanorama=null; if($('mesRangoP')) $('mesRangoP').textContent='Todos';
   _mesPlanif=null; if($('mesRangoG')) $('mesRangoG').textContent='Todos';
@@ -1274,7 +1298,7 @@ $('btnLimpiar').addEventListener('click',function(){
   renderGraficoRico(); renderGraficoPlanif();
 });
 // Menú de mantenimiento (discreto)
-$('btnMantenimiento').addEventListener('click',function(e){
+if($('btnMantenimiento')) $('btnMantenimiento').addEventListener('click',function(e){
   e.stopPropagation();
   const m=$('menuMant'); m.style.display=(m.style.display==='none'?'block':'none');
 });
@@ -1288,6 +1312,13 @@ function cargarAnalistas(){
     try{ delete window[cb]; }catch(e){}
     const lista=(resp&&resp.planificadores)?resp.planificadores:[];
     _ANALISTAS=lista;
+    var fp=$('fPlanif');
+    if(fp){
+      var cur=fp.value;
+      fp.innerHTML=['<option value="">Todos</option>']
+        .concat(lista.map(function(a){return '<option value="'+esc(a.nombre)+'">'+esc(a.nombre)+'</option>';})).join('');
+      fp.value=cur;
+    }
     const sel=$('planificadorSel');
     if(sel){
       const opts=['<option value="">— Planificador —</option>']
@@ -1522,13 +1553,18 @@ function _navMes(cual, dir){
   if(cual==='P'){ _mesPanorama=nuevo; $('mesRangoP').textContent=_nombreMes(nuevo); renderGraficoRico(); }
   else { _mesPlanif=nuevo; $('mesRangoG').textContent=_nombreMes(nuevo); renderGraficoPlanif(); }
 }
+if($('toggleGraficos')) $('toggleGraficos').addEventListener('click',function(){
+  var f=$('grafFila'); if(!f) return;
+  if(f.style.display==='none'){ f.style.display='grid'; this.textContent='▲ Ocultar gráficos'; renderGraficoRico(); renderGraficoPlanif(); }
+  else { f.style.display='none'; this.textContent='▼ Mostrar gráficos'; }
+});
 if($('mesPrevP')) $('mesPrevP').addEventListener('click',function(){_navMes('P',-1);});
 if($('mesNextP')) $('mesNextP').addEventListener('click',function(){_navMes('P',1);});
 if($('mesPrevG')) $('mesPrevG').addEventListener('click',function(){_navMes('G',-1);});
 if($('mesNextG')) $('mesNextG').addEventListener('click',function(){_navMes('G',1);});
 
 /* ====== CORRECCIÓN DE FECHAS (simular / aplicar con reporte legible) ====== */
-$('btnCorregirFechas').addEventListener('click',function(){
+if($('btnCorregirFechas')) $('btnCorregirFechas').addEventListener('click',function(){
   setMsg($('estadoGuardar'),'info','<span class="spinner"></span>Analizando fechas cargadas…');
   const cb='cbSim'+Date.now();
   window[cb]=function(resp){
@@ -1588,7 +1624,7 @@ function aplicarCorreccionFechas(){
 }
 
 /* ====== LIMPIAR DUPLICADOS (simular / aplicar con reporte) ====== */
-$('btnLimpiarDup').addEventListener('click',function(){
+if($('btnLimpiarDup')) $('btnLimpiarDup').addEventListener('click',function(){
   setMsg($('estadoGuardar'),'info','<span class="spinner"></span>Analizando duplicados…');
   const cb='cbDupSim'+Date.now();
   window[cb]=function(resp){
