@@ -993,6 +993,7 @@ $('btnGuardar').addEventListener('click',function(){
     termino_entrega:$('rTermino').value.trim(),
     analista:$('rAnalista').value.trim(),
     planificador:$('planificador').value.trim(),
+    n_orden_compra:($('rOC')?$('rOC').value.trim():''),
     fecha_publicacion_oc:(_extraido&&_extraido.fecha_publicacion_oc)||'',
     termino_entrega_oc:(_extraido&&_extraido.termino_entrega_oc)||'',
     licitacion:(_extraido&&_extraido.licitacion)||'',
@@ -1028,6 +1029,7 @@ function cargarTransitos(){
   window[cb]=function(resp){
     try{ delete window[cb]; }catch(e){}
     TRANSITOS=(resp&&resp.transitos)?resp.transitos:[];
+    if(typeof poblarSelectoresPlanif==='function') poblarSelectoresPlanif();
     renderTarjetas(); renderKPIs();
   };
   const s=document.createElement('script');
@@ -1394,27 +1396,51 @@ if($('btnMantenimiento')) $('btnMantenimiento').addEventListener('click',functio
 document.addEventListener('click',function(){ const m=$('menuMant'); if(m) m.style.display='none'; });
 
 /* ====== CARGAR PLANIFICADORES ====== */
-var _ANALISTAS=[]; // lista global para el combo predictivo
+var _ANALISTAS=[]; // lista global (padrón de la hoja ANALISTAS) para el combo predictivo
+
+/* Une el padrón de la hoja ANALISTAS con los planificadores que YA aparecen en
+   documentos cargados (TRANSITOS). Así un colaborador nuevo que subió documentos
+   nunca queda invisible en el filtro, aunque no esté en la hoja y sin intervención. */
+function _nombresPlanificadores(){
+  var mapa={}; // clave en minúscula -> nombre a mostrar
+  (_ANALISTAS||[]).forEach(function(a){
+    var n=String((a&&a.nombre)||'').trim(); if(n) mapa[n.toLowerCase()]=n;
+  });
+  (typeof TRANSITOS!=='undefined'?TRANSITOS:[]).forEach(function(t){
+    var n=String((t&&t.planificador)||'').trim();
+    if(n && !mapa[n.toLowerCase()]) mapa[n.toLowerCase()]=n;
+  });
+  return Object.keys(mapa).map(function(k){return mapa[k];})
+    .sort(function(x,y){return x.localeCompare(y,'es');});
+}
+
+/* (Re)construye el filtro fPlanif y el selector planificadorSel con la lista unida.
+   Conserva la selección actual. Idempotente: se puede llamar varias veces. */
+function poblarSelectoresPlanif(){
+  var nombres=_nombresPlanificadores();
+  var fp=$('fPlanif');
+  if(fp){
+    var cur=fp.value;
+    fp.innerHTML=['<option value="">Todos</option>']
+      .concat(nombres.map(function(n){return '<option value="'+esc(n)+'">'+esc(n)+'</option>';})).join('');
+    fp.value=cur;
+  }
+  var sel=$('planificadorSel');
+  if(sel){
+    var curSel=sel.value;
+    sel.innerHTML=['<option value="">— Planificador —</option>']
+      .concat(nombres.map(function(n){return '<option value="'+esc(n)+'">'+esc(n)+'</option>';}))
+      .concat(['<option value="__OTRO__">Otro (escribir)</option>']).join('');
+    sel.value=curSel;
+  }
+}
+
 function cargarAnalistas(){
   const cb='cbAna'+Date.now();
   window[cb]=function(resp){
     try{ delete window[cb]; }catch(e){}
-    const lista=(resp&&resp.planificadores)?resp.planificadores:[];
-    _ANALISTAS=lista;
-    var fp=$('fPlanif');
-    if(fp){
-      var cur=fp.value;
-      fp.innerHTML=['<option value="">Todos</option>']
-        .concat(lista.map(function(a){return '<option value="'+esc(a.nombre)+'">'+esc(a.nombre)+'</option>';})).join('');
-      fp.value=cur;
-    }
-    const sel=$('planificadorSel');
-    if(sel){
-      const opts=['<option value="">— Planificador —</option>']
-        .concat(lista.map(a=>'<option value="'+esc(a.nombre)+'">'+esc(a.nombre)+'</option>'))
-        .concat(['<option value="__OTRO__">Otro (escribir)</option>']);
-      sel.innerHTML=opts.join('');
-    }
+    _ANALISTAS=(resp&&resp.planificadores)?resp.planificadores:[];
+    poblarSelectoresPlanif();
     renderGraficoPlanif();
   };
   const s=document.createElement('script');
