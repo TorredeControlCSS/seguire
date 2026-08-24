@@ -291,16 +291,16 @@
       </div>
       <div class="grid g3" style="margin-bottom:12px;">
         <div><label>Proveedor</label><input type="text" id="rProv"></div>
-        <div><label>Vencimiento OC (estampada)</label><input type="text" id="rVenc" placeholder="AAAA-MM-DD"></div>
-        <div><label>Vencimiento de entrega (operativa)</label><input type="text" id="rVencEnt" placeholder="AAAA-MM-DD"><div id="confVencEnt" style="font-size:11px;margin-top:3px;display:none;"></div></div>
+        <div id="wrapVencEnt"><label>Vencimiento de entrega (operativa)</label><input type="text" id="rVencEnt" placeholder="AAAA-MM-DD"><div id="confVencEnt" style="font-size:11px;margin-top:3px;display:none;"></div></div>
+        <div id="wrapTerminoInicio"><label>Término de entrega (inicio)</label><input type="text" id="rTermino" placeholder="Ej. 60 días calendarios"></div>
       </div>
       <div class="grid g3" style="margin-bottom:12px;" id="filaFechasOC">
         <div><label>Publicación O/C</label><input type="text" id="rPubOC" placeholder="AAAA-MM-DD"></div>
         <div><label>Fecha término de entrega O/C</label><input type="text" id="rTerminoOC" placeholder="AAAA-MM-DD"></div>
-        <div><label>Licitación</label><input type="text" id="rLicitacion" placeholder="N° de licitación"></div>
+        <div><label>Vencimiento O/C</label><input type="text" id="rVenc" placeholder="AAAA-MM-DD"></div>
       </div>
       <div class="grid g2" style="margin-bottom:12px;">
-        <div><label>Término de entrega (inicio)</label><input type="text" id="rTermino" placeholder="Ej. 60 días calendarios"></div>
+        <div id="wrapLicitacion"><label>Licitación</label><input type="text" id="rLicitacion" placeholder="N° de licitación"></div>
         <div>
           <label>Analista responsable</label>
           <div class="combo-wrap" style="position:relative;">
@@ -698,8 +698,14 @@ function editarTransito(id){
   if($('rPubOC')) $('rPubOC').value=ref.fecha_publicacion_oc||'';
   if($('rTerminoOC')) $('rTerminoOC').value=ref.termino_entrega_oc||'';
   if($('rLicitacion')) $('rLicitacion').value=ref.licitacion||'';
-  // Los campos de fecha O/C solo aplican a Órdenes de Compra
-  if($('filaFechasOC')) $('filaFechasOC').style.display=(String(ref.tipo||'').toUpperCase()==='ORDEN_COMPRA')?'grid':'none';
+  // Campos de fecha DINÁMICOS según el tipo de documento:
+  //  - OC: las 3 del pie (Publicación O/C, Término entrega O/C, Vencimiento O/C) + Licitación. Oculta Venc. entrega y Término inicio.
+  //  - Solicitud/Adelanto: Vencimiento de entrega (operativa) + Término (inicio). Oculta las 3 de OC y Licitación.
+  var _esOC = String(ref.tipo||'').toUpperCase()==='ORDEN_COMPRA';
+  if($('filaFechasOC')) $('filaFechasOC').style.display=_esOC?'grid':'none';
+  if($('wrapVencEnt')) $('wrapVencEnt').style.display=_esOC?'none':'block';
+  if($('wrapTerminoInicio')) $('wrapTerminoInicio').style.display=_esOC?'none':'block';
+  if($('wrapLicitacion')) $('wrapLicitacion').style.display=_esOC?'block':'none';
   if($('rAnalista')) $('rAnalista').value=ref.planificador||'';
   // Un renglón por cada fila-CEDI del documento, con su monto
   $('renglones').innerHTML='';
@@ -864,14 +870,18 @@ $('btnGuardar').addEventListener('click',function(){
       if(!motivo.trim()){ setMsg($('estadoGuardar'),'err','Debe indicar un motivo para editar un documento notificado.'); return; }
     }
     // Campos de cabecera compartidos por todas las filas del documento
+    var _tipoEd=String($('rTipo').value||'').toUpperCase();
+    var _terminoOC=($('rTerminoOC')?$('rTerminoOC').value.trim():'');
+    // En OC, "vencimiento de entrega" y "término de entrega O/C" son lo mismo: se sincronizan.
+    var _vencEntFinal = _tipoEd==='ORDEN_COMPRA' ? _terminoOC : $('rVencEnt').value.trim();
     var cab={
       n_documento:$('rDoc').value.trim(), proveedor:$('rProv').value.trim(),
       fecha_emision:$('rFecha').value.trim(), n_entrega:$('rEntrega').value.trim(),
-      vencimiento_oc:$('rVenc').value.trim(), vencimiento_entrega:$('rVencEnt').value.trim(),
+      vencimiento_oc:$('rVenc').value.trim(), vencimiento_entrega:_vencEntFinal,
       termino_entrega:$('rTermino').value.trim(), planificador:($('rAnalista').value.trim()||$('planificador').value.trim()),
       n_orden_compra:($('rOC')?$('rOC').value.trim():''),
       fecha_publicacion_oc:($('rPubOC')?$('rPubOC').value.trim():''),
-      termino_entrega_oc:($('rTerminoOC')?$('rTerminoOC').value.trim():''),
+      termino_entrega_oc:_terminoOC,
       licitacion:($('rLicitacion')?$('rLicitacion').value.trim():'')
     };
     // Una carga por cada fila-CEDI (usa el data-fila-id de cada bloque)
