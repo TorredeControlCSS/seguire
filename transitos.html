@@ -270,7 +270,8 @@
       <div class="estado-msg info" id="avisoTipo" style="display:none;"></div>
       <div class="grid g4" style="margin-bottom:12px;">
         <div><label>Tipo</label><input type="text" id="rTipo" readonly></div>
-        <div><label>N° documento</label><input type="text" id="rDoc"></div>
+        <div><label>N° documento (nota)</label><input type="text" id="rDoc"></div>
+        <div><label>N° Orden de Compra (madre)</label><input type="text" id="rOC" placeholder="Ej. 1001104284-08-12"></div>
         <div><label>Fecha emisión</label><input type="text" id="rFecha"></div>
         <div><label>N° entrega</label><input type="text" id="rEntrega" placeholder="1, 2, 3..."></div>
       </div>
@@ -637,6 +638,7 @@ function editarTransito(id){
   panel.style.display='block';
   $('rTipo').value=ref.tipo||'';
   $('rDoc').value=ref.n_documento||'';
+  if($('rOC')) $('rOC').value=ref.n_orden_compra||'';
   $('rFecha').value=ref.fecha_emision||'';
   $('rEntrega').value=ref.n_entrega||'';
   $('rProv').value=ref.proveedor||'';
@@ -764,7 +766,8 @@ $('btnGuardar').addEventListener('click',function(){
       n_documento:$('rDoc').value.trim(), proveedor:$('rProv').value.trim(),
       fecha_emision:$('rFecha').value.trim(), n_entrega:$('rEntrega').value.trim(),
       vencimiento_oc:$('rVenc').value.trim(), vencimiento_entrega:$('rVencEnt').value.trim(),
-      termino_entrega:$('rTermino').value.trim(), planificador:($('rAnalista').value.trim()||$('planificador').value.trim())
+      termino_entrega:$('rTermino').value.trim(), planificador:($('rAnalista').value.trim()||$('planificador').value.trim()),
+      n_orden_compra:($('rOC')?$('rOC').value.trim():'')
     };
     // Una carga por cada fila-CEDI (usa el data-fila-id de cada bloque)
     var bloques=[...$('renglones').querySelectorAll('.reng-edit')];
@@ -982,6 +985,7 @@ function tarjetaDoc(g){
         '</div>'+
         '<div class="prov">'+esc(t.proveedor||'—')+(t.descripcion?(' · '+esc(t.descripcion)):'')+'</div>'+
         '<div style="font-size:10.5px;color:#0C447C;font-family:Consolas,monospace;margin-top:2px;">Abasto '+esc(t.cod_abasto_norm||t.cod_abasto||'—')+' · SAP '+esc(t.cod_sap||'—')+(t.n_entrega?(' · Entrega N° '+esc(t.n_entrega)):'')+'</div>'+
+        ((tipo==='SOLICITUD_ENTREGA' && t.n_orden_compra)?('<div style="font-size:11px;margin-top:3px;"><span style="background:#E6F1FB;color:#0C447C;font-weight:600;padding:2px 8px;border-radius:3px;font-family:Consolas,monospace;">O/C madre: '+esc(t.n_orden_compra)+'</span></div>'):'')+
         sello+
       '</div>'+
       '<div class="tj-venc"><div class="cap">'+capProta+'</div><div class="val" style="color:'+vc.c+';">'+esc(fechaProta||'—')+'</div>'+(diasTxt?('<div style="font-size:9.5px;color:'+vc.fg+';">'+esc(diasTxt)+'</div>'):'')+'</div>'+
