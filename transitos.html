@@ -1067,16 +1067,33 @@ function vencColor(dias){
    sus filas-CEDI. Un documento puede tener 1..N destinos. */
 function agruparPorDocumento(filas){
   const mapa={};
-  const vistas={}; // de-duplicación: doc|cedi|abasto|cantidad
+  const vistas={}; // de-duplicación: doc|cedi|abasto|cantidad -> índice en un arreglo temporal
+  const filtradas=[];
   filas.forEach(t=>{
     const claveDup=[String(t.n_documento||'').trim(),String(t.cedi||'').trim(),
                     String(t.cod_abasto||'').trim(),String(t.cantidad||'').trim()].join('|');
-    if(vistas[claveDup]) return; // salta duplicado exacto
-    vistas[claveDup]=true;
+    if(vistas[claveDup]!==undefined){
+      // Ya vimos una fila con esta clave. Si la NUEVA tiene N° de OC y la previa no,
+      // la nueva reemplaza a la previa (evita que una versión vieja sin OC gane).
+      const prevIdx=vistas[claveDup];
+      const prev=filtradas[prevIdx];
+      const nuevaTieneOC=!!String(t.n_orden_compra||'').trim();
+      const prevTieneOC=!!String(prev.n_orden_compra||'').trim();
+      if(nuevaTieneOC && !prevTieneOC){ filtradas[prevIdx]=t; }
+      return;
+    }
+    vistas[claveDup]=filtradas.length;
+    filtradas.push(t);
+  });
+  filtradas.forEach(t=>{
     const k=String(t.n_documento||'').trim()||('__'+t.id);
     if(!mapa[k]){
       mapa[k]={ doc:k, ref:t, filas:[], estado:String(t.estado_transito||'EMITIDA').toUpperCase(),
                 cantTotal:0, montoTotal:0 };
+    }
+    // Si la ref actual no tiene OC pero esta fila sí, actualiza la ref (el título usa la OC).
+    if(!String(mapa[k].ref.n_orden_compra||'').trim() && String(t.n_orden_compra||'').trim()){
+      mapa[k].ref=t;
     }
     mapa[k].filas.push(t);
     mapa[k].cantTotal += Number(t.cantidad)||0;
