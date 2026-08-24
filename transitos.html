@@ -570,6 +570,7 @@ function mostrarRevision(d, tipoElegido){
   $('rFecha').value=d.fecha_emision||'';
   $('rEntrega').value=d.n_entrega||'';
   $('rProv').value=d.proveedor||'';
+  if($('rOC')) $('rOC').value=d.n_orden_compra||'';
   $('rVenc').value=d.vencimiento_oc||'';
   $('rVencEnt').value=d.vencimiento_entrega||'';
   $('rTermino').value=d.termino_entrega||'';
