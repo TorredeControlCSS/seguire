@@ -170,6 +170,15 @@
   .tj-detalle .grid-det .k::after{content:' ';}
   .tj-detalle .grid-det br{display:none;}
   .tj-acc{display:flex;align-items:center;gap:7px;padding:10px 14px;border-top:1px solid #e2ecf5;flex-wrap:wrap;}
+  /* Evidencia de recepción (transitos_evidencia.json, 05-oct-2026) */
+  .tj-evid{display:flex;flex-direction:column;gap:6px;padding:8px 14px;border-top:1px solid #e2ecf5;}
+  .ev{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:12px;line-height:1.35;border-radius:8px;padding:7px 10px;}
+  .ev-ok{background:var(--pastel-teal);color:#085041;}
+  .ev-atr{background:var(--pastel-rojo);color:#791F1F;}
+  .ev-hecho{background:var(--pastel-gris);color:#5F5E5A;}
+  .ev-txt{flex:1;min-width:220px;}
+  .ev-conf{font-size:10.5px;opacity:.85;margin-left:4px;white-space:nowrap;}
+  .ev-btn{display:flex;gap:6px;flex-wrap:wrap;}
   .badge2{font-size:10px;padding:2px 8px;border-radius:20px;}
   .btn-menu-item{display:block;width:100%;text-align:left;padding:9px 14px;border:none;background:#fff;font-size:12.5px;color:#333;cursor:pointer;font-family:inherit;}
   .btn-menu-item:hover{background:#f0f6fc;color:var(--azul);}
@@ -368,6 +377,8 @@
             <option value="NOTIFICADA">Notificada</option>
             <option value="AGENDADA">Agendada</option>
             <option value="REVISAR">Por revisar</option>
+            <option value="_EV_CONF">Recibidas por confirmar</option>
+            <option value="_EV_ATR">Vencidas sin entrada</option>
           </select>
         </div>
         <div class="campo">
@@ -454,6 +465,10 @@ function modalConfirm(opts){
    - API_SIGUELO: notificar, editar, eliminar y Excel. (backend de SÍGUELO, módulo E1) */
 const API_SEGUIRE = 'https://script.google.com/macros/s/AKfycbyLjga90kMJ4_4zB7P2vPh7xX-UOBUvuShPvHe0IdhG9iB0hHuvgeSGrcpO95k9LEP6/exec';
 const API_SIGUELO = 'https://script.google.com/macros/s/AKfycbwVw0ACNMhdN6d-JsI1lyP2iKHBVgWXI5nK3rA6blEhF3l8t2Wuwk2TpRmaanB186Dk/exec';
+/* Evidencia de recepción: SÍGUELO cruza cada tránsito con las entradas de CEDIS Panamá
+   (TRANSITOS_EVIDENCIA.gs) y la publica aquí. Solo lectura; si no carga, el panel sigue igual. */
+const URL_EVIDENCIA = 'https://torredecontrolcss.github.io/SIGUELO/transitos_evidencia.json';
+var EVID = {};
 
 let TRANSITOS = [];
 let _extraido = null;
@@ -1035,11 +1050,77 @@ function cargarTransitos(){
     TRANSITOS=(resp&&resp.transitos)?resp.transitos:[];
     if(typeof poblarSelectoresPlanif==='function') poblarSelectoresPlanif();
     renderTarjetas(); renderKPIs();
+    cargarEvidencia();
   };
   const s=document.createElement('script');
   s.src=API_SEGUIRE+'?accion=listarTransitos&callback='+cb;
   s.onerror=()=>{ $('tarjetas').innerHTML='<div style="text-align:center;color:#a3331f;padding:20px;">No se pudo cargar. Verifique la conexión.</div>'; };
   document.body.appendChild(s);
+}
+
+/* ---------- Evidencia de recepción ---------- */
+function cargarEvidencia(){
+  fetch(URL_EVIDENCIA+'?t='+Date.now()).then(function(r){ return r.json(); }).then(function(j){
+    EVID={}; ((j&&j.rows)||[]).forEach(function(r){ EVID[String(r.id)]=r; });
+    renderTarjetas();
+  }).catch(function(){ /* sin evidencia, el panel funciona como siempre */ });
+}
+/* Situación vigente de una fila: lo que ya registró el planificador manda sobre el JSON. */
+function situacionEv(t){
+  var e=EVID[String(t.id)]; if(!e) return '';
+  var cant=Number(t.cantidad)||0, ent=Number(t.cant_entregada)||0;
+  if(e._local) return e._local;
+  if(cant>0 && ent>=cant) return 'CONFIRMADO_POR_PLANIFICADOR';
+  return e.situacion||'';
+}
+function evidenciaHtml(g){
+  var items=g.filas.map(function(f){
+    var e=EVID[String(f.id)]; if(!e) return '';
+    var sit=situacionEv(f), ced=esc(f.cedi||e.cedis||'—'), id=esc(f.id);
+    if(sit==='RECIBIDO_SIN_CONFIRMAR' || sit==='RECIBIDO_PARCIAL_SIN_CONFIRMAR'){
+      var ev=e.evidencia||{}, par=sit==='RECIBIDO_PARCIAL_SIN_CONFIRMAR';
+      var fechas=ev.primeraEntrada===ev.ultimaEntrada?('el '+esc(ev.primeraEntrada)):('entre el '+esc(ev.primeraEntrada)+' y el '+esc(ev.ultimaEntrada));
+      return '<div class="ev ev-ok"><div class="ev-txt"><b>'+ced+'</b> · '+(par?'Recibida en parte':'Recibida')+' según Entradas '+fechas+': <b>'+fmtNum(ev.recibido)+'</b> de '+fmtNum(f.cantidad)+' und'+
+        '<span class="ev-conf">· confianza '+esc(ev.confianza||'')+'</span></div>'+
+        '<div class="ev-btn"><button class="btn mini" onclick="responderEvidencia(\''+id+'\',\'CONFIRMADO\')">✓ Confirmar recepción</button>'+
+        '<button class="btn btn-sec mini" onclick="responderEvidencia(\''+id+'\',\'NO_CORRESPONDE\')">No corresponde</button></div></div>';
+    }
+    if(sit==='VENCIDO_SIN_ENTRADA'){
+      return '<div class="ev ev-atr"><div class="ev-txt"><b>'+ced+'</b> · Venció el '+esc(e.vencEntrega||'—')+' y no hay entrada registrada en CEDIS Panamá: escalar con el proveedor.'+
+        (e.motivo?('<span class="ev-conf">· '+esc(e.motivo)+'</span>'):'')+'</div></div>';
+    }
+    if(sit==='CONFIRMADO_POR_PLANIFICADOR'){
+      return '<div class="ev ev-hecho"><div class="ev-txt"><b>'+ced+'</b> · ✓ Recepción confirmada'+(Number(f.cant_entregada)>0?(': '+fmtNum(f.cant_entregada)+' und'):'')+'</div></div>';
+    }
+    if(sit==='_NO_CORRESPONDE'){
+      return '<div class="ev ev-hecho"><div class="ev-txt"><b>'+ced+'</b> · Marcada como "no corresponde". Se volverá a revisar con las entradas siguientes.</div></div>';
+    }
+    return '';   // en plazo o sin fuente de recepción: no se muestra nada
+  }).filter(Boolean);
+  return items.length?('<div class="tj-evid">'+items.join('')+'</div>'):'';
+}
+function responderEvidencia(id, resp){
+  var t=TRANSITOS.filter(function(x){ return String(x.id)===String(id); })[0], e=EVID[String(id)];
+  if(!t || !e) return;
+  var ev=e.evidencia||{}, conf=(resp==='CONFIRMADO');
+  modalConfirm({
+    titulo: conf?'Confirmar recepción':'La entrada no corresponde',
+    textoOK: conf?'Sí, se recibió':'No corresponde', peligro: !conf,
+    mensaje: conf
+      ? ('Se registrará como recibido <b>'+fmtNum(Math.min(Number(ev.recibido)||0, Number(t.cantidad)||0))+' und</b> de <b>'+esc(t.descripcion||t.cod_abasto||'')+'</b> en <b>'+esc(t.cedi||'')+'</b>.<br><br>El saldo del tránsito se actualiza en la hoja. El estado del documento no cambia.')
+      : ('La entrada de Recepción del <b>'+esc(ev.ultimaEntrada||'')+'</b> no se volverá a proponer para este renglón. Si el producto sigue sin llegar, el tránsito aparecerá como vencido sin entrada.')
+  }).then(function(ok){ if(!ok) return;
+    postSiguelo('confirmarRecepcionTransito',{ id:id, respuesta:resp, cantidad:ev.recibido, nivel:ev.nivel||'', hasta:ev.ultimaEntrada||'',
+      por:($('planificador')&&$('planificador').value.trim())||t.planificador||'' })
+      .then(function(j){
+        if(j&&j.success){
+          if(conf){ t.cant_entregada=j.cant_entregada; t.saldo=j.saldo; e._local='CONFIRMADO_POR_PLANIFICADOR'; }
+          else e._local='_NO_CORRESPONDE';
+          setMsg($('estadoGuardar'),'ok', conf?'Recepción confirmada.':'Registrado: la entrada no corresponde.');
+          renderTarjetas();
+        } else { setMsg($('estadoGuardar'),'err','No se pudo registrar: '+((j&&j.error)||'error')); }
+      }).catch(function(err){ setMsg($('estadoGuardar'),'err','Error de red: '+err); });
+  });
 }
 
 function estClase(est){
@@ -1260,6 +1341,7 @@ function tarjetaDoc(g){
   return '<div class="tj '+estClase(est)+'" id="tj_'+esc(idG)+'">'+
     cabecera+
     franja+
+    evidenciaHtml(g)+
     '<div class="tj-compacto">'+compacto+'</div>'+
     '<div class="tj-acc">'+acc+'</div>'+
   '</div>';
@@ -1280,7 +1362,9 @@ function aplicarFiltros(arr){
   const fp=$('fPlanif')?$('fPlanif').value:'';
   return arr.filter(t=>{
     if(ft && t.tipo!==ft) return false;
-    if(fe && String(t.estado_transito||'').toUpperCase()!==fe) return false;
+    if(fe==='_EV_CONF'){ var s1=situacionEv(t); if(s1!=='RECIBIDO_SIN_CONFIRMAR' && s1!=='RECIBIDO_PARCIAL_SIN_CONFIRMAR') return false; }
+    else if(fe==='_EV_ATR'){ if(situacionEv(t)!=='VENCIDO_SIN_ENTRADA') return false; }
+    else if(fe && String(t.estado_transito||'').toUpperCase()!==fe) return false;
     if(fp && String(t.planificador||'').trim()!==fp) return false;
     const fv=String(t.vencimiento_entrega||t.vencimiento_oc||'').slice(0,10);
     if(fd && (!fv || fv<fd)) return false;
