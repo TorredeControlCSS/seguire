@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Trazabilidad de OC y Tránsitos — SEGUIRE (Seguimiento Inteligente de Requisiciones) · CEDIS Panamá</title>
+<title>Trazabilidad de OC y Tránsitos — SEGUIRE (Seguimiento Inteligente de Requisiciones)</title>
 <link rel="icon" href="https://torredecontrolcss.github.io/seguire/favicon.ico">
 <link rel="apple-touch-icon" href="https://torredecontrolcss.github.io/seguire/icons/icon-192.png">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
@@ -91,6 +91,7 @@
   .bchip[disabled]{opacity:.45;cursor:default;}
   .bc-REC{background:#d6efdc;color:#1f6b36}.bc-VEN{background:#f6d5d1;color:#9b1c2c}.bc-PRO{background:#fbe8c8;color:#8a5a1a}.bc-FEC{background:#e7def3;color:#5b3f8c}.bc-CED{background:#eef1f5;color:#44546a}
   .bnota{font-size:12px;color:#5d6b7a;margin-top:8px;}
+  .edatos{margin-left:auto;font-size:11.5px;font-weight:400;color:#5d6b7a;}.edatos.ok{color:#2d6a3e;}.edatos.err{color:#a3331f;}
   .cerrados{display:flex;align-items:center;gap:6px;font-size:12.5px;color:#44546a;white-space:nowrap;}
   .kpi .n{font-size:17px;font-weight:700;font-family:Consolas,monospace;line-height:1.1;}
   .kpi .l{font-size:9.5px;line-height:1.25;margin-top:2px;}
@@ -215,7 +216,7 @@
   <img src="icons/icon-192.png" alt="CSS" onerror="this.style.display='none'">
   <div>
     <h1>Trazabilidad de OC y Tránsitos</h1>
-    <div class="sub">SEGUIRE · Seguimiento Inteligente de Requisiciones · Dirección Nacional de Logística — CEDIS Panamá</div>
+    <div class="sub">SEGUIRE · Seguimiento Inteligente de Requisiciones · Dirección Nacional de Logística</div>
   </div>
   <button id="btnTutorial" type="button" style="margin-left:auto;background:#fff;color:var(--azul);font-weight:700;border:none;border-radius:4px;padding:7px 14px;cursor:pointer;font-size:12px;">▶ Ver tutorial guiado</button>
 </header>
@@ -370,7 +371,7 @@
   <!-- PASO 3: Tarjetas -->
   <div class="panel">
     <div class="panel-h">
-      <span>Órdenes en tránsito (visibilidad anticipada)</span>
+      <span>Órdenes en tránsito (visibilidad anticipada)</span><span class="edatos" id="estadoDatos"></span>
     </div>
     <div class="panel-b">
       <div class="filtros">
@@ -1067,19 +1068,46 @@ $('btnGuardar').addEventListener('click',function(){
 });
 
 /* ====== PASO 3: CARGA Y TARJETAS ====== */
+/* (11-oct-2026) Carga en dos tiempos, para que el planificador no espere:
+   1) transitos_panel.json (SÍGUELO lo publica a los ~15 min de cada cambio): pinta en ~1 s;
+   2) en segundo plano, listarTransitos del GAS (lo último manda) y se repinta solo si cambió.
+   Si el usuario está escribiendo en una tarjeta, el repintado espera a que termine.
+   Después de guardar, se consulta directo al GAS sin borrar la lista que ya se ve. */
+const URL_PANEL_JSON='https://torredecontrolcss.github.io/SIGUELO/transitos_panel.json';
+var _gasOk=false, _firmaTr='';
+function firmaTr(l){ return JSON.stringify((l||[]).map(function(t){ return [t.id,t.estado_transito,t.cant_entregada,t.saldo,t.cantidad,t.cedi,t.vencimiento_entrega,t.termino_entrega,t.planificador,t.archivo_url?1:0]; })); }
+function pintarTransitos(lista){
+  var f=firmaTr(lista); if(f===_firmaTr && TRANSITOS.length){ TRANSITOS=lista; return; }
+  _firmaTr=f; TRANSITOS=lista;
+  if(typeof poblarSelectoresPlanif==='function') poblarSelectoresPlanif();
+  poblarBandeja(); renderBandeja(); renderTarjetas(); renderKPIs();
+}
+function ocupado(){ var a=document.activeElement, tg=$('tarjetas'); return !!(a&&tg&&tg.contains(a)&&/INPUT|TEXTAREA|SELECT/.test(a.tagName)); }
+function marcaDatos(txt,cls){ var el=$('estadoDatos'); if(el){ el.textContent=txt; el.className='edatos'+(cls?' '+cls:''); } }
 function cargarTransitos(){
-  $('tarjetas').innerHTML='<div style="text-align:center;color:#999;padding:20px;">Cargando…</div>';
+  const primera=!TRANSITOS.length;
+  if(primera){
+    $('tarjetas').innerHTML='<div style="text-align:center;color:#999;padding:20px;">Cargando…</div>';
+    fetch(URL_PANEL_JSON+'?t='+Date.now()).then(function(r){ return r.ok?r.json():null; }).then(function(j){
+      if(!j||!j.transitos||_gasOk) return;
+      pintarTransitos(j.transitos); cargarEvidencia();
+      marcaDatos('Datos publicados '+String(j.generado||'').replace('T',' ').slice(0,16)+' · confirmando con el registro en vivo…','esp');
+    }).catch(function(){});
+  }
+  marcaDatos(primera?'Cargando…':'Actualizando con el registro en vivo…','esp');
   const cb='cbTr'+Date.now();
   window[cb]=function(resp){
     try{ delete window[cb]; }catch(e){}
-    TRANSITOS=(resp&&resp.transitos)?resp.transitos:[];
-    if(typeof poblarSelectoresPlanif==='function') poblarSelectoresPlanif();
-    poblarBandeja(); renderBandeja(); renderTarjetas(); renderKPIs();
-    cargarEvidencia();
+    var lista=(resp&&resp.transitos)?resp.transitos:[];
+    var aplicar=function(){ if(ocupado()){ setTimeout(aplicar,2000); return; }
+      _gasOk=true; pintarTransitos(lista); cargarEvidencia();
+      marcaDatos('Al día con el registro · '+new Date().toLocaleTimeString('es-PA',{hour:'2-digit',minute:'2-digit'}),'ok'); };
+    aplicar();
   };
   const s=document.createElement('script');
   s.src=API_SEGUIRE+'?accion=listarTransitos&callback='+cb;
-  s.onerror=()=>{ $('tarjetas').innerHTML='<div style="text-align:center;color:#a3331f;padding:20px;">No se pudo cargar. Verifique la conexión.</div>'; };
+  s.onerror=()=>{ if(TRANSITOS.length) marcaDatos('Sin conexión con el registro en vivo: se muestran los datos publicados.','err');
+    else $('tarjetas').innerHTML='<div style="text-align:center;color:#a3331f;padding:20px;">No se pudo cargar. Verifique la conexión.</div>'; };
   document.body.appendChild(s);
 }
 
@@ -1410,7 +1438,7 @@ function poblarBandeja(){
   TRANSITOS.forEach(function(t){ var n=String(t.planificador||'').trim(); if(!n) return; var k=bTok(n).join(' '); if(vistos[k]) return; vistos[k]=1; nombres.push(n); });
   nombres.sort(function(a,b){ return a.localeCompare(b,'es'); });
   var q=new URLSearchParams(location.search), pUrl=q.get('p')||'', guardado=''; try{ guardado=localStorage.getItem('seg_yo')||''; }catch(e){}
-  var quiere=pUrl||guardado;
+  var quiere=_yo||pUrl||guardado;
   if(quiere && !nombres.some(function(n){ return n===quiere; })){ var m=nombres.find(function(n){ return trEsDe(quiere,n); }); if(m) quiere=m; else nombres.unshift(quiere); }
   sel.innerHTML='<option value="">— Todos —</option>'+nombres.map(function(n){ return '<option'+(n===quiere?' selected':'')+'>'+esc(n)+'</option>'; }).join('');
   _yo=quiere||''; if(pUrl){ try{ localStorage.setItem('seg_yo',_yo); }catch(e){} }
