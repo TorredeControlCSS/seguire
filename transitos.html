@@ -89,7 +89,7 @@
   .bchip b{display:block;font-size:20px;font-family:Consolas,monospace;}
   .bchip.on{outline:2px solid #0C447C;outline-offset:1px;}
   .bchip[disabled]{opacity:.45;cursor:default;}
-  .bc-REC{background:#d6efdc;color:#1f6b36}.bc-VEN{background:#f6d5d1;color:#9b1c2c}.bc-PRO{background:#fbe8c8;color:#8a5a1a}.bc-FEC{background:#e7def3;color:#5b3f8c}.bc-CED{background:#eef1f5;color:#44546a}
+  .bc-REC{background:#d6efdc;color:#1f6b36}.bc-VEN{background:#f6d5d1;color:#9b1c2c}.bc-PRO{background:#fbe8c8;color:#8a5a1a}.bc-FEC{background:#e7def3;color:#5b3f8c}.bc-CED{background:#eef1f5;color:#44546a}.bc-SOC{background:#dbeaf7;color:#1e5a9e}
   .bnota{font-size:12px;color:#5d6b7a;margin-top:8px;}
   .edatos{margin-left:auto;font-size:11.5px;font-weight:400;color:#5d6b7a;}.edatos.ok{color:#2d6a3e;}.edatos.err{color:#a3331f;}
   .cerrados{display:flex;align-items:center;gap:6px;font-size:12.5px;color:#44546a;white-space:nowrap;}
@@ -189,6 +189,7 @@
   .ev-ok{background:var(--pastel-teal);color:#085041;}
   .ev-atr{background:var(--pastel-rojo);color:#791F1F;}
   .ev-hecho{background:var(--pastel-gris);color:#5F5E5A;}
+  .ev-soc{background:#dbeaf7;color:#1e5a9e;}
   .ev-txt{flex:1;min-width:220px;}
   .ev-conf{font-size:10.5px;opacity:.85;margin-left:4px;white-space:nowrap;}
   .ev-btn{display:flex;gap:6px;flex-wrap:wrap;}
@@ -1114,11 +1115,17 @@ function cargarTransitos(){
 /* ---------- Evidencia de recepción ---------- */
 function cargarEvidencia(){
   fetch(URL_EVIDENCIA+'?t='+Date.now()).then(function(r){ return r.json(); }).then(function(j){
-    EVID={}; ((j&&j.rows)||[]).forEach(function(r){ EVID[String(r.id)]=r; });
+    EVID={}; EVMETA=(j&&j._meta)||{}; ((j&&j.rows)||[]).forEach(function(r){ EVID[String(r.id)]=r; });
     renderBandeja(); renderTarjetas(); renderKPIs();
   }).catch(function(){ /* sin evidencia, el panel funciona como siempre */ });
 }
 /* Situación vigente de una fila: lo que ya registró el planificador manda sobre el JSON. */
+var EVMETA={};
+/* Fuentes revisadas de una fila, con su fecha de corte: «el Kardex SAP-SAFIRO (al 08/10) ni en la recepción de CEDIS Panamá (al 05/10)» */
+function fFecha(iso){ iso=String(iso||''); return /^\d{4}-\d{2}-\d{2}/.test(iso)?iso.slice(8,10)+'/'+iso.slice(5,7):''; }
+function evFuente(k){ var F=(EVMETA.fuentes||{})[k]||{}, c=fFecha(F.corte||(k==='RECEPCION'?EVMETA.corteEntradas:''));
+  return (k==='KARDEX'?'el Kardex SAP-SAFIRO':'la recepción de CEDIS Panamá')+(c?' (al '+c+')':''); }
+function evRevisado(e){ var r=(e.revisado&&e.revisado.length)?e.revisado:['RECEPCION']; return r.map(evFuente).join(' ni en '); }
 function situacionEv(t){
   var e=EVID[String(t.id)]; if(!e) return '';
   var cant=Number(t.cantidad)||0, ent=Number(t.cant_entregada)||0;
@@ -1133,13 +1140,15 @@ function evidenciaHtml(g){
     if(sit==='RECIBIDO_SIN_CONFIRMAR' || sit==='RECIBIDO_PARCIAL_SIN_CONFIRMAR'){
       var ev=e.evidencia||{}, par=sit==='RECIBIDO_PARCIAL_SIN_CONFIRMAR';
       var fechas=ev.primeraEntrada===ev.ultimaEntrada?('el '+esc(ev.primeraEntrada)):('entre el '+esc(ev.primeraEntrada)+' y el '+esc(ev.ultimaEntrada));
-      return '<div class="ev ev-ok"><div class="ev-txt"><b>'+ced+'</b> · '+(par?'Recibida en parte':'Recibida')+' según Entradas '+fechas+': <b>'+fmtNum(ev.recibido)+'</b> de '+fmtNum(f.cantidad)+' und'+
-        '<span class="ev-conf">· confianza '+esc(ev.confianza||'')+'</span></div>'+
+      var fte=ev.fuente==='KARDEX'?'el Kardex SAP-SAFIRO':'la recepción de CEDIS Panamá';
+      var fuera=(ev.fueraPadron&&ev.fueraPadron.length)?' · registrada por '+esc(ev.fueraPadron.join(', '))+', fuera del personal de CEDIS Panamá':'';
+      return '<div class="ev ev-ok"><div class="ev-txt"><b>'+ced+'</b> · '+(par?'Recibida en parte':'Recibida')+' según '+fte+' '+fechas+': <b>'+fmtNum(ev.recibido)+'</b> de '+fmtNum(f.cantidad)+' und'+
+        '<span class="ev-conf">· confianza '+esc(ev.confianza||'')+fuera+'</span></div>'+
         '<div class="ev-btn"><button class="btn mini" onclick="responderEvidencia(\''+id+'\',\'CONFIRMADO\')">✓ Confirmar recepción</button>'+
         '<button class="btn btn-sec mini" onclick="responderEvidencia(\''+id+'\',\'NO_CORRESPONDE\')">No corresponde</button></div></div>';
     }
     if(sit==='VENCIDO_SIN_ENTRADA'){
-      return '<div class="ev ev-atr"><div class="ev-txt"><b>'+ced+'</b> · Venció el '+esc(e.vencEntrega||'—')+' y no hay entrada registrada en CEDIS Panamá: escalar con el proveedor.'+
+      return '<div class="ev ev-atr"><div class="ev-txt"><b>'+ced+'</b> · Venció el '+esc(e.vencEntrega||'—')+' y no aparece entrada en '+evRevisado(e)+': se sugiere validar con el proveedor.'+
         (e.motivo?('<span class="ev-conf">· '+esc(e.motivo)+'</span>'):'')+'</div></div>';
     }
     if(sit==='CONFIRMADO_POR_PLANIFICADOR'){
@@ -1150,6 +1159,13 @@ function evidenciaHtml(g){
     }
     return '';   // en plazo o sin fuente de recepción: no se muestra nada
   }).filter(Boolean);
+  /* Sin OC registrada: una sola línea por documento (11-oct-2026) */
+  var soc=g.filas.filter(function(f){ return !trCerrado(f) && trSinOc(f); });
+  if(soc.length){
+    var sug=soc.map(function(f){ var e=EVID[String(f.id)]; return e&&e.ocSugerida; }).filter(Boolean)[0];
+    items.push('<div class="ev ev-soc"><div class="ev-txt">Sin Nº de OC SAP registrado'+(soc.length<g.filas.length?' en '+soc.length+' de '+g.filas.length+' renglones':'')+
+      ': con él se coteja solo contra el Kardex SAP-SAFIRO. Se sugiere anotarlo (Editar)'+(sug?'; la cita del proveedor indica la OC <b>'+esc(sug)+'</b>':'')+'.</div></div>');
+  }
   return items.length?('<div class="tj-evid">'+items.join('')+'</div>'):'';
 }
 function responderEvidencia(id, resp){
@@ -1411,7 +1427,9 @@ function toggleDet(id){
 /* ====== BANDEJA «MIS PENDIENTES» (11-oct-2026) ======
    Misma regla que el recordatorio por correo (AVISO_PLANIFICADORES.gs en SÍGUELO). */
 var _yo='', _bandeja='';
-const B_CATS=[['REC','Confirmar recepción'],['VEN','Vencidos sin entrada'],['PRO','Vencen en 7 días'],['FEC','Fechas por verificar'],['CED','Sin CEDIS']];
+const B_CATS=[['REC','Confirmar recepción'],['VEN','Vencidos sin entrada'],['PRO','Vencen en 7 días'],['SOC','Sin OC registrada'],['FEC','Fechas por verificar'],['CED','Sin CEDIS']];
+/* Solicitud de entrega sin Nº de OC SAP (1001…): sin él no se coteja con el Kardex SAP-SAFIRO. */
+function trSinOc(t){ return String(t.tipo||'').toUpperCase()!=='ORDEN_COMPRA' && !/10\d{8}/.test(String(t.n_orden_compra||'')); }
 function trSaldo(t){ var s=t.saldo; if(s!==''&&s!=null&&!isNaN(Number(s))) return Number(s); return Math.max(0,(Number(t.cantidad)||0)-(Number(t.cant_entregada)||0)); }
 function trCerrado(t){ var e=String(t.estado_transito||'').toUpperCase(); if(e==='ENTREGADA'||e==='RECIBIDA'||e==='ANULADA'||e==='CANCELADA') return true;
   var cant=Number(t.cantidad)||0, ent=Number(t.cant_entregada)||0; if(cant>0&&ent>=cant) return true; return trSaldo(t)<=0; }
@@ -1422,6 +1440,7 @@ function trCats(t){
   if(s==='RECIBIDO_SIN_CONFIRMAR'||s==='RECIBIDO_PARCIAL_SIN_CONFIRMAR') c.push('REC');
   else if(s==='VENCIDO_SIN_ENTRADA'||(d!=null&&d<0&&s!=='EN_PLAZO')) c.push('VEN');
   else if(d!=null&&d>=0&&d<=7) c.push('PRO');
+  if(trSinOc(t)) c.push('SOC');
   if(String(t.estado_transito||'').toUpperCase()==='REVISAR') c.push('FEC');
   if(!String(t.cedi||'').trim()) c.push('CED');
   return c;
