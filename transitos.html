@@ -219,7 +219,11 @@
   .hbtn:hover{background:rgba(255,255,255,.24);}
   .hbtn svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
   .hbtn.prim{background:#fff;color:#0C447C;}
-  .hsello{font-size:10.5px;text-align:right;opacity:.92;line-height:1.35;min-width:150px;}
+  @media(max-width:1180px){ header .sub{display:none;} .hsello{display:none;} header h1{white-space:nowrap;font-size:15px;} .hbtn{padding:7px 8px;} }
+  @media(max-width:900px){ header{flex-wrap:wrap;} .hd-der{margin-left:0;flex-wrap:wrap;} }
+  header > div:not(.hd-der){min-width:0;flex:1 1 auto;}
+  header .sub,header h1{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .hsello{white-space:nowrap;font-size:10.5px;text-align:right;opacity:.92;line-height:1.35;min-width:150px;}
   .vistas{display:flex;gap:2px;background:#fff;border-bottom:1px solid var(--linea);padding:0 18px;position:sticky;top:70px;z-index:40;}
   .vistas button{background:none;border:0;border-bottom:3px solid transparent;padding:10px 14px;font:600 13px 'Segoe UI',Arial,sans-serif;color:#5b6775;cursor:pointer;}
   .vistas button.on{color:var(--azul);border-bottom-color:var(--azul);}
@@ -252,9 +256,9 @@
   .mt-acc .btn{padding:4px 9px;font-size:11.5px;margin:0 3px 3px 0;}
   .btn.ok{background:#1f6b36;border-color:#1f6b36;}.btn.ok:hover{background:#185a2c;}
   .mt-oc{display:flex;gap:5px;align-items:center;}
-  .mt-oc input{width:132px;padding:4px 6px;font:12px Consolas,monospace;border:1px solid #9bb7d6;border-radius:4px;}
+  .mt-oc input{width:150px;padding:4px 6px;font:12px Consolas,monospace;border:1px solid #9bb7d6;border-radius:4px;}
   .mt-det td{background:#f7fafd !important;padding:10px 14px;cursor:default;}
-  .mt-dgrid{display:grid;grid-template-columns:repeat(6,1fr);gap:8px 16px;font-size:12px;}
+  .mt-dgrid{display:grid;grid-template-columns:repeat(7,1fr);gap:8px 16px;font-size:12px;}
   .mt-dgrid div span{display:block;font-size:10.5px;color:#5b6775;text-transform:uppercase;}
   .mt-dacc{margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
   .mt-dacc .btn{padding:5px 10px;font-size:12px;}
@@ -270,6 +274,8 @@
   .cajon-pasos{display:flex;gap:6px;padding:10px 14px 0;}
   .cajon-pasos div{flex:1;background:#eef1f5;border-radius:6px;padding:6px 8px;font-size:11.5px;color:#44546a;}
   .cajon-pasos div.on{background:#dbeaf7;color:#1e5a9e;font-weight:700;}
+  .carga-como{background:#eef1f5;border-radius:6px;padding:6px 10px;font-size:12.5px;color:#24364a;white-space:nowrap;}
+  .carga-como span{display:block;font-size:11px;color:#5b6775;}
   .cajon-b{padding:12px 14px;overflow:auto;flex:1;}
   #toastBox{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);z-index:90;display:flex;flex-direction:column;gap:6px;align-items:center;pointer-events:none;}
   .toast{background:#24364a;color:#fff;padding:10px 16px;border-radius:6px;font-size:13px;box-shadow:0 3px 10px rgba(0,0,0,.25);max-width:620px;}
@@ -297,8 +303,8 @@
     <div class="sub">SEGUIRE · Seguimiento Inteligente de Requisiciones · Dirección Nacional de Logística</div>
   </div>
   <div class="hd-der">
-    <label class="hd-soy" title="Su nombre: el panel le muestra lo suyo y lo recuerda">Soy <select id="bYo"><option value="">— Elija su nombre —</option></select></label>
-    <button class="hbtn prim" id="btnCargar" type="button"><svg viewBox="0 0 24 24"><path d="M12 16V4M6 10l6-6 6 6M4 20h16"/></svg>Cargar documento</button>
+    <label class="hd-soy" title="Elija su nombre: el panel le muestra sus tránsitos y lo recuerda">Planificador <select id="bYo"><option value="">— Elija su nombre —</option></select></label>
+    <button class="hbtn prim" id="btnCargar" type="button"><svg viewBox="0 0 24 24"><path d="M12 16V4M6 10l6-6 6 6M4 20h16"/></svg>Cargar OC / Solicitud de Entrega</button>
     <button class="hbtn" id="btnTutorial" type="button" title="Tutorial guiado"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M10 8.5l5.5 3.5-5.5 3.5z"/></svg>Tutorial</button>
     <button class="hbtn" id="btnTema" type="button" title="Modo claro / oscuro"><svg viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></svg></button>
     <div class="hsello" id="selloDatos">Cargando datos…</div>
@@ -547,7 +553,7 @@
 
 <div class="cajon-ov" id="cajonOv"></div>
 <div class="cajon" id="cajon" role="dialog" aria-label="Cargar documento">
-  <div class="cajon-h"><span id="cajonTit">Cargar documento</span><button type="button" id="cajonCerrar">Cerrar</button></div>
+  <div class="cajon-h"><span id="cajonTit">Cargar OC / Solicitud de Entrega</span><button type="button" id="cajonCerrar">Cerrar</button></div>
   <div class="cajon-pasos" id="cajonPasos"><div class="on" id="cp1">1. Elegir tipo y subir el PDF</div><div id="cp2">2. Revisar lo leído</div><div id="cp3">3. Guardar</div></div>
   <div class="cajon-b" id="cajonBody"></div>
 </div>
@@ -709,6 +715,7 @@ function aplicarConfianza(inputId, confCampo){
 
 function mostrarRevision(d, tipoElegido){
   try{ pasoCajon(2); }catch(eP){}
+  setTimeout(function(){ var a=$('rAnalista'); if(a && !a.value.trim() && _yo) a.value=_yo; },0);
   $('panelRevision').style.display='block';
   const tipoIA=d.tipo||tipoElegido;
   $('rTipo').value=tipoIA;
@@ -2131,14 +2138,14 @@ function aplicarLimpiezaDup(){
    Mismo patrón del dashboard de reposición: overlay + spotlight + caja que avanza.
    Algunos pasos preparan el estado (abrir un documento en edición) para mostrar campos. */
 var TOUR_STEPS = [
-  { sel:'#bYo', tit:'1. Su nombre', txt:'Elija aquí su nombre una sola vez. El panel le muestra solo sus tránsitos y lo recuerda la próxima vez. El enlace del correo semanal ya llega con su nombre puesto.', v:'mis' },
-  { sel:'#mtChips', tit:'2. Sus pendientes', txt:'Cada contador es un tipo de pendiente. Haga clic en uno para ver la lista de esos tránsitos: confirmar recepción, vencidos sin entrada, por vencer, documentos sin OC, fechas por verificar y sin CEDIS.', v:'mis' },
+  { sel:'#bYo', tit:'1. Planificador', txt:'Elija aquí su nombre una sola vez. El panel le muestra solo sus tránsitos y lo recuerda la próxima vez. El enlace del correo semanal ya llega con su nombre puesto.', v:'mis' },
+  { sel:'#mtChips', tit:'2. Sus pendientes', txt:'Al elegir su nombre verá «Todo lo mío». Cada contador funciona como filtro: haga clic en uno para ver solo esos tránsitos: confirmar recepción, vencidos sin entrada, por vencer, documentos sin OC, fechas por verificar y sin CEDIS.', v:'mis' },
   { sel:'.mt-guia .q', tit:'3. Qué se sugiere hacer', txt:'Esta línea le explica, para la lista que está viendo, qué se espera que haga.', v:'mis' },
   { sel:'#mtTablaBox', tit:'4. La lista', txt:'Una fila por renglón y CEDIS. Haga clic en el encabezado de una columna para ordenar. La columna Entrega muestra en color cuánto falta o cuánto lleva vencida, y Situación dice de qué fuente sale la información.', v:'mis' },
   { sel:'.mt-acc', tit:'5. Siguiente paso', txt:'Cada fila trae el botón de lo que corresponde hacer: confirmar la recepción, notificar al proveedor, anotar la OC o verificar la fecha.', v:'mis' },
   { sel:'#mtTablaBox tr.f', tit:'6. Más acciones', txt:'Haga clic sobre la fila para ver el detalle y las demás acciones: ver el PDF, editar el documento, cita tomada o eliminar.', v:'mis' },
   { sel:'#mtXlsVista', tit:'7. Descargar Excel', txt:'Descargue en Excel la lista que está viendo, o todos sus tránsitos con saldo.', v:'mis' },
-  { sel:'#btnCargar', tit:'8. Cargar un documento', txt:'Para registrar una OC, una Solicitud de Entrega o una Nota de Adelanto, use este botón. Se abre un panel donde elige el tipo, sube el PDF y revisa lo que el sistema leyó antes de guardar.', v:'mis' },
+  { sel:'#btnCargar', tit:'8. Cargar OC / Solicitud de Entrega', txt:'Para registrar una OC, una Solicitud de Entrega o una Nota de Adelanto, use este botón. Se abre un panel donde elige el tipo, sube el PDF y revisa lo que el sistema leyó antes de guardar. Se registra a su nombre.', v:'mis' },
   { sel:'#vistas', tit:'9. Vista Jefatura', txt:'La pestaña Vista Jefatura muestra el panorama general: indicadores, gráficos y todos los documentos de todos los planificadores.', v:'mis' }
 ];
 var TOUR_I = 0;
@@ -2235,7 +2242,7 @@ function verVista(v){
 function abrirCajon(titulo, paso, edicion){
   var ed=!!edicion||/^Editar/.test(titulo||'');
   if(!ed && _editandoId){ cancelarEdicionCajon(); }                    // abrir «Cargar» descarta una edición a medias
-  $('cajonTit').textContent=titulo||'Cargar documento';
+  $('cajonTit').textContent=titulo||'Cargar OC / Solicitud de Entrega';
   $('panelCarga').style.display=ed?'none':'block';
   $('cajonPasos').style.display=ed?'none':'flex';
   $('cajon').classList.add('on'); $('cajonOv').classList.add('on'); pasoCajon(paso||1); syncPlanificadorCarga();
@@ -2243,10 +2250,17 @@ function abrirCajon(titulo, paso, edicion){
 function cancelarEdicionCajon(){ restaurarPanel(); _extraido=null; _pdfBase64=null; _editandoId=null; $('btnGuardar').textContent='Guardar en tránsitos'; $('estadoGuardar').className='estado-msg'; }
 function cerrarCajon(){ if(_editandoId) cancelarEdicionCajon(); $('cajon').classList.remove('on'); $('cajonOv').classList.remove('on'); }
 function pasoCajon(n){ ['cp1','cp2','cp3'].forEach(function(id,i){ var e=$(id); if(e) e.classList.toggle('on', i===n-1); }); }
+/* (11-oct) Con el planificador elegido arriba, el cajón no vuelve a pedir el nombre:
+   lo muestra y lo usa. Sin nombre elegido, se ve el selector de siempre. */
 function syncPlanificadorCarga(){
-  var sel=$('planificadorSel'), inp=$('planificador'); if(!_yo||!sel) return;
-  var op=[].slice.call(sel.options).find(function(o){ return o.value===_yo || trEsDe(_yo,o.value); });
-  if(op && !sel.value){ sel.value=op.value; if(inp) inp.value=op.value; }
+  var sel=$('planificadorSel'), inp=$('planificador'), nota=$('cargaComo'); if(!sel) return;
+  if(!nota){ nota=document.createElement('div'); nota.id='cargaComo'; nota.className='carga-como'; sel.parentNode.insertBefore(nota, sel); }
+  if(_yo){
+    var op=[].slice.call(sel.options).find(function(o){ return o.value===_yo || trEsDe(_yo,o.value); });
+    if(op) sel.value=op.value; if(inp){ inp.value=op?op.value:_yo; inp.style.display='none'; }
+    sel.style.display='none'; nota.style.display='block';
+    nota.innerHTML='Se registra a nombre de <b>'+esc(_yo)+'</b><span>Para cambiarlo, elija otro nombre en «Planificador», arriba.</span>';
+  } else { sel.style.display=''; nota.style.display='none'; }
 }
 function misBase(){ return TRANSITOS.filter(function(t){ return !_yo || trEsDe(_yo,t.planificador); }); }
 function misCats(t){ var c=trCats(t); return trCerrado(t)?c:c.concat(['ALL']); }
@@ -2279,7 +2293,7 @@ function misAccion(t, cat){
   var k=cat==='ALL'?(['REC','SOC','FEC','CED','VEN','PRO'].find(function(x){ return cs.indexOf(x)>=0; })||''):cat;
   if(k==='REC') return '<button class="btn ok" data-a="conf" data-id="'+id+'">Confirmar</button><button class="btn btn-sec" data-a="nocorr" data-id="'+id+'">No corresponde</button>';
   if(k==='SOC'){ var e=EVID[String(t.id)]||{}, sug=e.ocSugerida||'';
-    return '<div class="mt-oc"><input id="oc_'+id+'" placeholder="1001……" value="'+esc(sug)+'" maxlength="16"><button class="btn" data-a="oc" data-id="'+id+'">Guardar</button></div>'+(sug?'<div class="sm">sugerida por la cita del proveedor: verifíquela</div>':''); }
+    return '<div class="mt-oc"><input id="oc_'+id+'" placeholder="1001234567-08-12" value="'+esc(sug)+'" maxlength="18" title="Nº de OC SAP: 1001234567 o 1001234567-08-12"><button class="btn" data-a="oc" data-id="'+id+'">Guardar</button></div>'+(sug?'<div class="sm">sugerida por la cita del proveedor: verifíquela con el PDF</div>':'<div class="sm">Escríbala tal como aparece en el PDF (Contrato Nº / OC)</div>'); }
   if((k==='FEC'||k==='CED')&&est==='AGENDADA') return '<span class="sm">Con cita en firme: ya no se puede editar</span>';
   if(k==='FEC') return '<button class="btn" data-a="editar" data-id="'+id+'">Verificar fecha</button>';
   if(k==='CED') return '<button class="btn" data-a="editar" data-id="'+id+'">Indicar CEDIS</button>';
@@ -2291,6 +2305,8 @@ function misAccion(t, cat){
   return '<span class="sm">Clic en la fila para ver acciones</span>';
 }
 const M_COLS=[['doc','Documento · OC'],['cod','Renglón'],['prov','Proveedor'],['ced','CEDIS'],['sal','Saldo'],['f','Entrega'],['sit','Situación'],['acc','Siguiente paso']];
+const M_ACC={ REC:'Siguiente paso: confirme la recepción', VEN:'Siguiente paso: contacte al proveedor', PRO:'Siguiente paso: confirme la cita',
+  SOC:'Siguiente paso: escriba el Nº de OC SAP y presione Guardar', FEC:'Siguiente paso: verifique la fecha con el PDF', CED:'Siguiente paso: indique el CEDIS', ALL:'Siguiente paso' };
 const M_KEY={ doc:function(t){ return normDoc(t.n_documento); }, cod:function(t){ return String(t.cod_abasto||''); }, prov:function(t){ return String(t.proveedor||'').toUpperCase(); },
   ced:function(t){ return String(t.cedi||''); }, sal:function(t){ return t._sal!=null?t._sal:trSaldo(t); }, f:function(t){ return trFecha(t)||'9999'; }, sit:function(t){ return situacionEv(t)||''; } };
 function misLista(){
@@ -2307,16 +2323,16 @@ function misLista(){
 function renderMis(){
   if(!$('mtChips')) return;
   var base=misBase(), n=misCuentas(base);
-  if(!_misCatUser || !_misCat){ _misCat=(['REC','VEN','PRO','SOC','FEC','CED'].find(function(k){ return n[k]>0; }))||'ALL'; }
+  if(!_misCatUser || !_misCat){ _misCat='ALL'; }
   $('mtAviso').style.display=_yo?'none':'block';
-  $('mtAviso').innerHTML='Elija su nombre arriba, en <b>Soy</b>, para ver solo sus tránsitos. Mientras tanto se muestran los de todos los planificadores.';
+  $('mtAviso').innerHTML='Elija su nombre arriba, en <b>Planificador</b>, para ver solo sus tránsitos. Mientras tanto se muestran los de todos los planificadores.';
   $('mtChips').innerHTML=M_CATS.map(function(c){ return '<button type="button" class="mt-chip k-'+c[0]+(_misCat===c[0]?' on':'')+'" data-k="'+c[0]+'"'+((n[c[0]]||c[0]==='ALL')?'':' disabled')+'><b>'+n[c[0]]+'</b>'+c[1]+'</button>'; }).join('');
   $('mtGuia').innerHTML=(M_CATS.find(function(c){ return c[0]===_misCat; })||M_CATS[6])[2];
   var L=misLista();
   if(!TRANSITOS.length){ $('mtTablaBox').innerHTML='<div class="mt-vacio">Cargando…</div>'; return; }
   if(!L.length){ $('mtTablaBox').innerHTML='<div class="mt-vacio">No hay tránsitos en esta lista'+(_yo?' para '+esc(_yo):'')+'.</div>'; $('mtPie').textContent=''; return; }
   var h='<table class="mt-tabla"><thead><tr>'+M_COLS.map(function(c){ var o=!!M_KEY[c[0]];
-    return '<th'+(o?' data-o="'+c[0]+'"':' class="nos"')+(c[0]==='sal'?' style="text-align:right"':'')+'>'+c[1]+(o?'<span class="ar">'+(_misOrden.k===c[0]?(_misOrden.dir>0?'▲':'▼'):'▲▼')+'</span>':'')+'</th>'; }).join('')+'</tr></thead><tbody>';
+    return '<th'+(o?' data-o="'+c[0]+'"':' class="nos"')+(c[0]==='sal'?' style="text-align:right"':'')+(c[0]==='acc'?' style="white-space:normal;min-width:190px"':'')+'>'+(c[0]==='acc'?(M_ACC[_misCat]||c[1]):c[1])+(o?'<span class="ar">'+(_misOrden.k===c[0]?(_misOrden.dir>0?'▲':'▼'):'▲▼')+'</span>':'')+'</th>'; }).join('')+'</tr></thead><tbody>';
   L.forEach(function(t){
     var id=esc(t.id), esOC=String(t.tipo).toUpperCase()==='ORDEN_COMPRA', ab=_misAbierto===String(t.id);
     var oc=esOC?'<span class="sm">OC madre</span>':(/10\d{8}/.test(String(t.n_orden_compra||''))?'<span class="sm" style="font-family:Consolas,monospace">'+esc(t.n_orden_compra)+'</span>':'<span class="sm" style="color:#1e5a9e">sin OC</span>');
@@ -2331,7 +2347,7 @@ function renderMis(){
     if(ab){ var est=String(t.estado_transito||'').toUpperCase();
       h+='<tr class="mt-det"><td colspan="8"><div class="mt-dgrid">'+
         '<div><span>Emisión</span>'+esc(t.fecha_emision||'—')+'</div><div><span>Cantidad</span>'+fmtNum(t.cantidad)+'</div><div><span>Entregado</span>'+fmtNum(t.cant_entregada||0)+'</div>'+
-        '<div><span>Estado</span>'+esc(est||'EMITIDA')+'</div><div><span>Código SAP</span>'+esc(t.cod_sap||'—')+'</div><div><span>Planificador</span>'+esc(t.planificador||'—')+'</div></div>'+
+        '<div><span>Estado</span>'+esc(est||'EMITIDA')+'</div><div><span>Nº OC SAP</span>'+esc(t.n_orden_compra||'— sin OC')+'</div><div><span>Código SAP</span>'+esc(t.cod_sap||'—')+'</div><div><span>Planificador</span>'+esc(t.planificador||'—')+'</div></div>'+
         '<div class="mt-dacc">'+(t.archivo_url?'<a class="btn btn-sec" href="'+esc(t.archivo_url)+'" target="_blank" rel="noopener">Ver PDF</a>':'<span class="sm">El PDF aparece al terminar de conectar con el registro en vivo.</span>')+
         (est!=='AGENDADA'?'<button class="btn btn-sec" data-a="editar" data-id="'+id+'">Editar documento'+(est==='NOTIFICADA'?' (reenvía aviso)':'')+'</button>':'')+
         (est!=='NOTIFICADA'&&est!=='AGENDADA'?'<button class="btn btn-sec" data-a="notif" data-id="'+id+'">Notificar al proveedor</button>':'')+
@@ -2414,7 +2430,7 @@ function misExcel(todo){
   $('mtXlsVista').addEventListener('click',function(){ misExcel(false); });
   $('mtXlsTodo').addEventListener('click',function(){ misExcel(true); });
   document.querySelectorAll('#vistas button').forEach(function(b){ b.addEventListener('click',function(){ verVista(b.dataset.v); }); });
-  $('btnCargar').addEventListener('click',function(){ abrirCajon('Cargar documento',1); });
+  $('btnCargar').addEventListener('click',function(){ abrirCajon('Cargar OC / Solicitud de Entrega',1); });
   $('cajonCerrar').addEventListener('click',cerrarCajon); $('cajonOv').addEventListener('click',cerrarCajon);
   $('btnTema').addEventListener('click',function(){ var r=document.documentElement, osc=r.getAttribute('data-theme')!=='dark'; r.setAttribute('data-theme',osc?'dark':'light'); try{ localStorage.setItem('seg_tema',osc?'dark':'light'); }catch(e){} });
   try{ if(localStorage.getItem('seg_tema')==='dark') document.documentElement.setAttribute('data-theme','dark'); }catch(e){}
