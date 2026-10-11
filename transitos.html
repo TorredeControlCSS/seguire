@@ -80,6 +80,18 @@
   .kpis{display:grid;grid-template-columns:repeat(6,1fr);gap:7px;margin-bottom:12px;}
   @media(max-width:760px){.kpis{grid-template-columns:1fr 1fr 1fr;}}
   .kpi{border-radius:6px;padding:7px 10px;background:var(--pastel-gris);transition:.15s;}
+  /* Bandeja «Mis pendientes» (11-oct-2026) */
+  .bandeja{display:flex;flex-wrap:wrap;align-items:center;gap:10px;}
+  .bandeja .soy{display:flex;align-items:center;gap:8px;font-size:13px;color:#24364a;font-weight:600;}
+  .bandeja .soy select{min-width:220px;}
+  .bchips{display:flex;flex-wrap:wrap;gap:8px;flex:1;}
+  .bchip{border:0;border-radius:8px;padding:7px 12px;cursor:pointer;text-align:left;font:inherit;font-size:12px;line-height:1.25;min-width:118px;}
+  .bchip b{display:block;font-size:20px;font-family:Consolas,monospace;}
+  .bchip.on{outline:2px solid #0C447C;outline-offset:1px;}
+  .bchip[disabled]{opacity:.45;cursor:default;}
+  .bc-REC{background:#d6efdc;color:#1f6b36}.bc-VEN{background:#f6d5d1;color:#9b1c2c}.bc-PRO{background:#fbe8c8;color:#8a5a1a}.bc-FEC{background:#e7def3;color:#5b3f8c}.bc-CED{background:#eef1f5;color:#44546a}
+  .bnota{font-size:12px;color:#5d6b7a;margin-top:8px;}
+  .cerrados{display:flex;align-items:center;gap:6px;font-size:12.5px;color:#44546a;white-space:nowrap;}
   .kpi .n{font-size:17px;font-weight:700;font-family:Consolas,monospace;line-height:1.1;}
   .kpi .l{font-size:9.5px;line-height:1.25;margin-top:2px;}
   .kpi.on-azul{background:var(--pastel-azul);} .kpi.on-azul .n{color:#0C447C;} .kpi.on-azul .l{color:#185FA5;}
@@ -217,7 +229,19 @@
     <div class="kpi off" id="kpiAdelCard"><div class="n" id="kpiAdel">—</div><div class="l">Notas de Adelanto</div></div>
     <div class="kpi off" id="kpiPendCard"><div class="n" id="kpiPend">—</div><div class="l">Sin retirar / pendientes</div></div>
     <div class="kpi off" id="kpiVencCard"><div class="n" id="kpiVenc">—</div><div class="l">Vencen ≤ 15 días</div></div>
-    <div class="kpi off" id="kpiCantCard"><div class="n" id="kpiCant">—</div><div class="l">Cantidad total (unidades)</div></div>
+    <div class="kpi off" id="kpiCantCard"><div class="n" id="kpiCant">—</div><div class="l">Saldo en tránsito (unidades)</div></div>
+  </div>
+
+  <!-- Bandeja: lo que le toca a cada planificador -->
+  <div class="panel" id="panelBandeja">
+    <div class="panel-h"><span>Mis pendientes</span></div>
+    <div class="panel-b">
+      <div class="bandeja">
+        <label class="soy">Planificador <select id="bYo"><option value="">— Todos —</option></select></label>
+        <div class="bchips" id="bChips"></div>
+      </div>
+      <div class="bnota" id="bNota">Elija su nombre para ver solo lo suyo. Haga clic en un contador para ver esos documentos.</div>
+    </div>
   </div>
 
   <!-- Dos gráficos lado a lado: panorama + planificadores -->
@@ -401,6 +425,7 @@
             <button class="btn btn-sec" id="btnExcel" type="button" title="Descargar Excel institucional">⬇ Excel</button>
             <button class="btn btn-sec" id="btnRefrescar" type="button">↻ Refrescar</button>
             <button class="btn btn-sec" id="btnLimpiar" type="button" title="Limpiar todos los filtros">✕ Limpiar</button>
+            <label class="cerrados" title="Documentos ya recibidos o confirmados"><input type="checkbox" id="fCerrados"> Mostrar cerrados</label>
           </div>
         </div>
       </div>
@@ -1049,7 +1074,7 @@ function cargarTransitos(){
     try{ delete window[cb]; }catch(e){}
     TRANSITOS=(resp&&resp.transitos)?resp.transitos:[];
     if(typeof poblarSelectoresPlanif==='function') poblarSelectoresPlanif();
-    renderTarjetas(); renderKPIs();
+    poblarBandeja(); renderBandeja(); renderTarjetas(); renderKPIs();
     cargarEvidencia();
   };
   const s=document.createElement('script');
@@ -1062,7 +1087,7 @@ function cargarTransitos(){
 function cargarEvidencia(){
   fetch(URL_EVIDENCIA+'?t='+Date.now()).then(function(r){ return r.json(); }).then(function(j){
     EVID={}; ((j&&j.rows)||[]).forEach(function(r){ EVID[String(r.id)]=r; });
-    renderTarjetas();
+    renderBandeja(); renderTarjetas(); renderKPIs();
   }).catch(function(){ /* sin evidencia, el panel funciona como siempre */ });
 }
 /* Situación vigente de una fila: lo que ya registró el planificador manda sobre el JSON. */
@@ -1355,12 +1380,62 @@ function toggleDet(id){
   if(v){ v.innerHTML=(_detAbierto[id]?'▲':'▼')+' detalle'; }
 }
 
+/* ====== BANDEJA «MIS PENDIENTES» (11-oct-2026) ======
+   Misma regla que el recordatorio por correo (AVISO_PLANIFICADORES.gs en SÍGUELO). */
+var _yo='', _bandeja='';
+const B_CATS=[['REC','Confirmar recepción'],['VEN','Vencidos sin entrada'],['PRO','Vencen en 7 días'],['FEC','Fechas por verificar'],['CED','Sin CEDIS']];
+function trSaldo(t){ var s=t.saldo; if(s!==''&&s!=null&&!isNaN(Number(s))) return Number(s); return Math.max(0,(Number(t.cantidad)||0)-(Number(t.cant_entregada)||0)); }
+function trCerrado(t){ var e=String(t.estado_transito||'').toUpperCase(); if(e==='ENTREGADA'||e==='RECIBIDA'||e==='ANULADA'||e==='CANCELADA') return true;
+  var cant=Number(t.cantidad)||0, ent=Number(t.cant_entregada)||0; if(cant>0&&ent>=cant) return true; return trSaldo(t)<=0; }
+function trFecha(t){ var tp=String(t.tipo||'').toUpperCase(), f=tp==='ORDEN_COMPRA'?(t.termino_entrega_oc||t.termino_entrega||t.vencimiento_entrega):(t.vencimiento_entrega||t.termino_entrega); f=String(f||'').slice(0,10); return /^\d{4}-\d{2}-\d{2}$/.test(f)?f:''; }
+function trCats(t){
+  if(trCerrado(t)) return [];
+  var c=[], s=situacionEv(t), d=diasPara(trFecha(t));
+  if(s==='RECIBIDO_SIN_CONFIRMAR'||s==='RECIBIDO_PARCIAL_SIN_CONFIRMAR') c.push('REC');
+  else if(s==='VENCIDO_SIN_ENTRADA'||(d!=null&&d<0&&s!=='EN_PLAZO')) c.push('VEN');
+  else if(d!=null&&d>=0&&d<=7) c.push('PRO');
+  if(String(t.estado_transito||'').toUpperCase()==='REVISAR') c.push('FEC');
+  if(!String(t.cedi||'').trim()) c.push('CED');
+  return c;
+}
+/* El nombre elegido coincide con el escrito en el documento aunque varíe la forma
+   ("Selene Fernández" ↔ "Selene itzel Fernandez vega"): mismo primer nombre y los demás
+   apellidos presentes (una inicial vale). */
+function bTok(s){ return String(s||'').toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^A-Z ]/g,' ').split(/\s+/).filter(function(w){ return w.length>0&&['DE','LA','DEL','LOS'].indexOf(w)<0; }); }
+function trEsDe(yo,nombre){ var a=bTok(yo), b=bTok(nombre); if(!a.length||!b.length||a[0]!==b[0]) return false;
+  return a.slice(1).every(function(w){ return b.some(function(u){ return u===w||(u.length===1&&w.charAt(0)===u)||(w.length===1&&u.charAt(0)===w); }); }); }
+function poblarBandeja(){
+  var sel=$('bYo'); if(!sel) return;
+  var vistos={}, nombres=[];
+  TRANSITOS.forEach(function(t){ var n=String(t.planificador||'').trim(); if(!n) return; var k=bTok(n).join(' '); if(vistos[k]) return; vistos[k]=1; nombres.push(n); });
+  nombres.sort(function(a,b){ return a.localeCompare(b,'es'); });
+  var q=new URLSearchParams(location.search), pUrl=q.get('p')||'', guardado=''; try{ guardado=localStorage.getItem('seg_yo')||''; }catch(e){}
+  var quiere=pUrl||guardado;
+  if(quiere && !nombres.some(function(n){ return n===quiere; })){ var m=nombres.find(function(n){ return trEsDe(quiere,n); }); if(m) quiere=m; else nombres.unshift(quiere); }
+  sel.innerHTML='<option value="">— Todos —</option>'+nombres.map(function(n){ return '<option'+(n===quiere?' selected':'')+'>'+esc(n)+'</option>'; }).join('');
+  _yo=quiere||''; if(pUrl){ try{ localStorage.setItem('seg_yo',_yo); }catch(e){} }
+}
+function renderBandeja(){
+  var box=$('bChips'); if(!box) return;
+  var n={}; B_CATS.forEach(function(c){ n[c[0]]=0; });
+  TRANSITOS.forEach(function(t){ if(_yo && !trEsDe(_yo,t.planificador)) return; trCats(t).forEach(function(k){ n[k]++; }); });
+  box.innerHTML=B_CATS.map(function(c){ return '<button type="button" class="bchip bc-'+c[0]+(_bandeja===c[0]?' on':'')+'" data-k="'+c[0]+'"'+(n[c[0]]?'':' disabled')+'><b>'+n[c[0]]+'</b>'+c[1]+'</button>'; }).join('');
+  box.querySelectorAll('.bchip').forEach(function(b){ b.onclick=function(){ _bandeja=(_bandeja===b.dataset.k)?'':b.dataset.k; renderBandeja(); renderTarjetas();
+    var tg=document.getElementById('tarjetas'); if(_bandeja&&tg) tg.scrollIntoView({behavior:'smooth',block:'start'}); }; });
+  $('bNota').textContent=_bandeja?('Mostrando: '+B_CATS.find(function(c){return c[0]===_bandeja;})[1]+(_yo?' · '+_yo:'')+'. Vuelva a hacer clic en el contador para quitar el filtro.')
+    :(_yo?'Lo que hoy tiene una acción pendiente para '+_yo+'. Haga clic en un contador para ver esos documentos.':'Elija su nombre para ver solo lo suyo. Haga clic en un contador para ver esos documentos.');
+}
+
 function aplicarFiltros(arr){
   const q=$('fBuscar').value.toLowerCase().trim();
   const ft=$('fTipo').value, fe=$('fEstado').value;
   const fd=$('fVencDesde').value, fh=$('fVencHasta').value;
   const fp=$('fPlanif')?$('fPlanif').value:'';
+  const verCerr=$('fCerrados')&&$('fCerrados').checked;
   return arr.filter(t=>{
+    if(!verCerr && trCerrado(t)) return false;
+    if(_yo && !trEsDe(_yo,t.planificador)) return false;
+    if(_bandeja && trCats(t).indexOf(_bandeja)<0) return false;
     if(ft && t.tipo!==ft) return false;
     if(fe==='_EV_CONF'){ var s1=situacionEv(t); if(s1!=='RECIBIDO_SIN_CONFIRMAR' && s1!=='RECIBIDO_PARCIAL_SIN_CONFIRMAR') return false; }
     else if(fe==='_EV_ATR'){ if(situacionEv(t)!=='VENCIDO_SIN_ENTRADA') return false; }
@@ -1385,9 +1460,11 @@ function renderKPIs(){
   const oc=docsUnicosPorTipo('ORDEN_COMPRA');
   const sol=docsUnicosPorTipo('SOLICITUD_ENTREGA');
   const adel=docsUnicosPorTipo('ADELANTO');
-  const pend=TRANSITOS.filter(t=>String(t.estado_transito||'').toUpperCase()!=='AGENDADA').length;
-  const venc=TRANSITOS.filter(t=>{const d=diasPara(t.vencimiento_entrega||t.vencimiento_oc);return d!=null&&d>=0&&d<=15;}).length;
-  const totCant=TRANSITOS.reduce((s,t)=>s+(parseFloat(t.cantidad)||0),0);
+  // (11-oct-2026) sobre lo que sigue pendiente: lo recibido o confirmado ya no cuenta
+  const vivos=TRANSITOS.filter(t=>!trCerrado(t));
+  const pend=vivos.filter(t=>String(t.estado_transito||'').toUpperCase()!=='AGENDADA').length;
+  const venc=vivos.filter(t=>{const d=diasPara(t.vencimiento_entrega||t.vencimiento_oc);return d!=null&&d>=0&&d<=15;}).length;
+  const totCant=vivos.reduce((s,t)=>s+trSaldo(t),0);
   $('kpiOC').textContent=oc;
   $('kpiSol').textContent=sol;
   $('kpiAdel').textContent=adel;
@@ -1478,6 +1555,8 @@ $('btnExcel').addEventListener('click',function(){
 
 /* ====== FILTROS Y CONTROLES ====== */
 ['fBuscar','fTipo','fEstado','fPlanif','fVencDesde','fVencHasta','fOrden'].forEach(id=>{var el=$(id); if(el) el.addEventListener('input',renderTarjetas);});
+if($('fCerrados')) $('fCerrados').addEventListener('change',function(){ renderTarjetas(); });
+if($('bYo')) $('bYo').addEventListener('change',function(){ _yo=this.value; _bandeja=''; try{ localStorage.setItem('seg_yo',_yo); }catch(e){} renderBandeja(); renderTarjetas(); });
 $('btnOrdenDir').addEventListener('click',function(){ _ordenDir=!_ordenDir; this.textContent=_ordenDir?'▲':'▼'; renderTarjetas(); });
 $('btnRefrescar').addEventListener('click',cargarTransitos);
 $('btnLimpiar').addEventListener('click',function(){
@@ -1487,6 +1566,7 @@ $('btnLimpiar').addEventListener('click',function(){
   $('fTipo').value='';
   $('fEstado').value='';
   if($('fPlanif')) $('fPlanif').value='';
+  _bandeja=''; if(typeof renderBandeja==='function') renderBandeja();
   if($('fOrden')) $('fOrden').selectedIndex=0;
   _mesPanorama=null; if($('mesRangoP')) $('mesRangoP').textContent='Todos';
   _mesPlanif=null; if($('mesRangoG')) $('mesRangoG').textContent='Todos';
