@@ -199,8 +199,8 @@
   .btn-menu-item+.btn-menu-item{border-top:1px solid #eee;}
   /* Tutorial guiado */
   #tourOverlay{position:fixed;inset:0;z-index:1000;}
-  #tourBackdrop{position:absolute;inset:0;background:rgba(12,68,124,.55);}
-  .tour-spot{position:absolute;border:3px solid var(--azul2);border-radius:4px;box-shadow:0 0 0 9999px rgba(12,68,124,.35);transition:all .25s ease;pointer-events:none;}
+  #tourBackdrop{position:absolute;inset:0;background:transparent;}
+  .tour-spot{position:absolute;border:3px solid #fff;outline:3px solid #1e5a9e;border-radius:6px;box-shadow:0 0 0 9999px rgba(12,40,70,.55);transition:all .25s ease;pointer-events:none;}
   #tourBox{position:absolute;z-index:1002;background:#fff;border:1px solid #a8a8a8;border-radius:6px;padding:14px 16px;max-width:340px;box-shadow:0 8px 30px rgba(0,0,0,.28);border-top:4px solid var(--azul);}
   #tourTitulo{font-size:14px;font-weight:700;color:var(--azul2);margin-bottom:6px;font-family:'Segoe UI',Arial,sans-serif;}
   #tourTexto{font-size:12.5px;line-height:1.5;color:#333;}
@@ -210,7 +210,84 @@
   #tourNav .sep{margin-left:auto;}
   #tourNext{background:var(--azul) !important;color:#fff;font-weight:700;border-color:var(--azul) !important;padding:7px 14px !important;}
   #tourSkip,#tourPrev{color:#555;}
+
+  /* ====== VISTA «MIS TRÁNSITOS» · encabezado · cajón · avisos · tema (11-oct-2026) ====== */
+  .hd-der{margin-left:auto;display:flex;align-items:center;gap:8px;}
+  .hd-soy{display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.12);padding:5px 8px;border-radius:6px;font-size:12px;font-weight:600;color:#fff;margin:0;}
+  .hd-soy select{width:auto;min-width:190px;border:0;border-radius:4px;padding:4px 6px;font:inherit;font-weight:600;color:#0C447C;}
+  .hbtn{background:rgba(255,255,255,.14);border:0;color:#fff;border-radius:6px;padding:7px 10px;font:600 12px 'Segoe UI',Arial,sans-serif;cursor:pointer;display:inline-flex;align-items:center;gap:6px;white-space:nowrap;}
+  .hbtn:hover{background:rgba(255,255,255,.24);}
+  .hbtn svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
+  .hbtn.prim{background:#fff;color:#0C447C;}
+  .hsello{font-size:10.5px;text-align:right;opacity:.92;line-height:1.35;min-width:150px;}
+  .vistas{display:flex;gap:2px;background:#fff;border-bottom:1px solid var(--linea);padding:0 18px;position:sticky;top:70px;z-index:40;}
+  .vistas button{background:none;border:0;border-bottom:3px solid transparent;padding:10px 14px;font:600 13px 'Segoe UI',Arial,sans-serif;color:#5b6775;cursor:pointer;}
+  .vistas button.on{color:var(--azul);border-bottom-color:var(--azul);}
+  .mt-chips{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;}
+  .mt-chip{border:2px solid transparent;border-radius:8px;padding:7px 12px;min-width:118px;cursor:pointer;text-align:left;font:inherit;font-size:11.5px;line-height:1.25;}
+  .mt-chip b{display:block;font-size:20px;line-height:1.1;font-family:Consolas,monospace;}
+  .mt-chip.on{border-color:currentColor;box-shadow:0 1px 4px rgba(0,0,0,.12);}
+  .mt-chip[disabled]{opacity:.5;cursor:default;}
+  .k-REC{background:#d6efdc;color:#1f6b36}.k-VEN{background:#f6d5d1;color:#9b1c2c}.k-PRO{background:#fbe8c8;color:#8a5a1a}
+  .k-SOC{background:#dbeaf7;color:#1e5a9e}.k-FEC{background:#e7def3;color:#5b3f8c}.k-CED,.k-ALL{background:#eef1f5;color:#44546a}
+  .mt-guia{background:#fff;border:1px solid var(--linea);border-radius:8px;padding:9px 12px;display:flex;align-items:center;gap:12px;margin-bottom:10px;flex-wrap:wrap;}
+  .mt-guia .q{font-size:13px;flex:1;min-width:280px;}.mt-guia .q b{color:var(--azul);}
+  .mt-guia .der{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
+  .mt-guia input{width:240px;}
+  .mt-aviso{background:#fbe8c8;color:#8a5a1a;border-radius:8px;padding:9px 12px;margin-bottom:10px;font-size:13px;}
+  .mt-tabla{width:100%;border-collapse:collapse;background:#fff;border:1px solid var(--linea);}
+  .mt-tabla th{background:var(--azul2);color:#fff;font-size:11.5px;text-align:left;padding:7px 8px;cursor:pointer;white-space:nowrap;user-select:none;position:sticky;top:112px;z-index:5;}
+  .mt-tabla th.nos{cursor:default;}
+  .mt-tabla th .ar{opacity:.65;font-size:9px;margin-left:3px;}
+  .mt-tabla td{padding:7px 8px;border-bottom:1px solid #e8ecf1;vertical-align:top;font-size:12.5px;}
+  .mt-tabla tr.f{cursor:pointer;}
+  .mt-tabla tr.f:hover td{background:#f7fafd;}
+  .mt-tabla tr.abierta td{background:#f2f7fc;}
+  .mt-tabla .cod{color:var(--azul);font-weight:700;font-family:Consolas,monospace;}
+  .mt-tabla .sm{font-size:11px;color:#5b6775;}
+  .mt-tabla .nm{text-align:right;font-family:Consolas,monospace;}
+  .mt-pill{display:inline-block;border-radius:12px;padding:2px 8px;font-size:11px;font-weight:600;white-space:nowrap;}
+  .mt-sit{font-size:11.5px;line-height:1.35;max-width:260px;}
+  .mt-acc{white-space:nowrap;}
+  .mt-acc .btn{padding:4px 9px;font-size:11.5px;margin:0 3px 3px 0;}
+  .btn.ok{background:#1f6b36;border-color:#1f6b36;}.btn.ok:hover{background:#185a2c;}
+  .mt-oc{display:flex;gap:5px;align-items:center;}
+  .mt-oc input{width:132px;padding:4px 6px;font:12px Consolas,monospace;border:1px solid #9bb7d6;border-radius:4px;}
+  .mt-det td{background:#f7fafd !important;padding:10px 14px;cursor:default;}
+  .mt-dgrid{display:grid;grid-template-columns:repeat(6,1fr);gap:8px 16px;font-size:12px;}
+  .mt-dgrid div span{display:block;font-size:10.5px;color:#5b6775;text-transform:uppercase;}
+  .mt-dacc{margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
+  .mt-dacc .btn{padding:5px 10px;font-size:12px;}
+  .mt-dacc .sep{margin-left:auto;}
+  .mt-lnk{color:#9b1c2c;background:none;border:0;font:12px 'Segoe UI',Arial,sans-serif;cursor:pointer;text-decoration:underline;}
+  .mt-pie{font-size:11.5px;color:#5b6775;margin-top:8px;}
+  .mt-vacio{padding:26px;text-align:center;color:#5b6775;background:#fff;border:1px solid var(--linea);}
+  .cajon-ov{position:fixed;inset:0;background:rgba(12,30,50,.35);z-index:60;display:none;}
+  .cajon{position:fixed;top:0;right:0;width:min(1000px,96vw);height:100vh;background:var(--bg);box-shadow:-4px 0 16px rgba(0,0,0,.2);z-index:61;display:none;flex-direction:column;}
+  .cajon.on,.cajon-ov.on{display:flex;}
+  .cajon-h{background:var(--azul);color:#fff;padding:14px 16px;font-weight:700;display:flex;align-items:center;gap:10px;}
+  .cajon-h button{margin-left:auto;background:rgba(255,255,255,.15);border:0;color:#fff;font-size:13px;cursor:pointer;border-radius:5px;padding:5px 10px;}
+  .cajon-pasos{display:flex;gap:6px;padding:10px 14px 0;}
+  .cajon-pasos div{flex:1;background:#eef1f5;border-radius:6px;padding:6px 8px;font-size:11.5px;color:#44546a;}
+  .cajon-pasos div.on{background:#dbeaf7;color:#1e5a9e;font-weight:700;}
+  .cajon-b{padding:12px 14px;overflow:auto;flex:1;}
+  #toastBox{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);z-index:90;display:flex;flex-direction:column;gap:6px;align-items:center;pointer-events:none;}
+  .toast{background:#24364a;color:#fff;padding:10px 16px;border-radius:6px;font-size:13px;box-shadow:0 3px 10px rgba(0,0,0,.25);max-width:620px;}
+  .toast.ok{background:#1f6b36;}.toast.err{background:#9b1c2c;}
+  :root[data-theme="dark"]{--bg:#141b24;--linea:#334255;}
+  :root[data-theme="dark"] body{background:#141b24;color:#dce3ea;}
+  :root[data-theme="dark"] .panel,:root[data-theme="dark"] .mt-guia,:root[data-theme="dark"] .mt-tabla,:root[data-theme="dark"] .vistas,:root[data-theme="dark"] .mt-vacio,:root[data-theme="dark"] .tarjeta{background:#1c2633;color:#dce3ea;}
+  :root[data-theme="dark"] .panel-h{background:#223042;color:#cfe0f3;}
+  :root[data-theme="dark"] .mt-tabla td{border-color:#2b394b;}
+  :root[data-theme="dark"] .mt-tabla tr.f:hover td,:root[data-theme="dark"] .mt-det td,:root[data-theme="dark"] .mt-tabla tr.abierta td{background:#223042 !important;}
+  :root[data-theme="dark"] .mt-tabla .sm,:root[data-theme="dark"] .mt-dgrid div span,:root[data-theme="dark"] .mt-pie{color:#9fb0c2;}
+  :root[data-theme="dark"] .mt-tabla .cod,:root[data-theme="dark"] .mt-guia .q b{color:#8fc1f0;}
+  :root[data-theme="dark"] input,:root[data-theme="dark"] select{background:#141b24;color:#dce3ea;border-color:#3a4a5e;}
+  :root[data-theme="dark"] .hd-soy select{background:#fff;color:#0C447C;}
+  :root[data-theme="dark"] .vistas button{color:#9fb0c2;}
+  :root[data-theme="dark"] .vistas button.on{color:#8fc1f0;border-bottom-color:#8fc1f0;}
 </style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
 </head>
 <body>
 <header>
@@ -219,10 +296,37 @@
     <h1>Trazabilidad de OC y Tránsitos</h1>
     <div class="sub">SEGUIRE · Seguimiento Inteligente de Requisiciones · Dirección Nacional de Logística</div>
   </div>
-  <button id="btnTutorial" type="button" style="margin-left:auto;background:#fff;color:var(--azul);font-weight:700;border:none;border-radius:4px;padding:7px 14px;cursor:pointer;font-size:12px;">▶ Ver tutorial guiado</button>
+  <div class="hd-der">
+    <label class="hd-soy" title="Su nombre: el panel le muestra lo suyo y lo recuerda">Soy <select id="bYo"><option value="">— Elija su nombre —</option></select></label>
+    <button class="hbtn prim" id="btnCargar" type="button"><svg viewBox="0 0 24 24"><path d="M12 16V4M6 10l6-6 6 6M4 20h16"/></svg>Cargar documento</button>
+    <button class="hbtn" id="btnTutorial" type="button" title="Tutorial guiado"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M10 8.5l5.5 3.5-5.5 3.5z"/></svg>Tutorial</button>
+    <button class="hbtn" id="btnTema" type="button" title="Modo claro / oscuro"><svg viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></svg></button>
+    <div class="hsello" id="selloDatos">Cargando datos…</div>
+  </div>
 </header>
 
-<div class="wrap">
+<nav class="vistas" id="vistas">
+  <button type="button" data-v="mis" class="on">Mis tránsitos</button>
+  <button type="button" data-v="jefatura">Vista Jefatura</button>
+</nav>
+
+<div class="wrap" id="vistaMis">
+  <div class="mt-aviso" id="mtAviso" style="display:none;"></div>
+  <div class="mt-chips" id="mtChips"></div>
+  <div class="mt-guia">
+    <div class="q" id="mtGuia"></div>
+    <div class="der">
+      <input type="text" id="mtBuscar" placeholder="Buscar OC, renglón, proveedor…">
+      <button class="btn btn-sec mini" id="mtLimpiar" type="button">Limpiar filtros</button>
+      <button class="btn btn-sec mini" id="mtXlsVista" type="button" title="Excel de lo que está viendo">Excel de esta vista</button>
+      <button class="btn btn-sec mini" id="mtXlsTodo" type="button" title="Excel de todos sus tránsitos con saldo">Excel de todo lo mío</button>
+    </div>
+  </div>
+  <div id="mtTablaBox"><div class="mt-vacio">Cargando…</div></div>
+  <div class="mt-pie" id="mtPie"></div>
+</div>
+
+<div class="wrap" id="vistaJefatura" style="display:none;">
 
   <!-- KPIs pastel -->
   <div class="kpis" id="kpis">
@@ -232,18 +336,6 @@
     <div class="kpi off" id="kpiPendCard"><div class="n" id="kpiPend">—</div><div class="l">Sin retirar / pendientes</div></div>
     <div class="kpi off" id="kpiVencCard"><div class="n" id="kpiVenc">—</div><div class="l">Vencen ≤ 15 días</div></div>
     <div class="kpi off" id="kpiCantCard"><div class="n" id="kpiCant">—</div><div class="l">Saldo en tránsito (unidades)</div></div>
-  </div>
-
-  <!-- Bandeja: lo que le toca a cada planificador -->
-  <div class="panel" id="panelBandeja">
-    <div class="panel-h"><span>Mis pendientes</span></div>
-    <div class="panel-b">
-      <div class="bandeja">
-        <label class="soy">Planificador <select id="bYo"><option value="">— Todos —</option></select></label>
-        <div class="bchips" id="bChips"></div>
-      </div>
-      <div class="bnota" id="bNota">Elija su nombre para ver solo lo suyo. Haga clic en un contador para ver esos documentos.</div>
-    </div>
   </div>
 
   <!-- Dos gráficos lado a lado: panorama + planificadores -->
@@ -297,8 +389,8 @@
     </div>
   </div>
 
-  <!-- Carga compacta -->
-  <div class="panel">
+  <!-- Carga compacta (se muestra dentro del cajón «Cargar documento») -->
+  <div class="panel" id="panelCarga">
     <div class="carga-compacta">
       <span style="font-weight:700;color:var(--azul);font-size:13px;white-space:nowrap;">Cargar documento</span>
       <select id="tipoDoc" title="Tipo de documento">
@@ -453,6 +545,14 @@
   </div>
 </div>
 
+<div class="cajon-ov" id="cajonOv"></div>
+<div class="cajon" id="cajon" role="dialog" aria-label="Cargar documento">
+  <div class="cajon-h"><span id="cajonTit">Cargar documento</span><button type="button" id="cajonCerrar">Cerrar</button></div>
+  <div class="cajon-pasos" id="cajonPasos"><div class="on" id="cp1">1. Elegir tipo y subir el PDF</div><div id="cp2">2. Revisar lo leído</div><div id="cp3">3. Guardar</div></div>
+  <div class="cajon-b" id="cajonBody"></div>
+</div>
+<div id="toastBox"></div>
+
 <div class="modal-ov" id="modalConfirm">
   <div class="modal-bx" id="modalBox">
     <div class="modal-hd" id="modalTit">Confirmar</div>
@@ -465,6 +565,8 @@
 </div>
 
 <script>
+/* (11-oct-2026) El panel de carga y el de revisión viven en el cajón «Cargar documento». */
+(function(){ var b=document.getElementById('cajonBody'); ['panelCarga','panelRevision'].forEach(function(id){ var el=document.getElementById(id); if(b&&el) b.appendChild(el); }); })();
 /* Modal de confirmación institucional (reemplaza confirm() nativo). Devuelve Promise<boolean>. */
 function modalConfirm(opts){
   opts=opts||{};
@@ -520,7 +622,8 @@ function diasPara(fv){
   const h=new Date(); h.setHours(0,0,0,0);
   return Math.round((f-h)/86400000);
 }
-function setMsg(el, tipo, html){ el.className='estado-msg '+tipo; el.innerHTML=html; }
+function setMsg(el, tipo, html){ el.className='estado-msg '+tipo; el.innerHTML=html;
+  if(el && el.offsetParent===null && (tipo==='ok'||tipo==='err')){ var d=document.createElement('div'); d.innerHTML=html; toast(d.textContent, tipo); } }
 function postSiguelo(action,data){
   return fetch(API_SIGUELO,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({action:action,data:data})}).then(r=>r.json());
 }
@@ -605,6 +708,7 @@ function aplicarConfianza(inputId, confCampo){
 }
 
 function mostrarRevision(d, tipoElegido){
+  try{ pasoCajon(2); }catch(eP){}
   $('panelRevision').style.display='block';
   const tipoIA=d.tipo||tipoElegido;
   $('rTipo').value=tipoIA;
@@ -744,10 +848,10 @@ function restaurarPanel(){
 function editarTransito(id){
   // id puede venir como id de fila; resolvemos el documento y todas sus filas.
   var ref=TRANSITOS.filter(function(x){return String(x.id)===String(id);})[0];
-  if(!ref){ alert('No se encontró el documento.'); return; }
+  if(!ref){ toast('No se encontró el documento.'); return; }
   var nDoc=String(ref.n_documento||'').trim();
   var estado=String(ref.estado_transito||'').toUpperCase();
-  if(estado==='AGENDADA'){ alert('El proveedor ya agendó cita con esta orden. No puede editarse.'); return; }
+  if(estado==='AGENDADA'){ toast('El proveedor ya agendó cita con esta orden. No puede editarse.'); return; }
   // De-duplicar filas del documento por CEDI
   var filasDoc=[], vistos={};
   TRANSITOS.forEach(function(x){
@@ -759,8 +863,7 @@ function editarTransito(id){
   _editandoDoc=nDoc;
   _editandoFilas=filasDoc;
   const panel=$('panelRevision');
-  const tarjeta=document.getElementById('tj_'+id);
-  if(tarjeta && tarjeta.parentNode){ tarjeta.parentNode.insertBefore(panel, tarjeta.nextSibling); }
+  abrirCajon('Editar documento · '+nDoc, 2);
   panel.style.display='block';
   $('rTipo').value=ref.tipo||'';
   $('rDoc').value=ref.n_documento||'';
@@ -819,13 +922,13 @@ function filaRenglonEdicion(f){
 function eliminarDocumento(nDoc, estado){
   if(!nDoc){ return; }
   var est=String(estado||'').toUpperCase();
-  if(est==='AGENDADA'){ alert('El proveedor ya agendó cita con esta orden. No puede eliminarse.'); return; }
+  if(est==='AGENDADA'){ toast('El proveedor ya agendó cita con esta orden. No puede eliminarse.'); return; }
   var filas=TRANSITOS.filter(function(x){return String(x.n_documento).trim()===String(nDoc).trim();}).length;
   var motivo='';
   if(est==='NOTIFICADA'){
     motivo=prompt('Este tránsito ya fue NOTIFICADO al proveedor.\nIndique el motivo de la anulación (se le enviará un correo de anulación):','');
     if(motivo===null) return;
-    if(!motivo.trim()){ alert('Debe indicar un motivo para anular un tránsito notificado.'); return; }
+    if(!motivo.trim()){ toast('Debe indicar un motivo para anular un tránsito notificado.'); return; }
   } else {
     modalConfirm({
       titulo:'Eliminar documento', peligro:true, textoOK:'Eliminar',
@@ -885,7 +988,7 @@ function revertirNotificacion(nDoc){
     titulo:'Revertir notificación', peligro:true, textoOK:'Revertir y avisar',
     mensaje:'El documento volverá a estado EMITIDA y se enviará un correo de <b>rectificación</b> al proveedor indicándole que ignore la notificación anterior.<br><br>Documento: <b>'+esc(nDoc)+'</b>'
   }).then(function(ok){ if(!ok) return;
-    postSiguelo('revertirNotificacionTransito',{n_documento:nDoc, usuario:($('planificador').value.trim()||'Torre de Control')})
+    postSiguelo('revertirNotificacionTransito',{n_documento:nDoc, usuario:(_yo||$('planificador').value.trim()||'Torre de Control')})
       .then(function(j){
         if(j&&j.success){
           var m='Notificación revertida. El documento volvió a EMITIDA.';
@@ -906,12 +1009,12 @@ function notificarProveedor(nDoc, btn){
 }
 function _ejecutarNotificar(nDoc, btn){
   if(btn){ btn.disabled=true; btn.textContent='Enviando…'; }
-  postSiguelo('notificarTransitoProveedor',{n_documento:nDoc, usuario:($('planificador').value.trim()||'Torre de Control')})
+  postSiguelo('notificarTransitoProveedor',{n_documento:nDoc, usuario:(_yo||$('planificador').value.trim()||'Torre de Control')})
     .then(function(j){
       if(j&&j.success){
         setMsg($('estadoGuardar'),'ok','Notificación enviada al proveedor ('+esc(j.correo)+'). El documento pasó a NOTIFICADA.');
         var ahora=new Date().toISOString().slice(0,10);
-        actualizarLocalDoc(nDoc,{ estado_transito:'NOTIFICADA', notificado_en:ahora, notificado_por:($('planificador').value.trim()||'Torre de Control') });
+        actualizarLocalDoc(nDoc,{ estado_transito:'NOTIFICADA', notificado_en:ahora, notificado_por:(_yo||$('planificador').value.trim()||'Torre de Control') });
       } else if(j&&j.sin_correo){
         setMsg($('estadoGuardar'),'err','No se pudo notificar: '+esc(j.error));
         if(btn){ btn.disabled=false; btn.textContent='Notificar al proveedor'; }
@@ -1012,9 +1115,8 @@ $('btnGuardar').addEventListener('click',function(){
         if(huboError){ setMsg($('estadoGuardar'),'err','Algunos cambios fallaron: '+huboError); }
         else {
           var m='Cambios guardados en '+cargas.length+' CEDI(s).'+(correoAvisado?' Correo de corrección enviado al proveedor.':'');
-          setMsg($('estadoGuardar'),'ok',m);
           _editandoId=null; _editandoDoc=null; _editandoFilas=[]; btn.textContent='Guardar en tránsitos';
-          restaurarPanel();
+          restaurarPanel(); cerrarCajon(); toast(m,'ok');
           actualizarLocalFilas(cargas);
         }
         return;
@@ -1058,9 +1160,8 @@ $('btnGuardar').addEventListener('click',function(){
                '<b>Correcciones automáticas en la captura de datos:</b><ul style="margin:4px 0 0 16px;padding:0;">'+
                j.avisos.map(function(a){return '<li>'+esc(a)+'</li>';}).join('')+'</ul></div>';
         }
-        setMsg($('estadoGuardar'),'ok',msg);
         restaurarPanel();
-        $('estadoCarga').className='estado-msg';
+        setMsg($('estadoCarga'),'ok',msg); pasoCajon(3);
         cargarTransitos();
       } else {
         setMsg($('estadoGuardar'),'err','No se pudo guardar: '+((j&&j.error)||'error'));
@@ -1084,7 +1185,7 @@ function pintarTransitos(lista){
   poblarBandeja(); renderBandeja(); renderTarjetas(); renderKPIs();
 }
 function ocupado(){ var a=document.activeElement, tg=$('tarjetas'); return !!(a&&tg&&tg.contains(a)&&/INPUT|TEXTAREA|SELECT/.test(a.tagName)); }
-function marcaDatos(txt,cls){ var el=$('estadoDatos'); if(el){ el.textContent=txt; el.className='edatos'+(cls?' '+cls:''); } }
+function marcaDatos(txt,cls){ var el=$('estadoDatos'); if(el){ el.textContent=txt; el.className='edatos'+(cls?' '+cls:''); } _selloTxt=txt; pintaSello(); }
 function cargarTransitos(){
   const primera=!TRANSITOS.length;
   if(primera){
@@ -1177,15 +1278,15 @@ function responderEvidencia(id, resp){
     textoOK: conf?'Sí, se recibió':'No corresponde', peligro: !conf,
     mensaje: conf
       ? ('Se registrará como recibido <b>'+fmtNum(Math.min(Number(ev.recibido)||0, Number(t.cantidad)||0))+' und</b> de <b>'+esc(t.descripcion||t.cod_abasto||'')+'</b> en <b>'+esc(t.cedi||'')+'</b>.<br><br>El saldo del tránsito se actualiza en la hoja. El estado del documento no cambia.')
-      : ('La entrada de Recepción del <b>'+esc(ev.ultimaEntrada||'')+'</b> no se volverá a proponer para este renglón. Si el producto sigue sin llegar, el tránsito aparecerá como vencido sin entrada.')
+      : ('La entrada registrada en '+(ev.fuente==='KARDEX'?'el Kardex SAP-SAFIRO':'la recepción de CEDIS Panamá')+' del <b>'+esc(ev.ultimaEntrada||'')+'</b> no se volverá a proponer para este renglón. Si el producto sigue sin llegar, el tránsito aparecerá como vencido sin entrada.')
   }).then(function(ok){ if(!ok) return;
     postSiguelo('confirmarRecepcionTransito',{ id:id, respuesta:resp, cantidad:ev.recibido, nivel:ev.nivel||'', hasta:ev.ultimaEntrada||'',
-      por:($('planificador')&&$('planificador').value.trim())||t.planificador||'' })
+      por:_yo||($('planificador')&&$('planificador').value.trim())||t.planificador||'' })
       .then(function(j){
         if(j&&j.success){
           if(conf){ t.cant_entregada=j.cant_entregada; t.saldo=j.saldo; e._local='CONFIRMADO_POR_PLANIFICADOR'; }
           else e._local='_NO_CORRESPONDE';
-          setMsg($('estadoGuardar'),'ok', conf?'Recepción confirmada.':'Registrado: la entrada no corresponde.');
+          toast(conf?'Recepción confirmada. El saldo quedó actualizado.':'Registrado: la entrada no corresponde.','ok');
           renderTarjetas();
         } else { setMsg($('estadoGuardar'),'err','No se pudo registrar: '+((j&&j.error)||'error')); }
       }).catch(function(err){ setMsg($('estadoGuardar'),'err','Error de red: '+err); });
@@ -1256,6 +1357,7 @@ function agruparPorDocumento(filas){
 }
 
 function renderTarjetas(){
+  if(typeof renderMis==='function') setTimeout(renderMis,0);
   let filas=aplicarFiltros(TRANSITOS);
   let grupos=agruparPorDocumento(filas);
   const orden=$('fOrden').value;
@@ -1459,10 +1561,11 @@ function poblarBandeja(){
   var q=new URLSearchParams(location.search), pUrl=q.get('p')||'', guardado=''; try{ guardado=localStorage.getItem('seg_yo')||''; }catch(e){}
   var quiere=_yo||pUrl||guardado;
   if(quiere && !nombres.some(function(n){ return n===quiere; })){ var m=nombres.find(function(n){ return trEsDe(quiere,n); }); if(m) quiere=m; else nombres.unshift(quiere); }
-  sel.innerHTML='<option value="">— Todos —</option>'+nombres.map(function(n){ return '<option'+(n===quiere?' selected':'')+'>'+esc(n)+'</option>'; }).join('');
+  sel.innerHTML='<option value="">— Elija su nombre —</option>'+nombres.map(function(n){ return '<option'+(n===quiere?' selected':'')+'>'+esc(n)+'</option>'; }).join('');
   _yo=quiere||''; if(pUrl){ try{ localStorage.setItem('seg_yo',_yo); }catch(e){} }
 }
 function renderBandeja(){
+  if(typeof renderMis==='function') renderMis();
   var box=$('bChips'); if(!box) return;
   var n={}; B_CATS.forEach(function(c){ n[c[0]]=0; });
   TRANSITOS.forEach(function(t){ if(_yo && !trEsDe(_yo,t.planificador)) return; trCats(t).forEach(function(k){ n[k]++; }); });
@@ -1481,8 +1584,6 @@ function aplicarFiltros(arr){
   const verCerr=$('fCerrados')&&$('fCerrados').checked;
   return arr.filter(t=>{
     if(!verCerr && trCerrado(t)) return false;
-    if(_yo && !trEsDe(_yo,t.planificador)) return false;
-    if(_bandeja && trCats(t).indexOf(_bandeja)<0) return false;
     if(ft && t.tipo!==ft) return false;
     if(fe==='_EV_CONF'){ var s1=situacionEv(t); if(s1!=='RECIBIDO_SIN_CONFIRMAR' && s1!=='RECIBIDO_PARCIAL_SIN_CONFIRMAR') return false; }
     else if(fe==='_EV_ATR'){ if(situacionEv(t)!=='VENCIDO_SIN_ENTRADA') return false; }
@@ -1603,7 +1704,7 @@ $('btnExcel').addEventListener('click',function(){
 /* ====== FILTROS Y CONTROLES ====== */
 ['fBuscar','fTipo','fEstado','fPlanif','fVencDesde','fVencHasta','fOrden'].forEach(id=>{var el=$(id); if(el) el.addEventListener('input',renderTarjetas);});
 if($('fCerrados')) $('fCerrados').addEventListener('change',function(){ renderTarjetas(); });
-if($('bYo')) $('bYo').addEventListener('change',function(){ _yo=this.value; _bandeja=''; try{ localStorage.setItem('seg_yo',_yo); }catch(e){} renderBandeja(); renderTarjetas(); });
+if($('bYo')) $('bYo').addEventListener('change',function(){ _yo=this.value; _bandeja=''; _misCat=''; _misCatUser=false; _misAbierto=null; try{ localStorage.setItem('seg_yo',_yo); }catch(e){} syncPlanificadorCarga(); renderMis(); });
 $('btnOrdenDir').addEventListener('click',function(){ _ordenDir=!_ordenDir; this.textContent=_ordenDir?'▲':'▼'; renderTarjetas(); });
 $('btnRefrescar').addEventListener('click',cargarTransitos);
 $('btnLimpiar').addEventListener('click',function(){
@@ -2030,16 +2131,15 @@ function aplicarLimpiezaDup(){
    Mismo patrón del dashboard de reposición: overlay + spotlight + caja que avanza.
    Algunos pasos preparan el estado (abrir un documento en edición) para mostrar campos. */
 var TOUR_STEPS = [
-  { sel:'#kpis', tit:'1. Resumen general', txt:'Estas tarjetas le muestran, de un vistazo, cuántas Órdenes de Compra, Solicitudes de Entrega y Notas de Adelanto hay en tránsito, cuántas están pendientes y cuántas vencen pronto.' },
-  { sel:'#dropzone', tit:'2. Cargar un documento', txt:'Arrastre aquí el PDF de una Orden de Compra, Solicitud de Entrega o Nota de Adelanto (o haga clic para elegirlo). El sistema lee el documento automáticamente y extrae sus datos.' },
-  { sel:'#tipoDoc', tit:'3. Indique el tipo', txt:'Antes de cargar, elija qué tipo de documento es. Esto ayuda al reconocimiento a interpretarlo correctamente.' },
-  { sel:'#planificadorSel', tit:'4. Su nombre', txt:'Seleccione su nombre como planificador. Así queda registrado quién dio de alta cada documento.' },
-  { sel:'#fBuscar', tit:'5. Buscar', txt:'Escriba un número de OC, un renglón, un proveedor o parte de la descripción para encontrar un documento sin recorrer toda la lista.' },
-  { sel:'#fPlanif', tit:'6. Filtrar por planificador', txt:'Puede filtrar la lista para ver solo los documentos de un planificador. También hay filtros por tipo, estado y rango de fechas.' },
-  { sel:'#tarjetas', tit:'7. Las tarjetas de documento', txt:'Cada documento aparece como una tarjeta. Arriba, el número de Orden de Compra (lo trazable) y la fecha más urgente. La franja de color muestra las cifras clave, y abajo el detalle.', prep:'lista' },
-  { sel:'#tarjetas .tj-acc', tit:'8. Acciones', txt:'En cada tarjeta puede Editar los datos, Ver el PDF original, y Notificar al proveedor para avisarle que retire. Si ya lo notificó, podrá revertir la notificación en caso de error.', prep:'lista' },
-  { sel:'#btnExcel', tit:'9. Descargar Excel', txt:'Genera un reporte en Excel con todos los tránsitos, para revisarlo o compartirlo.' },
-  { sel:'#toggleGraficos', tit:'10. Análisis visual', txt:'Los gráficos de arriba resumen la carga por urgencia y por planificador. Puede ocultarlos con este botón si desea más espacio para la lista.' }
+  { sel:'#bYo', tit:'1. Su nombre', txt:'Elija aquí su nombre una sola vez. El panel le muestra solo sus tránsitos y lo recuerda la próxima vez. El enlace del correo semanal ya llega con su nombre puesto.', v:'mis' },
+  { sel:'#mtChips', tit:'2. Sus pendientes', txt:'Cada contador es un tipo de pendiente. Haga clic en uno para ver la lista de esos tránsitos: confirmar recepción, vencidos sin entrada, por vencer, documentos sin OC, fechas por verificar y sin CEDIS.', v:'mis' },
+  { sel:'.mt-guia .q', tit:'3. Qué se sugiere hacer', txt:'Esta línea le explica, para la lista que está viendo, qué se espera que haga.', v:'mis' },
+  { sel:'#mtTablaBox', tit:'4. La lista', txt:'Una fila por renglón y CEDIS. Haga clic en el encabezado de una columna para ordenar. La columna Entrega muestra en color cuánto falta o cuánto lleva vencida, y Situación dice de qué fuente sale la información.', v:'mis' },
+  { sel:'.mt-acc', tit:'5. Siguiente paso', txt:'Cada fila trae el botón de lo que corresponde hacer: confirmar la recepción, notificar al proveedor, anotar la OC o verificar la fecha.', v:'mis' },
+  { sel:'#mtTablaBox tr.f', tit:'6. Más acciones', txt:'Haga clic sobre la fila para ver el detalle y las demás acciones: ver el PDF, editar el documento, cita tomada o eliminar.', v:'mis' },
+  { sel:'#mtXlsVista', tit:'7. Descargar Excel', txt:'Descargue en Excel la lista que está viendo, o todos sus tránsitos con saldo.', v:'mis' },
+  { sel:'#btnCargar', tit:'8. Cargar un documento', txt:'Para registrar una OC, una Solicitud de Entrega o una Nota de Adelanto, use este botón. Se abre un panel donde elige el tipo, sube el PDF y revisa lo que el sistema leyó antes de guardar.', v:'mis' },
+  { sel:'#vistas', tit:'9. Vista Jefatura', txt:'La pestaña Vista Jefatura muestra el panorama general: indicadores, gráficos y todos los documentos de todos los planificadores.', v:'mis' }
 ];
 var TOUR_I = 0;
 
@@ -2060,6 +2160,7 @@ function mostrarPasoTour(){
   var step = TOUR_STEPS[TOUR_I];
   if(!step){ cerrarTour(); return; }
   if (step.prep==='lista') tourPrepararLista();
+  if (step.v && _vista!==step.v) verVista(step.v);
   setTimeout(function(){ posicionarTour(step); }, step.prep? 150 : 0);
 }
 function posicionarTour(step){
@@ -2101,6 +2202,225 @@ function posicionarTour(step){
   var p=$('tourPrev'); if(p) p.addEventListener('click', function(){ if(TOUR_I>0){ TOUR_I--; mostrarPasoTour(); } });
   var s=$('tourSkip'); if(s) s.addEventListener('click', cerrarTour);
   window.addEventListener('resize', function(){ if($('tourOverlay').style.display==='block') posicionarTour(TOUR_STEPS[TOUR_I]); });
+})();
+
+/* ====== VISTA «MIS TRÁNSITOS» (11-oct-2026) ======
+   Lo que le toca hacer a cada planificador, en una tabla compacta con un botón por fila.
+   Usa las mismas acciones de siempre (confirmar recepción, notificar, cita tomada,
+   editar, eliminar) y una nueva: anotar el Nº de OC SAP (anotarOCTransito en SÍGUELO). */
+var _vista='mis', _misCat='', _misCatUser=false, _misOrden={k:'f',dir:1}, _misAbierto=null, _selloTxt='';
+const M_CATS=[
+  ['REC','Confirmar recepción','Hay una entrada registrada de estos renglones. Se sugiere <b>confirmarla</b>, o marcar «no corresponde» si es de otra orden.'],
+  ['VEN','Vencidos sin entrada','Venció la entrega y no aparece entrada en las fuentes revisadas. Se sugiere <b>validar con el proveedor</b> si aún entregará.'],
+  ['PRO','Vencen en 7 días','La entrega vence en los próximos 7 días. Se sugiere <b>confirmar con el proveedor su cita</b> de entrega.'],
+  ['SOC','Documentos sin OC','Falta el Nº de OC SAP (1001…). Al <b>anotarlo aquí</b>, el sistema coteja la entrega solo contra el Kardex SAP-SAFIRO.'],
+  ['FEC','Fechas por verificar','Al leer el PDF no se pudo confirmar el día o el mes de una fecha. Se sugiere <b>cotejarla con el documento</b>.'],
+  ['CED','Sin CEDIS','El documento no indica el CEDIS de entrega. Mientras no lo tenga, <b>no aparece como tránsito</b> en los tableros.'],
+  ['ALL','Todo lo mío','Todos sus tránsitos con saldo pendiente.']];
+function toast(msg, tipo){ var b=$('toastBox'); if(!b){ return; } var d=document.createElement('div'); d.className='toast'+(tipo?' '+tipo:''); d.textContent=String(msg||''); b.appendChild(d); setTimeout(function(){ d.remove(); }, tipo==='err'?7000:4500); }
+function normDoc(v){ return String(v||'').replace(/\s+/g,' ').trim().toUpperCase(); }
+function pintaSello(){
+  var el=$('selloDatos'); if(!el) return;
+  var F=(EVMETA&&EVMETA.fuentes)||{}, k=F.KARDEX&&F.KARDEX.corte, r=(F.RECEPCION&&F.RECEPCION.corte)||(EVMETA&&EVMETA.corteEntradas);
+  el.innerHTML=esc(_selloTxt||'')+((k||r)?'<br>Kardex al '+esc(fFecha(k)||'—')+' · Recepción al '+esc(fFecha(r)||'—'):'');
+}
+function verVista(v){
+  _vista=(v==='jefatura')?'jefatura':'mis';
+  $('vistaMis').style.display=_vista==='mis'?'block':'none';
+  $('vistaJefatura').style.display=_vista==='jefatura'?'block':'none';
+  document.querySelectorAll('#vistas button').forEach(function(b){ b.classList.toggle('on', b.dataset.v===_vista); });
+  try{ localStorage.setItem('seg_vista',_vista); }catch(e){}
+  if(_vista==='jefatura'){ try{ renderGraficoRico(); renderGraficoPlanif(); }catch(e){} }
+}
+function abrirCajon(titulo, paso, edicion){
+  var ed=!!edicion||/^Editar/.test(titulo||'');
+  if(!ed && _editandoId){ cancelarEdicionCajon(); }                    // abrir «Cargar» descarta una edición a medias
+  $('cajonTit').textContent=titulo||'Cargar documento';
+  $('panelCarga').style.display=ed?'none':'block';
+  $('cajonPasos').style.display=ed?'none':'flex';
+  $('cajon').classList.add('on'); $('cajonOv').classList.add('on'); pasoCajon(paso||1); syncPlanificadorCarga();
+}
+function cancelarEdicionCajon(){ restaurarPanel(); _extraido=null; _pdfBase64=null; _editandoId=null; $('btnGuardar').textContent='Guardar en tránsitos'; $('estadoGuardar').className='estado-msg'; }
+function cerrarCajon(){ if(_editandoId) cancelarEdicionCajon(); $('cajon').classList.remove('on'); $('cajonOv').classList.remove('on'); }
+function pasoCajon(n){ ['cp1','cp2','cp3'].forEach(function(id,i){ var e=$(id); if(e) e.classList.toggle('on', i===n-1); }); }
+function syncPlanificadorCarga(){
+  var sel=$('planificadorSel'), inp=$('planificador'); if(!_yo||!sel) return;
+  var op=[].slice.call(sel.options).find(function(o){ return o.value===_yo || trEsDe(_yo,o.value); });
+  if(op && !sel.value){ sel.value=op.value; if(inp) inp.value=op.value; }
+}
+function misBase(){ return TRANSITOS.filter(function(t){ return !_yo || trEsDe(_yo,t.planificador); }); }
+function misCats(t){ var c=trCats(t); return trCerrado(t)?c:c.concat(['ALL']); }
+function misCuentas(L){
+  var n={}; M_CATS.forEach(function(c){ n[c[0]]=0; }); var docs={};
+  L.forEach(function(t){ misCats(t).forEach(function(k){ if(k==='SOC') docs[normDoc(t.n_documento)]=1; else n[k]++; }); });
+  n.SOC=Object.keys(docs).length; return n;
+}
+function misEntrega(t){
+  var f=trFecha(t), d=diasPara(f); if(d==null) return '<span class="sm">sin fecha</span>';
+  var st=d<0?'background:#f6d5d1;color:#9b1c2c':d<=7?'background:#fbe8c8;color:#8a5a1a':'background:#d6efdc;color:#1f6b36';
+  return '<span style="font-family:Consolas,monospace">'+f.slice(8)+'/'+f.slice(5,7)+'/'+f.slice(2,4)+'</span><br><span class="mt-pill" style="'+st+'">'+(d<0?'venció hace '+(-d)+' d':d===0?'vence hoy':'en '+d+' d')+'</span>';
+}
+function misSituacion(t){
+  var e=EVID[String(t.id)]||{}, s=situacionEv(t), v=e.evidencia;
+  if(s==='CONFIRMADO_POR_PLANIFICADOR') return '<b style="color:#1f6b36">Recepción confirmada</b>'+(Number(t.cant_entregada)>0?'<br><span class="sm">'+fmtNum(t.cant_entregada)+' u</span>':'');
+  if(s==='_NO_CORRESPONDE') return '<span class="sm">Marcada «no corresponde»: se revisa con las entradas siguientes</span>';
+  if((s==='RECIBIDO_SIN_CONFIRMAR'||s==='RECIBIDO_PARCIAL_SIN_CONFIRMAR')&&v){
+    return '<b style="color:#1f6b36">'+(s==='RECIBIDO_PARCIAL_SIN_CONFIRMAR'?'Recibida en parte':'Recibida')+': '+fmtNum(v.recibido)+' u</b><br><span class="sm">'+(v.fuente==='KARDEX'?'Kardex SAP-SAFIRO':'Recepción CEDIS Panamá')+' · '+esc(fFecha(v.ultimaEntrada))+' · confianza '+esc(v.confianza||'')+'</span>';
+  }
+  if(s==='VENCIDO_SIN_ENTRADA') return 'Sin entrada<br><span class="sm">revisado en '+esc(evRevisado(e))+'</span>';
+  if(String(t.tipo).toUpperCase()==='ORDEN_COMPRA') return '<span class="sm">OC madre: se sigue por sus Solicitudes de Entrega</span>';
+  var ced=String(t.cedi||'').toUpperCase();
+  if(ced && ced!=='PANAMA') return '<span class="sm">'+esc(ced.charAt(0)+ced.slice(1).toLowerCase())+' aún no publica sus entradas en el sistema: se sugiere validar con ese CEDIS</span>';
+  if(e.motivo) return '<span class="sm">'+esc(e.motivo)+'</span>';
+  return '<span class="sm">'+(diasPara(trFecha(t))!=null&&diasPara(trFecha(t))<0?'Vencida':'En plazo')+'</span>';
+}
+function misAccion(t, cat){
+  var id=esc(t.id), est=String(t.estado_transito||'').toUpperCase(), cs=misCats(t);
+  var k=cat==='ALL'?(['REC','SOC','FEC','CED','VEN','PRO'].find(function(x){ return cs.indexOf(x)>=0; })||''):cat;
+  if(k==='REC') return '<button class="btn ok" data-a="conf" data-id="'+id+'">Confirmar</button><button class="btn btn-sec" data-a="nocorr" data-id="'+id+'">No corresponde</button>';
+  if(k==='SOC'){ var e=EVID[String(t.id)]||{}, sug=e.ocSugerida||'';
+    return '<div class="mt-oc"><input id="oc_'+id+'" placeholder="1001……" value="'+esc(sug)+'" maxlength="16"><button class="btn" data-a="oc" data-id="'+id+'">Guardar</button></div>'+(sug?'<div class="sm">sugerida por la cita del proveedor: verifíquela</div>':''); }
+  if((k==='FEC'||k==='CED')&&est==='AGENDADA') return '<span class="sm">Con cita en firme: ya no se puede editar</span>';
+  if(k==='FEC') return '<button class="btn" data-a="editar" data-id="'+id+'">Verificar fecha</button>';
+  if(k==='CED') return '<button class="btn" data-a="editar" data-id="'+id+'">Indicar CEDIS</button>';
+  if(k==='VEN'||k==='PRO'){
+    if(est!=='NOTIFICADA'&&est!=='AGENDADA') return '<button class="btn" data-a="notif" data-id="'+id+'">Notificar al proveedor</button>';
+    if(est==='NOTIFICADA') return '<span class="sm">Notificado '+esc(fFecha(t.notificado_en))+'</span><br><button class="btn btn-sec" data-a="cita" data-id="'+id+'">Cita tomada</button>';
+    if(est==='AGENDADA') return '<span class="sm">Con cita: en espera de la entrega</span>';
+  }
+  return '<span class="sm">Clic en la fila para ver acciones</span>';
+}
+const M_COLS=[['doc','Documento · OC'],['cod','Renglón'],['prov','Proveedor'],['ced','CEDIS'],['sal','Saldo'],['f','Entrega'],['sit','Situación'],['acc','Siguiente paso']];
+const M_KEY={ doc:function(t){ return normDoc(t.n_documento); }, cod:function(t){ return String(t.cod_abasto||''); }, prov:function(t){ return String(t.proveedor||'').toUpperCase(); },
+  ced:function(t){ return String(t.cedi||''); }, sal:function(t){ return t._sal!=null?t._sal:trSaldo(t); }, f:function(t){ return trFecha(t)||'9999'; }, sit:function(t){ return situacionEv(t)||''; } };
+function misLista(){
+  var q=($('mtBuscar').value||'').toLowerCase().trim(), cat=_misCat;
+  var L=misBase().filter(function(t){ return misCats(t).indexOf(cat)>=0; });
+  if(q) L=L.filter(function(t){ return (t.n_documento+' '+t.n_orden_compra+' '+t.cod_abasto+' '+t.proveedor+' '+t.descripcion).toLowerCase().indexOf(q)>=0; });
+  if(cat==='SOC'){ var g={};
+    L.forEach(function(t){ var k=normDoc(t.n_documento); if(!g[k]) g[k]=Object.assign({},t,{_ced:[],_n:0,_sal:0}); g[k]._ced.push(t.cedi||'—'); g[k]._n++; g[k]._sal+=trSaldo(t); });
+    L=Object.keys(g).map(function(k){ return g[k]; }); }
+  var kf=M_KEY[_misOrden.k]||M_KEY.f;
+  L.sort(function(a,b){ var x=kf(a), y=kf(b); return (x<y?-1:x>y?1:0)*_misOrden.dir; });
+  return L;
+}
+function renderMis(){
+  if(!$('mtChips')) return;
+  var base=misBase(), n=misCuentas(base);
+  if(!_misCatUser || !_misCat){ _misCat=(['REC','VEN','PRO','SOC','FEC','CED'].find(function(k){ return n[k]>0; }))||'ALL'; }
+  $('mtAviso').style.display=_yo?'none':'block';
+  $('mtAviso').innerHTML='Elija su nombre arriba, en <b>Soy</b>, para ver solo sus tránsitos. Mientras tanto se muestran los de todos los planificadores.';
+  $('mtChips').innerHTML=M_CATS.map(function(c){ return '<button type="button" class="mt-chip k-'+c[0]+(_misCat===c[0]?' on':'')+'" data-k="'+c[0]+'"'+((n[c[0]]||c[0]==='ALL')?'':' disabled')+'><b>'+n[c[0]]+'</b>'+c[1]+'</button>'; }).join('');
+  $('mtGuia').innerHTML=(M_CATS.find(function(c){ return c[0]===_misCat; })||M_CATS[6])[2];
+  var L=misLista();
+  if(!TRANSITOS.length){ $('mtTablaBox').innerHTML='<div class="mt-vacio">Cargando…</div>'; return; }
+  if(!L.length){ $('mtTablaBox').innerHTML='<div class="mt-vacio">No hay tránsitos en esta lista'+(_yo?' para '+esc(_yo):'')+'.</div>'; $('mtPie').textContent=''; return; }
+  var h='<table class="mt-tabla"><thead><tr>'+M_COLS.map(function(c){ var o=!!M_KEY[c[0]];
+    return '<th'+(o?' data-o="'+c[0]+'"':' class="nos"')+(c[0]==='sal'?' style="text-align:right"':'')+'>'+c[1]+(o?'<span class="ar">'+(_misOrden.k===c[0]?(_misOrden.dir>0?'▲':'▼'):'▲▼')+'</span>':'')+'</th>'; }).join('')+'</tr></thead><tbody>';
+  L.forEach(function(t){
+    var id=esc(t.id), esOC=String(t.tipo).toUpperCase()==='ORDEN_COMPRA', ab=_misAbierto===String(t.id);
+    var oc=esOC?'<span class="sm">OC madre</span>':(/10\d{8}/.test(String(t.n_orden_compra||''))?'<span class="sm" style="font-family:Consolas,monospace">'+esc(t.n_orden_compra)+'</span>':'<span class="sm" style="color:#1e5a9e">sin OC</span>');
+    h+='<tr class="f'+(ab?' abierta':'')+'" data-id="'+id+'"><td><div style="font-family:Consolas,monospace;font-size:11.5px">'+esc(t.n_documento)+'</div>'+oc+'</td>'+
+      '<td><span class="cod">'+esc(t.cod_abasto)+'</span> '+esc(String(t.descripcion||'').slice(0,60))+'</td>'+
+      '<td class="sm" style="color:inherit">'+esc(String(t.proveedor||'').slice(0,34))+'</td>'+
+      '<td>'+(t._ced?esc(t._ced.filter(function(x,i,a){ return a.indexOf(x)===i; }).join(', ')):esc(t.cedi||'—'))+'</td>'+
+      '<td class="nm">'+fmtNum(Math.round(t._sal!=null?t._sal:trSaldo(t)))+'</td>'+
+      '<td>'+misEntrega(t)+'</td>'+
+      '<td class="mt-sit">'+(t._ced?'<span class="sm">'+t._n+' fila'+(t._n>1?'s':'')+' de este documento se cotejan al anotar la OC</span>':misSituacion(t))+'</td>'+
+      '<td class="mt-acc">'+misAccion(t,_misCat)+'</td></tr>';
+    if(ab){ var est=String(t.estado_transito||'').toUpperCase();
+      h+='<tr class="mt-det"><td colspan="8"><div class="mt-dgrid">'+
+        '<div><span>Emisión</span>'+esc(t.fecha_emision||'—')+'</div><div><span>Cantidad</span>'+fmtNum(t.cantidad)+'</div><div><span>Entregado</span>'+fmtNum(t.cant_entregada||0)+'</div>'+
+        '<div><span>Estado</span>'+esc(est||'EMITIDA')+'</div><div><span>Código SAP</span>'+esc(t.cod_sap||'—')+'</div><div><span>Planificador</span>'+esc(t.planificador||'—')+'</div></div>'+
+        '<div class="mt-dacc">'+(t.archivo_url?'<a class="btn btn-sec" href="'+esc(t.archivo_url)+'" target="_blank" rel="noopener">Ver PDF</a>':'<span class="sm">El PDF aparece al terminar de conectar con el registro en vivo.</span>')+
+        (est!=='AGENDADA'?'<button class="btn btn-sec" data-a="editar" data-id="'+id+'">Editar documento'+(est==='NOTIFICADA'?' (reenvía aviso)':'')+'</button>':'')+
+        (est!=='NOTIFICADA'&&est!=='AGENDADA'?'<button class="btn btn-sec" data-a="notif" data-id="'+id+'">Notificar al proveedor</button>':'')+
+        (est==='NOTIFICADA'?'<button class="btn btn-sec" data-a="revnotif" data-id="'+id+'">Revertir notificación</button>':'')+
+        (est!=='AGENDADA'?'<button class="btn btn-sec" data-a="cita" data-id="'+id+'">Cita tomada</button>':'<span class="sm">Con cita en firme: ya no se puede editar ni eliminar</span><button class="btn btn-sec" data-a="revcita" data-id="'+id+'">Revertir cita tomada</button>')+
+        '<span class="sep"></span>'+(est!=='AGENDADA'?'<button class="mt-lnk" data-a="elim" data-id="'+id+'">'+(est==='NOTIFICADA'?'Anular documento (avisa al proveedor)':'Eliminar documento')+'</button>':'')+'</div></td></tr>';
+    }
+  });
+  $('mtTablaBox').innerHTML=h+'</tbody></table>';
+  $('mtPie').textContent=L.length+(_misCat==='SOC'?' documento(s)':' fila(s)')+' · haga clic en una fila para ver el detalle y las demás acciones · clic en un encabezado para ordenar';
+}
+function misGuardarOC(t, btn){
+  var inp=$('oc_'+t.id), v=String(inp&&inp.value||'').replace(/\s+/g,'');
+  if(!/^10\d{8}(-?\d{2}-?\d{2})?$/.test(v)){ toast('El Nº de OC SAP empieza con 10 y tiene 10 dígitos (ej. 1001104510 o 1001104510-08-12).','err'); if(inp) inp.focus(); return; }
+  var nDoc=t.n_documento;
+  modalConfirm({ titulo:'Anotar Nº de OC', textoOK:'Guardar OC',
+    mensaje:'Se anotará la OC <b>'+esc(v)+'</b> en todas las filas del documento <b>'+esc(nDoc)+'</b> que no la tienen.<br><br>No se envía ningún correo y el estado del documento no cambia.' }).then(function(ok){ if(!ok) return;
+    btn.disabled=true; btn.textContent='Guardando…';
+    postSiguelo('anotarOCTransito',{ n_documento:nDoc, oc:v, por:_yo||'' }).then(function(j){
+      if(j&&j.success){
+        toast(j.yaTenia?'Ese documento ya tenía OC registrada.':'OC '+v+' anotada en '+j.filas+' fila(s). El cotejo con el Kardex se hace en la próxima actualización (15 min).','ok');
+        TRANSITOS=TRANSITOS.map(function(x){ return (normDoc(x.n_documento)===normDoc(nDoc) && trSinOc(x))?Object.assign({},x,{n_orden_compra:v}):x; });
+        renderTarjetas(); renderKPIs();
+      } else { var er=(j&&j.error)||'error'; if(/Action not found/i.test(er)) er='esta función aún no está activa en el servidor; avise a la Torre de Control'; toast('No se pudo guardar: '+er,'err'); btn.disabled=false; btn.textContent='Guardar'; }
+    }).catch(function(err){ toast('Error de red: '+err,'err'); btn.disabled=false; btn.textContent='Guardar'; });
+  });
+}
+function misClick(ev){
+  var th=ev.target.closest('th[data-o]');
+  if(th){ var k=th.dataset.o; _misOrden=_misOrden.k===k?{k:k,dir:-_misOrden.dir}:{k:k,dir:1}; renderMis(); return; }
+  var b=ev.target.closest('[data-a]');
+  if(b){ ev.stopPropagation(); var t=TRANSITOS.filter(function(x){ return String(x.id)===String(b.dataset.id); })[0]; if(!t) return;
+    var a=b.dataset.a, d=t.n_documento;
+    if(a==='conf') responderEvidencia(t.id,'CONFIRMADO');
+    else if(a==='nocorr') responderEvidencia(t.id,'NO_CORRESPONDE');
+    else if(a==='oc') misGuardarOC(t,b);
+    else if(a==='editar') editarTransito(t.id);
+    else if(a==='notif') notificarProveedor(d,b);
+    else if(a==='revnotif') revertirNotificacion(d);
+    else if(a==='cita') marcarCitaTomada(d);
+    else if(a==='revcita') revertirCitaTomada(d);
+    else if(a==='elim') eliminarDocumento(d,t.estado_transito);
+    return; }
+  if(ev.target.closest('input,a')) return;
+  var tr=ev.target.closest('tr.f'); if(tr){ _misAbierto=(_misAbierto===tr.dataset.id)?null:tr.dataset.id; renderMis(); }
+}
+/* Excel institucional (logo, CAJA DE SEGURO SOCIAL, encabezado azul, filtros) */
+function misExcel(todo){
+  if(typeof ExcelJS==='undefined'){ toast('No se pudo cargar el generador de Excel. Recargue la página.','err'); return; }
+  var cat=todo?'ALL':_misCat, nom=(M_CATS.find(function(c){ return c[0]===cat; })||M_CATS[6])[1];
+  var gu=_misCat; _misCat=cat; var L=misLista(); _misCat=gu;
+  var wb=new ExcelJS.Workbook(), ws=wb.addWorksheet('Mis tránsitos',{views:[{state:'frozen',ySplit:5}]});
+  var cols=[['Documento',30],['Nº OC SAP',20],['Tipo',18],['Código',12],['Descripción',46],['Proveedor',32],['CEDIS',14],['Cantidad',12],['Entregado',12],['Saldo',12],['Entrega',12],['Días',8],['Estado',13],['Situación',44]];
+  ws.columns=cols.map(function(c){ return {width:c[1]}; });
+  ws.mergeCells('B1:N1'); ws.getCell('B1').value='CAJA DE SEGURO SOCIAL'; ws.getCell('B1').font={bold:true,size:14,color:{argb:'FF0C447C'}};
+  ws.mergeCells('B2:N2'); ws.getCell('B2').value='Dirección Nacional de Logística · SEGUIRE · Mis tránsitos — '+nom+(_yo?' · '+_yo:'');
+  ws.mergeCells('B3:N3'); ws.getCell('B3').value='Generado '+new Date().toLocaleString('es-PA')+' · '+String(_selloTxt||'').replace(/<[^>]+>/g,'');
+  ws.getRow(1).height=24; ws.getRow(2).height=18;
+  var hr=ws.getRow(5); cols.forEach(function(c,i){ var cell=hr.getCell(i+1); cell.value=c[0]; cell.font={bold:true,color:{argb:'FFFFFFFF'}}; cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FF1E5A9E'}}; cell.alignment={vertical:'middle',wrapText:true}; });
+  var r=6;
+  L.forEach(function(t){ var f=trFecha(t), d=diasPara(f), tmp=document.createElement('div'); tmp.innerHTML=t._ced?(t._n+' filas sin OC'):misSituacion(t);
+    var row=ws.getRow(r++); row.values=[t.n_documento, t.n_orden_compra||'', t.tipo, t.cod_abasto, t.descripcion, t.proveedor, t._ced?t._ced.join(', '):t.cedi, Number(t.cantidad)||0, Number(t.cant_entregada)||0, Math.round(t._sal!=null?t._sal:trSaldo(t)), f, d, t.estado_transito, tmp.textContent];
+    if(d!=null){ var c=row.getCell(12); c.fill={type:'pattern',pattern:'solid',fgColor:{argb:d<0?'FFF6D5D1':d<=7?'FFFBE8C8':'FFD6EFDC'}}; }
+    [8,9,10].forEach(function(i){ row.getCell(i).numFmt='#,##0'; }); });
+  ws.autoFilter={from:{row:5,column:1},to:{row:Math.max(5,r-1),column:cols.length}};
+  fetch('icons/icon-192.png').then(function(x){ return x.ok?x.arrayBuffer():null; }).catch(function(){ return null; }).then(function(buf){
+    if(buf){ var img=wb.addImage({buffer:buf,extension:'png'}); ws.addImage(img,{tl:{col:0,row:0},ext:{width:58,height:58}}); }
+    return wb.xlsx.writeBuffer();
+  }).then(function(out){
+    var a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([out],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}));
+    a.download='Mis_transitos_'+(_yo||'todos').replace(/\s+/g,'_')+'_'+nom.replace(/\s+/g,'_')+'_'+hoyISO()+'.xlsx'; document.body.appendChild(a); a.click(); a.remove(); setTimeout(function(){ URL.revokeObjectURL(a.href); },4000);
+    toast('Excel descargado ('+L.length+' '+(cat==='SOC'?'documentos':'filas')+').','ok');
+  });
+}
+(function(){
+  $('mtChips').addEventListener('click',function(e){ var b=e.target.closest('.mt-chip'); if(!b||b.disabled) return; _misCat=b.dataset.k; _misCatUser=true; _misAbierto=null; renderMis(); });
+  $('mtTablaBox').addEventListener('click',misClick);
+  $('mtBuscar').addEventListener('input',function(){ renderMis(); });
+  $('mtLimpiar').addEventListener('click',function(){ $('mtBuscar').value=''; _misCat=''; _misCatUser=false; _misAbierto=null; _misOrden={k:'f',dir:1}; renderMis(); });
+  $('mtXlsVista').addEventListener('click',function(){ misExcel(false); });
+  $('mtXlsTodo').addEventListener('click',function(){ misExcel(true); });
+  document.querySelectorAll('#vistas button').forEach(function(b){ b.addEventListener('click',function(){ verVista(b.dataset.v); }); });
+  $('btnCargar').addEventListener('click',function(){ abrirCajon('Cargar documento',1); });
+  $('cajonCerrar').addEventListener('click',cerrarCajon); $('cajonOv').addEventListener('click',cerrarCajon);
+  $('btnTema').addEventListener('click',function(){ var r=document.documentElement, osc=r.getAttribute('data-theme')!=='dark'; r.setAttribute('data-theme',osc?'dark':'light'); try{ localStorage.setItem('seg_tema',osc?'dark':'light'); }catch(e){} });
+  try{ if(localStorage.getItem('seg_tema')==='dark') document.documentElement.setAttribute('data-theme','dark'); }catch(e){}
+  var q=new URLSearchParams(location.search), v=q.get('vista'); if(!v){ try{ v=localStorage.getItem('seg_vista'); }catch(e){} }
+  if(q.get('ver')==='pendientes'||q.get('p')) v='mis';
+  verVista(v||'mis');
 })();
 
 /* ====== INICIO ====== */
