@@ -2141,7 +2141,7 @@ function aplicarLimpiezaDup(){
    Algunos pasos preparan el estado (abrir un documento en edición) para mostrar campos. */
 var TOUR_STEPS = [
   { sel:'#bYo', tit:'1. Planificador', txt:'Elija aquí su nombre una sola vez. El panel le muestra solo sus tránsitos y lo recuerda la próxima vez. El enlace del correo semanal ya llega con su nombre puesto.', v:'mis' },
-  { sel:'#mtChips', tit:'2. Sus pendientes', txt:'Al elegir su nombre verá «Todo lo mío». Cada contador funciona como filtro: haga clic en uno para ver solo esos tránsitos: confirmar recepción, vencidos sin entrada, por vencer, documentos sin OC, fechas por verificar y sin CEDIS.', v:'mis' },
+  { sel:'#mtChips', tit:'2. Sus pendientes', txt:'Al elegir su nombre, el panel abre en el contador con trabajo más urgente. Cada contador funciona como filtro (para ver todo, «Todo lo mío»): haga clic en uno para ver solo esos tránsitos: confirmar recepción, vencidos sin entrada, por vencer, documentos sin OC, fechas por verificar y sin CEDIS.', v:'mis' },
   { sel:'.mt-guia .q', tit:'3. Qué se sugiere hacer', txt:'Esta línea le explica, para la lista que está viendo, qué se espera que haga.', v:'mis' },
   { sel:'#mtTablaBox', tit:'4. La lista', txt:'Una fila por renglón y CEDIS. Haga clic en el encabezado de una columna para ordenar. La columna Entrega muestra en color cuánto falta o cuánto lleva vencida, y Situación dice de qué fuente sale la información.', v:'mis' },
   { sel:'.mt-acc', tit:'5. Siguiente paso', txt:'Cada fila trae el botón de lo que corresponde hacer: confirmar la recepción, notificar al proveedor, anotar la OC o verificar la fecha.', v:'mis' },
@@ -2332,7 +2332,10 @@ function misLista(){
 function renderMis(){
   if(!$('mtChips')) return;
   var base=misBase(), n=misCuentas(base);
-  if(!_misCatUser || !_misCat){ _misCat='ALL'; }
+  if(!_misCatUser || !_misCat){
+    /* con nombre elegido, abre en el primer contador con trabajo (orden de la guía, sección 14); sin nombre, «Todo lo mío» */
+    _misCat=(_yo && ['REC','FEC','VEN','PRO','SOC','CED'].find(function(k){ return n[k]>0; })) || 'ALL';
+  }
   $('mtAviso').style.display=_yo?'none':'block';
   $('mtAviso').innerHTML='Elija su nombre arriba, en <b>Planificador</b>, para ver solo sus tránsitos. Mientras tanto se muestran los de todos los planificadores.';
   $('mtChips').innerHTML=M_CATS.map(function(c){ return '<button type="button" class="mt-chip k-'+c[0]+(_misCat===c[0]?' on':'')+'" data-k="'+c[0]+'"'+((n[c[0]]||c[0]==='ALL')?'':' disabled')+'><b>'+n[c[0]]+'</b>'+c[1]+'</button>'; }).join('');
@@ -2473,7 +2476,7 @@ function misExcel(todo){
   $('mtChips').addEventListener('click',function(e){ var b=e.target.closest('.mt-chip'); if(!b||b.disabled) return; _misCat=b.dataset.k; _misCatUser=true; _misAbierto=null; renderMis(); });
   $('mtTablaBox').addEventListener('click',misClick);
   $('mtBuscar').addEventListener('input',function(){ renderMis(); });
-  $('mtLimpiar').addEventListener('click',function(){ $('mtBuscar').value=''; _misCat=''; _misCatUser=false; _misAbierto=null; _misOrden={k:'f',dir:1}; renderMis(); });
+  $('mtLimpiar').addEventListener('click',function(){ $('mtBuscar').value=''; _misCat='ALL'; _misCatUser=true; _misAbierto=null; _misOrden={k:'f',dir:1}; renderMis(); });
   $('mtXlsVista').addEventListener('click',function(){ misExcel(false); });
   $('mtXlsTodo').addEventListener('click',function(){ misExcel(true); });
   document.querySelectorAll('#vistas button').forEach(function(b){ b.addEventListener('click',function(){ verVista(b.dataset.v); }); });
