@@ -2281,7 +2281,9 @@ function misSituacion(t){
   if((s==='RECIBIDO_SIN_CONFIRMAR'||s==='RECIBIDO_PARCIAL_SIN_CONFIRMAR')&&v){
     return '<b style="color:#1f6b36">'+(s==='RECIBIDO_PARCIAL_SIN_CONFIRMAR'?'Recibida en parte':'Recibida')+': '+fmtNum(v.recibido)+' u</b><br><span class="sm">'+(v.fuente==='KARDEX'?'Kardex SAP-SAFIRO':'Recepción CEDIS Panamá')+' · '+esc(fFecha(v.ultimaEntrada))+' · confianza '+esc(v.confianza||'')+(Number(v.sinPresupuesto)>0?'<br>entrada 561 (sin presupuesto asignado)':'')+'</span>';
   }
-  if(s==='VENCIDO_SIN_ENTRADA') return 'Sin entrada<br><span class="sm">revisado en '+esc(evRevisado(e))+'</span>';
+  if(s==='VENCIDO_SIN_ENTRADA') return Number(t.cant_entregada)>0
+    ? '<b style="color:#1f6b36">Recibido en parte: '+fmtNum(t.cant_entregada)+' u</b><br><span class="sm">saldo vencido, sin entrada nueva en '+esc(evRevisado(e))+'</span>'
+    : 'Sin entrada<br><span class="sm">revisado en '+esc(evRevisado(e))+'</span>';
   if(String(t.tipo).toUpperCase()==='ORDEN_COMPRA') return '<span class="sm">OC madre: se sigue por sus Solicitudes de Entrega</span>';
   var ced=String(t.cedi||'').toUpperCase();
   if(ced && ced!=='PANAMA') return '<span class="sm">'+esc(ced.charAt(0)+ced.slice(1).toLowerCase())+' aún no publica sus entradas en el sistema: se sugiere validar con ese CEDIS</span>';
