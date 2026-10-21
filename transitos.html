@@ -2383,8 +2383,9 @@ function registrarRecepcionManual(t){
     titulo:'Registrar recepción',
     textoOK:'Registrar',
     mensaje:'<b>'+esc(t.cod_abasto||'')+'</b> '+esc(String(t.descripcion||'').slice(0,70))+'<br>CEDIS <b>'+esc(ced.charAt(0)+ced.slice(1).toLowerCase())+'</b> · saldo '+fmtNum(sal)+' und<br><br>'+
-      '<label style="display:block;margin:4px 0">Cantidad recibida <input id="mrCant" type="number" min="1" max="'+sal+'" value="'+sal+'" style="width:120px;margin-left:6px"></label>'+
-      '<label style="display:block;margin:4px 0">Fecha de llegada <input id="mrFecha" type="date" max="'+hoyIso+'" value="'+hoyIso+'" style="margin-left:6px"></label>'+
+      '<div style="display:grid;grid-template-columns:auto 170px;gap:8px 12px;align-items:center;margin:4px 0">'+
+        '<label for="mrCant" style="margin:0">Cantidad recibida</label><input id="mrCant" type="number" min="1" max="'+sal+'" value="'+sal+'" style="width:170px;margin:0;box-sizing:border-box">'+
+        '<label for="mrFecha" style="margin:0">Fecha de llegada</label><input id="mrFecha" type="date" max="'+hoyIso+'" value="'+hoyIso+'" style="width:170px;margin:0;box-sizing:border-box"></div>'+
       '<div class="sm" style="margin-top:8px">Este CEDIS aún no publica sus entradas en el sistema, así que la recepción queda registrada como <b>confirmación del planificador</b>, con su nombre y la fecha. Se sugiere validarla antes con ese CEDIS.</div>'
   }).then(function(ok){ if(!ok) return;
     var q=Math.round(Number(($('mrCant')||{}).value)||0), f=String(($('mrFecha')||{}).value||'');
