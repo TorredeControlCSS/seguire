@@ -1545,7 +1545,9 @@ function trCerrado(t){ var e=String(t.estado_transito||'').toUpperCase(); if(e==
 function trFecha(t){ var tp=String(t.tipo||'').toUpperCase(), f=tp==='ORDEN_COMPRA'?(t.termino_entrega_oc||t.termino_entrega||t.vencimiento_entrega):(t.vencimiento_entrega||t.termino_entrega); f=String(f||'').slice(0,10); return /^\d{4}-\d{2}-\d{2}$/.test(f)?f:''; }
 function trCats(t){
   if(trCerrado(t)) return [];
-  var c=[], s=situacionEv(t), d=diasPara(trFecha(t));
+  var c=[], s=situacionEv(t), d=diasPara(trFecha(t)), ev0=EVID[String(t.id)]||{};
+  /* OC madre cubierta por sus Solicitudes de Entrega: solo pide acción si tiene una entrega directa por confirmar */
+  if(ev0.cubierta && s!=='RECIBIDO_SIN_CONFIRMAR' && s!=='RECIBIDO_PARCIAL_SIN_CONFIRMAR') return [];
   if(s==='RECIBIDO_SIN_CONFIRMAR'||s==='RECIBIDO_PARCIAL_SIN_CONFIRMAR') c.push('REC');
   else if(s==='VENCIDO_SIN_ENTRADA'||(d!=null&&d<0&&s!=='EN_PLAZO')) c.push('VEN');
   else if(d!=null&&d>=0&&d<=7) c.push('PRO');
@@ -2284,7 +2286,7 @@ function misSituacion(t){
   if(s==='VENCIDO_SIN_ENTRADA') return Number(t.cant_entregada)>0
     ? '<b style="color:#1f6b36">Recibido en parte: '+fmtNum(t.cant_entregada)+' u</b><br><span class="sm">saldo vencido, sin entrada nueva en '+esc(evRevisado(e))+'</span>'
     : 'Sin entrada<br><span class="sm">revisado en '+esc(evRevisado(e))+'</span>';
-  if(String(t.tipo).toUpperCase()==='ORDEN_COMPRA') return '<span class="sm">OC madre: se sigue por sus Solicitudes de Entrega</span>';
+  if(String(t.tipo).toUpperCase()==='ORDEN_COMPRA' && e.cubierta) return '<span class="sm">OC madre: se sigue por sus Solicitudes de Entrega</span>';
   var ced=String(t.cedi||'').toUpperCase();
   if(ced && ced!=='PANAMA') return '<span class="sm">'+esc(ced.charAt(0)+ced.slice(1).toLowerCase())+' aún no publica sus entradas en el sistema: se sugiere validar con ese CEDIS</span>';
   if(e.motivo) return '<span class="sm">'+esc(e.motivo)+'</span>';
