@@ -2279,7 +2279,7 @@ function misSituacion(t){
   if(s==='CONFIRMADO_POR_PLANIFICADOR') return '<b style="color:#1f6b36">Recepción confirmada</b>'+(Number(t.cant_entregada)>0?'<br><span class="sm">'+fmtNum(t.cant_entregada)+' u</span>':'');
   if(s==='_NO_CORRESPONDE') return '<span class="sm">Marcada «no corresponde»: se revisa con las entradas siguientes</span>';
   if((s==='RECIBIDO_SIN_CONFIRMAR'||s==='RECIBIDO_PARCIAL_SIN_CONFIRMAR')&&v){
-    return '<b style="color:#1f6b36">'+(s==='RECIBIDO_PARCIAL_SIN_CONFIRMAR'?'Recibida en parte':'Recibida')+': '+fmtNum(v.recibido)+' u</b><br><span class="sm">'+(v.fuente==='KARDEX'?'Kardex SAP-SAFIRO':'Recepción CEDIS Panamá')+' · '+esc(fFecha(v.ultimaEntrada))+' · confianza '+esc(v.confianza||'')+'</span>';
+    return '<b style="color:#1f6b36">'+(s==='RECIBIDO_PARCIAL_SIN_CONFIRMAR'?'Recibida en parte':'Recibida')+': '+fmtNum(v.recibido)+' u</b><br><span class="sm">'+(v.fuente==='KARDEX'?'Kardex SAP-SAFIRO':'Recepción CEDIS Panamá')+' · '+esc(fFecha(v.ultimaEntrada))+' · confianza '+esc(v.confianza||'')+(Number(v.sinPresupuesto)>0?'<br>entrada 561 (sin presupuesto asignado)':'')+'</span>';
   }
   if(s==='VENCIDO_SIN_ENTRADA') return 'Sin entrada<br><span class="sm">revisado en '+esc(evRevisado(e))+'</span>';
   if(String(t.tipo).toUpperCase()==='ORDEN_COMPRA') return '<span class="sm">OC madre: se sigue por sus Solicitudes de Entrega</span>';
@@ -2298,9 +2298,14 @@ function misAccion(t, cat){
   if(k==='FEC') return '<button class="btn" data-a="editar" data-id="'+id+'">Verificar fecha</button>';
   if(k==='CED') return '<button class="btn" data-a="editar" data-id="'+id+'">Indicar CEDIS</button>';
   if(k==='VEN'||k==='PRO'){
-    if(est!=='NOTIFICADA'&&est!=='AGENDADA') return '<button class="btn" data-a="notif" data-id="'+id+'">Notificar al proveedor</button>';
-    if(est==='NOTIFICADA') return '<span class="sm">Notificado '+esc(fFecha(t.notificado_en))+'</span><br><button class="btn btn-sec" data-a="cita" data-id="'+id+'">Cita tomada</button>';
-    if(est==='AGENDADA') return '<span class="sm">Con cita: en espera de la entrega</span>';
+    var man=(k==='VEN'&&misSinFuente(t))?'<button class="btn btn-sec" data-a="manual" data-id="'+id+'">Registrar recepción</button>':'';
+    if(est!=='NOTIFICADA'&&est!=='AGENDADA') return '<button class="btn" data-a="notif" data-id="'+id+'">Notificar al proveedor</button>'+man;
+    if(est==='NOTIFICADA') return '<span class="sm">Notificado '+esc(fFecha(t.notificado_en))+'</span><br><button class="btn btn-sec" data-a="cita" data-id="'+id+'">Cita tomada</button>'+man;
+    if(est==='AGENDADA'){
+      if(man) return '<span class="sm">Con cita. Si ya llegó, regístrela:</span><br>'+man;
+      if(k==='VEN') return '<span class="sm">Con cita y sin entrada en '+esc(evRevisado(EVID[String(t.id)]||{}))+': se sugiere validar con el proveedor</span>';
+      return '<span class="sm">Con cita: en espera de la entrega</span>';
+    }
   }
   return '<span class="sm">Clic en la fila para ver acciones</span>';
 }
@@ -2353,11 +2358,47 @@ function renderMis(){
         (est!=='NOTIFICADA'&&est!=='AGENDADA'?'<button class="btn btn-sec" data-a="notif" data-id="'+id+'">Notificar al proveedor</button>':'')+
         (est==='NOTIFICADA'?'<button class="btn btn-sec" data-a="revnotif" data-id="'+id+'">Revertir notificación</button>':'')+
         (est!=='AGENDADA'?'<button class="btn btn-sec" data-a="cita" data-id="'+id+'">Cita tomada</button>':'<span class="sm">Con cita en firme: ya no se puede editar ni eliminar</span><button class="btn btn-sec" data-a="revcita" data-id="'+id+'">Revertir cita tomada</button>')+
+        (misSinFuente(t)?'<button class="btn btn-sec" data-a="manual" data-id="'+id+'">Registrar recepción</button>':'')+
         '<span class="sep"></span>'+(est!=='AGENDADA'?'<button class="mt-lnk" data-a="elim" data-id="'+id+'">'+(est==='NOTIFICADA'?'Anular documento (avisa al proveedor)':'Eliminar documento')+'</button>':'')+'</div></td></tr>';
     }
   });
   $('mtTablaBox').innerHTML=h+'</tbody></table>';
   $('mtPie').textContent=L.length+(_misCat==='SOC'?' documento(s)':' fila(s)')+' · haga clic en una fila para ver el detalle y las demás acciones · clic en un encabezado para ordenar';
+}
+/* Recepción registrada por el planificador (20-oct-2026). Solo para CEDIS cuyas
+   entradas no publica ninguna fuente (hoy Divisa y Chiriquí): sin esto, un tránsito
+   entregado allí no tenía forma de cerrarse. Usa la misma acción del backend que
+   «Confirmar» (confirmarRecepcionTransito), con nivel MANUAL_PLANIFICADOR y la fecha
+   de llegada que indica el planificador; queda en la bitácora TEV_RESPUESTAS. */
+function misSinFuente(t){
+  var e=EVID[String(t.id)], ced=String(t.cedi||'').toUpperCase();
+  if(!e||!ced||ced==='PANAMA'||String(t.tipo).toUpperCase()==='ORDEN_COMPRA') return false;
+  if(e.evidencia||(e.revisado&&e.revisado.length)) return false;
+  return situacionEv(t)!=='CONFIRMADO_POR_PLANIFICADOR' && trSaldo(t)>0;
+}
+function registrarRecepcionManual(t){
+  var e=EVID[String(t.id)]=EVID[String(t.id)]||{}, sal=Math.round(trSaldo(t)), hoy=new Date(), ced=String(t.cedi||'');
+  var hoyIso=hoy.getFullYear()+'-'+('0'+(hoy.getMonth()+1)).slice(-2)+'-'+('0'+hoy.getDate()).slice(-2);
+  modalConfirm({
+    titulo:'Registrar recepción',
+    textoOK:'Registrar',
+    mensaje:'<b>'+esc(t.cod_abasto||'')+'</b> '+esc(String(t.descripcion||'').slice(0,70))+'<br>CEDIS <b>'+esc(ced.charAt(0)+ced.slice(1).toLowerCase())+'</b> · saldo '+fmtNum(sal)+' und<br><br>'+
+      '<label style="display:block;margin:4px 0">Cantidad recibida <input id="mrCant" type="number" min="1" max="'+sal+'" value="'+sal+'" style="width:120px;margin-left:6px"></label>'+
+      '<label style="display:block;margin:4px 0">Fecha de llegada <input id="mrFecha" type="date" max="'+hoyIso+'" value="'+hoyIso+'" style="margin-left:6px"></label>'+
+      '<div class="sm" style="margin-top:8px">Este CEDIS aún no publica sus entradas en el sistema, así que la recepción queda registrada como <b>confirmación del planificador</b>, con su nombre y la fecha. Se sugiere validarla antes con ese CEDIS.</div>'
+  }).then(function(ok){ if(!ok) return;
+    var q=Math.round(Number(($('mrCant')||{}).value)||0), f=String(($('mrFecha')||{}).value||'');
+    if(!(q>0)) { toast('Indique la cantidad recibida.','err'); return; }
+    if(q>sal) q=sal;
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(f)) { toast('Indique la fecha de llegada.','err'); return; }
+    postSiguelo('confirmarRecepcionTransito',{ id:t.id, respuesta:'CONFIRMADO', cantidad:(Number(t.cant_entregada)||0)+q, nivel:'MANUAL_PLANIFICADOR', hasta:f,
+      por:_yo||t.planificador||'' })
+      .then(function(j){
+        if(j&&j.success){ t.cant_entregada=j.cant_entregada; t.saldo=j.saldo; e._local='CONFIRMADO_POR_PLANIFICADOR';
+          toast('Recepción registrada: '+fmtNum(q)+' und. El saldo quedó actualizado.','ok'); renderTarjetas(); }
+        else toast('No se pudo registrar: '+((j&&j.error)||'error'),'err');
+      }).catch(function(err){ toast('Error de red: '+err,'err'); });
+  });
 }
 function misGuardarOC(t, btn){
   var inp=$('oc_'+t.id), v=String(inp&&inp.value||'').replace(/\s+/g,'');
@@ -2383,6 +2424,7 @@ function misClick(ev){
     var a=b.dataset.a, d=t.n_documento;
     if(a==='conf') responderEvidencia(t.id,'CONFIRMADO');
     else if(a==='nocorr') responderEvidencia(t.id,'NO_CORRESPONDE');
+    else if(a==='manual') registrarRecepcionManual(t);
     else if(a==='oc') misGuardarOC(t,b);
     else if(a==='editar') editarTransito(t.id);
     else if(a==='notif') notificarProveedor(d,b);
