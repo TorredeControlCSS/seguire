@@ -2376,7 +2376,7 @@ function renderMis(){
    de llegada que indica el planificador; queda en la bitácora TEV_RESPUESTAS. */
 function misSinFuente(t){
   var e=EVID[String(t.id)], ced=String(t.cedi||'').toUpperCase();
-  if(!e||!ced||ced==='PANAMA'||String(t.tipo).toUpperCase()==='ORDEN_COMPRA') return false;
+  if(!e||!ced||ced==='PANAMA'||e.cubierta) return false;   // la OC madre de entrega directa también se puede registrar
   if(e.evidencia||(e.revisado&&e.revisado.length)) return false;
   return situacionEv(t)!=='CONFIRMADO_POR_PLANIFICADOR' && trSaldo(t)>0;
 }
