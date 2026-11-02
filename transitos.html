@@ -119,6 +119,7 @@
   .tj.st-emitida{border-left-color:#E24B4A;}
   .tj.st-notificada{border-left-color:#378ADD;}
   .tj.st-agendada{border-left-color:#1D9E75;opacity:.92;}
+  .tj.st-recibida{border-left-color:#1f6b36;opacity:.88;}
   .tj-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;padding:11px 14px;}
   .tj-head .doc{font-size:14px;font-weight:700;color:#222;font-family:Consolas,monospace;}
   .tj-head .prov{font-size:12.5px;color:#555;margin-top:3px;}
@@ -1260,7 +1261,8 @@ function evidenciaHtml(g){
         (e.motivo?('<span class="ev-conf">· '+esc(e.motivo)+'</span>'):'')+'</div></div>';
     }
     if(sit==='CONFIRMADO_POR_PLANIFICADOR'){
-      return '<div class="ev ev-hecho"><div class="ev-txt"><b>'+ced+'</b> · ✓ Recepción confirmada'+(Number(f.cant_entregada)>0?(': '+fmtNum(f.cant_entregada)+' und'):'')+'</div></div>';
+      var qc=confQuien(f);
+      return '<div class="ev ev-hecho"><div class="ev-txt"><b>'+ced+'</b> · ✓ Recepción confirmada'+(Number(f.cant_entregada)>0?(': '+fmtNum(f.cant_entregada)+' und'):'')+(qc?('<span class="ev-conf">· '+esc(qc)+'</span>'):'')+'</div></div>';
     }
     if(sit==='_NO_CORRESPONDE'){
       return '<div class="ev ev-hecho"><div class="ev-txt"><b>'+ced+'</b> · Marcada como "no corresponde". Se volverá a revisar con las entradas siguientes.</div></div>';
@@ -1300,6 +1302,13 @@ function responderEvidencia(id, resp){
   });
 }
 
+/* Quién confirmó la recepción de una fila (automática / Torre / planificador), según transitos_evidencia.json */
+function confQuien(t){
+  var e=EVID[String(t.id)]||{}, cp=e.confirmadoPor||{};
+  var qn=cp.tipo==='AUTOMATICO'?'automática · '+(cp.fuente==='RECEPCION'?'Recepción CEDIS Panamá':'Kardex SAP-SAFIRO')
+    :cp.tipo==='BARRIDO'?'por la Torre de Control':cp.tipo==='REGISTRO_MANUAL'?'registrada por '+(cp.por||'el planificador'):cp.tipo==='PLANIFICADOR'?'por '+(cp.por||'el planificador'):'';
+  return qn+(cp.fecha?(qn?' · ':'')+fFecha(cp.fecha):'');
+}
 function estClase(est){
   const e=String(est||'').toUpperCase();
   if(e==='NOTIFICADA') return 'st-notificada';
@@ -1312,6 +1321,7 @@ function estBadge(est){
   if(e==='NOTIFICADA'){bg='var(--pastel-azul)';fg='#0C447C';}
   else if(e==='AGENDADA'){bg='var(--pastel-teal)';fg='#085041';}
   else if(e==='REVISAR'){bg='var(--pastel-rojo)';fg='#791F1F';}
+  else if(e==='RECIBIDA'){bg='#D6EFDC';fg='#1f6b36';}
   return '<span class="pill" style="background:'+bg+';color:'+fg+';">'+esc(txt)+'</span>';
 }
 function vencColor(dias){
@@ -1403,6 +1413,9 @@ function tarjetaDoc(g){
   const t=g.ref;
   const tipo=String(t.tipo||'').toUpperCase();
   const est=g.estado;
+  /* Recepción completa en todas sus filas: la entrega manda sobre el trámite con el proveedor.
+     ESTADO_TRANSITO no se cambia en la hoja (EMITIDA/NOTIFICADA/AGENDADA queda como historia del trámite). */
+  const cerrada=!!(g.filas&&g.filas.length&&g.filas.every(trCerrado));
   // FECHA PROTAGONISTA por tipo (esquina superior derecha)
   // OC: Término de entrega (urgencia operativa). Solicitud/Adelanto: Vencimiento de entrega.
   var fechaProta, capProta;
@@ -1420,13 +1433,18 @@ function tarjetaDoc(g){
 
   // Sello segun estado
   let sello='';
-  if(est==='NOTIFICADA'){ sello='<div class="sello" style="color:#0F6E56;font-size:11px;margin-top:3px;">✓ Notificado'+(t.notificado_en?(' el '+esc(t.notificado_en)):'')+(t.notificado_por?(' · '+esc(t.notificado_por)):'')+'</div>'; }
+  if(cerrada){ var q0=confQuien(g.filas[0]);
+    sello='<div class="sello" style="color:#1f6b36;font-size:11px;margin-top:3px;">✓ Recepción completa'+(q0?(' · '+esc(q0)):'')+
+      '<span style="color:#888;margin-left:6px;">· trámite con el proveedor: '+esc(String(est||'EMITIDA').toLowerCase())+'</span></div>'; }
+  else if(est==='NOTIFICADA'){ sello='<div class="sello" style="color:#0F6E56;font-size:11px;margin-top:3px;">✓ Notificado'+(t.notificado_en?(' el '+esc(t.notificado_en)):'')+(t.notificado_por?(' · '+esc(t.notificado_por)):'')+'</div>'; }
   else if(est==='AGENDADA'){ sello='<div class="sello" style="color:#0F6E56;font-size:11px;margin-top:3px;">✓ El proveedor ya agendó su cita de entrega</div>'; }
 
   // Botones segun estado (modelo A)
   var btnPDF = t.archivo_url ? '<a class="btn btn-sec mini" href="'+esc(t.archivo_url)+'" target="_blank" style="text-decoration:none;">Ver PDF</a>' : '';
   let acc='';
-  if(est==='AGENDADA'){
+  if(cerrada){
+    acc=btnPDF+'<span style="font-size:11px;color:#1f6b36;margin-left:8px;">Cerrado: recibido completo, no requiere acciones.</span>';
+  } else if(est==='AGENDADA'){
     acc=btnPDF+
         '<span style="font-size:11px;color:#888;margin-left:8px;">Bloqueado: ya existe cita en firme</span>'+
         '<button class="btn btn-sec mini" style="margin-left:auto;" onclick="revertirCitaTomada(\''+esc(g.doc)+'\')">↩ Revertir cita</button>';
@@ -1449,14 +1467,14 @@ function tarjetaDoc(g){
     '<div class="tj-head">'+
       '<div style="min-width:0;">'+
         '<div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap;">'+
-          '<span class="doc">'+esc(tituloDoc)+'</span>'+estBadge(est)+
+          '<span class="doc">'+esc(tituloDoc)+'</span>'+estBadge(cerrada?'RECIBIDA':est)+
           '<span class="badge2" style="background:'+tc.bg+';color:'+tc.fg+';">'+esc(tipoLabel(tipo))+'</span>'+
         '</div>'+
         '<div class="prov">'+esc(t.proveedor||'—')+(t.descripcion?(' · '+esc(t.descripcion)):'')+'</div>'+
         '<div style="font-size:10.5px;color:#0C447C;font-family:Consolas,monospace;margin-top:2px;">Abasto '+esc(t.cod_abasto_norm||t.cod_abasto||'—')+' · SAP '+esc(t.cod_sap||'—')+(t.n_entrega?(' · Entrega N° '+esc(t.n_entrega)):'')+'</div>'+
         sello+
       '</div>'+
-      '<div class="tj-venc"><div class="cap">'+capProta+'</div>'+(fechaProta?('<div class="val" style="color:'+vc.c+';">'+esc(fechaProta)+'</div>'+(diasTxt?('<div style="font-size:9.5px;color:'+vc.fg+';">'+esc(diasTxt)+'</div>'):'')):('<div class="val" style="color:#c9a227;font-size:12px;">Sin fecha — verifique</div>'))+'</div>'+
+      '<div class="tj-venc"><div class="cap">'+capProta+'</div>'+(cerrada?('<div class="val" style="color:#1f6b36;">Recibida</div>'+(fechaProta?('<div style="font-size:9.5px;color:#888;">vencía '+esc(fechaProta)+'</div>'):'')):fechaProta?('<div class="val" style="color:'+vc.c+';">'+esc(fechaProta)+'</div>'+(diasTxt?('<div style="font-size:9.5px;color:'+vc.fg+';">'+esc(diasTxt)+'</div>'):'')):('<div class="val" style="color:#c9a227;font-size:12px;">Sin fecha — verifique</div>'))+'</div>'+
     '</div>';
 
   // Franja de señal (3 tarjetas de color) segun tipo
@@ -1516,7 +1534,7 @@ function tarjetaDoc(g){
       celda('Planificador', t.planificador);
   }
 
-  return '<div class="tj '+estClase(est)+'" id="tj_'+esc(idG)+'">'+
+  return '<div class="tj '+(cerrada?'st-recibida':estClase(est))+'" id="tj_'+esc(idG)+'">'+
     cabecera+
     franja+
     evidenciaHtml(g)+
@@ -2272,7 +2290,8 @@ function misCuentas(L){
   n.SOC=Object.keys(docs).length; return n;
 }
 function misEntrega(t){
-  var f=trFecha(t), d=diasPara(f); if(d==null) return '<span class="sm">sin fecha</span>';
+  var f=trFecha(t), d=diasPara(f);
+  if(trCerrado(t)) return '<span class="mt-pill" style="background:#d6efdc;color:#1f6b36">Recibida</span>'+(f?'<br><span class="sm">vencía '+f.slice(8)+'/'+f.slice(5,7)+'/'+f.slice(2,4)+'</span>':''); if(d==null) return '<span class="sm">sin fecha</span>';
   var st=d<0?'background:#f6d5d1;color:#9b1c2c':d<=7?'background:#fbe8c8;color:#8a5a1a':'background:#d6efdc;color:#1f6b36';
   return '<span style="font-family:Consolas,monospace">'+f.slice(8)+'/'+f.slice(5,7)+'/'+f.slice(2,4)+'</span><br><span class="mt-pill" style="'+st+'">'+(d<0?'venció hace '+(-d)+' d':d===0?'vence hoy':'en '+d+' d')+'</span>';
 }
@@ -2297,6 +2316,7 @@ function misSituacion(t){
   return '<span class="sm">'+(diasPara(trFecha(t))!=null&&diasPara(trFecha(t))<0?'Vencida':'En plazo')+'</span>';
 }
 function misAccion(t, cat){
+  if(trCerrado(t)) return '<span class="sm" style="color:#1f6b36">Cerrado: no requiere acciones</span>';
   var id=esc(t.id), est=String(t.estado_transito||'').toUpperCase(), cs=misCats(t);
   var k=cat==='ALL'?(['REC','SOC','FEC','CED','VEN','PRO'].find(function(x){ return cs.indexOf(x)>=0; })||''):cat;
   if(k==='REC') return '<button class="btn ok" data-a="conf" data-id="'+id+'">Confirmar</button><button class="btn btn-sec" data-a="nocorr" data-id="'+id+'">No corresponde</button>';
@@ -2348,7 +2368,7 @@ function renderMis(){
   if(!TRANSITOS.length){ $('mtTablaBox').innerHTML='<div class="mt-vacio">Cargando…</div>'; return; }
   if(!L.length){ $('mtTablaBox').innerHTML='<div class="mt-vacio">No hay tránsitos en esta lista'+(_yo?' para '+esc(_yo):'')+'.</div>'; $('mtPie').textContent=''; return; }
   var h='<table class="mt-tabla"><thead><tr>'+M_COLS.map(function(c){ var o=!!M_KEY[c[0]];
-    return '<th'+(o?' data-o="'+c[0]+'"':' class="nos"')+(c[0]==='sal'?' style="text-align:right"':'')+(c[0]==='acc'?' style="white-space:normal;min-width:190px"':'')+'>'+(c[0]==='acc'?(M_ACC[_misCat]||c[1]):c[1])+(o?'<span class="ar">'+(_misOrden.k===c[0]?(_misOrden.dir>0?'▲':'▼'):'▲▼')+'</span>':'')+'</th>'; }).join('')+'</tr></thead><tbody>';
+    return '<th'+(o?' data-o="'+c[0]+'"':' class="nos"')+(c[0]==='sal'?' style="text-align:right"':'')+(c[0]==='acc'?' style="white-space:normal;min-width:190px"':'')+'>'+(c[0]==='acc'?((($('mtBuscar').value||'').trim()?'Siguiente paso':M_ACC[_misCat])||c[1]):c[1])+(o?'<span class="ar">'+(_misOrden.k===c[0]?(_misOrden.dir>0?'▲':'▼'):'▲▼')+'</span>':'')+'</th>'; }).join('')+'</tr></thead><tbody>';
   L.forEach(function(t){
     var id=esc(t.id), esOC=String(t.tipo).toUpperCase()==='ORDEN_COMPRA', ab=_misAbierto===String(t.id);
     var oc=esOC?'<span class="sm">OC madre</span>':(/10\d{8}/.test(String(t.n_orden_compra||''))?'<span class="sm" style="font-family:Consolas,monospace">'+esc(t.n_orden_compra)+'</span>':'<span class="sm" style="color:#1e5a9e">sin OC</span>');
@@ -2363,14 +2383,15 @@ function renderMis(){
     if(ab){ var est=String(t.estado_transito||'').toUpperCase();
       h+='<tr class="mt-det"><td colspan="8"><div class="mt-dgrid">'+
         '<div><span>Emisión</span>'+esc(t.fecha_emision||'—')+'</div><div><span>Cantidad</span>'+fmtNum(t.cantidad)+'</div><div><span>Entregado</span>'+fmtNum(t.cant_entregada||0)+'</div>'+
-        '<div><span>Estado</span>'+esc(est||'EMITIDA')+'</div><div><span>Nº OC SAP</span>'+esc(t.n_orden_compra||'— sin OC')+'</div><div><span>Código SAP</span>'+esc(t.cod_sap||'—')+'</div><div><span>Planificador</span>'+esc(t.planificador||'—')+'</div></div>'+
+        '<div><span>Estado</span>'+(trCerrado(t)?'<b style="color:#1f6b36">RECIBIDA</b> <span class="sm">(trámite: '+esc((est||'EMITIDA').toLowerCase())+')</span>':esc(est||'EMITIDA'))+'</div><div><span>Nº OC SAP</span>'+esc(t.n_orden_compra||'— sin OC')+'</div><div><span>Código SAP</span>'+esc(t.cod_sap||'—')+'</div><div><span>Planificador</span>'+esc(t.planificador||'—')+'</div></div>'+
         '<div class="mt-dacc">'+(t.archivo_url?'<a class="btn btn-sec" href="'+esc(t.archivo_url)+'" target="_blank" rel="noopener">Ver PDF</a>':'<span class="sm">El PDF aparece al terminar de conectar con el registro en vivo.</span>')+
+        (trCerrado(t)?'<span class="sm" style="color:#1f6b36">Cerrado: recibido completo'+(confQuien(t)?' · '+esc(confQuien(t)):'')+'. No requiere acciones.</span>':(''+
         (est!=='AGENDADA'?'<button class="btn btn-sec" data-a="editar" data-id="'+id+'">Editar documento'+(est==='NOTIFICADA'?' (reenvía aviso)':'')+'</button>':'')+
         (est!=='NOTIFICADA'&&est!=='AGENDADA'?'<button class="btn btn-sec" data-a="notif" data-id="'+id+'">Notificar al proveedor</button>':'')+
         (est==='NOTIFICADA'?'<button class="btn btn-sec" data-a="revnotif" data-id="'+id+'">Revertir notificación</button>':'')+
         (est!=='AGENDADA'?'<button class="btn btn-sec" data-a="cita" data-id="'+id+'">Cita tomada</button>':'<span class="sm">Con cita en firme: ya no se puede editar ni eliminar</span><button class="btn btn-sec" data-a="revcita" data-id="'+id+'">Revertir cita tomada</button>')+
         (misSinFuente(t)?'<button class="btn btn-sec" data-a="manual" data-id="'+id+'">Registrar recepción</button>':'')+
-        '<span class="sep"></span>'+(est!=='AGENDADA'?'<button class="mt-lnk" data-a="elim" data-id="'+id+'">'+(est==='NOTIFICADA'?'Anular documento (avisa al proveedor)':'Eliminar documento')+'</button>':'')+'</div></td></tr>';
+        '<span class="sep"></span>'+(est!=='AGENDADA'?'<button class="mt-lnk" data-a="elim" data-id="'+id+'">'+(est==='NOTIFICADA'?'Anular documento (avisa al proveedor)':'Eliminar documento')+'</button>':'')))+'</div></td></tr>';
     }
   });
   $('mtTablaBox').innerHTML=h+'</tbody></table>';
