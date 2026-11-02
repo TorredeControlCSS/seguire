@@ -1592,7 +1592,7 @@ function aplicarFiltros(arr){
   const fp=$('fPlanif')?$('fPlanif').value:'';
   const verCerr=$('fCerrados')&&$('fCerrados').checked;
   return arr.filter(t=>{
-    if(!verCerr && trCerrado(t)) return false;
+    if(!verCerr && !q && trCerrado(t)) return false;   // al buscar, también aparecen los cerrados
     if(ft && t.tipo!==ft) return false;
     if(fe==='_EV_CONF'){ var s1=situacionEv(t); if(s1!=='RECIBIDO_SIN_CONFIRMAR' && s1!=='RECIBIDO_PARCIAL_SIN_CONFIRMAR') return false; }
     else if(fe==='_EV_ATR'){ if(situacionEv(t)!=='VENCIDO_SIN_ENTRADA') return false; }
@@ -1602,7 +1602,7 @@ function aplicarFiltros(arr){
     if(fd && (!fv || fv<fd)) return false;
     if(fh && (!fv || fv>fh)) return false;
     if(q){
-      const blob=(t.n_documento+' '+t.cod_abasto+' '+t.proveedor+' '+t.descripcion).toLowerCase();
+      const blob=(t.n_documento+' '+(t.n_orden_compra||'')+' '+t.cod_abasto+' '+(t.cod_sap||'')+' '+t.proveedor+' '+t.descripcion).toLowerCase();
       if(blob.indexOf(q)===-1) return false;
     }
     return true;
@@ -2324,8 +2324,8 @@ const M_KEY={ doc:function(t){ return normDoc(t.n_documento); }, cod:function(t)
   ced:function(t){ return String(t.cedi||''); }, sal:function(t){ return t._sal!=null?t._sal:trSaldo(t); }, f:function(t){ return trFecha(t)||'9999'; }, sit:function(t){ return situacionEv(t)||''; } };
 function misLista(){
   var q=($('mtBuscar').value||'').toLowerCase().trim(), cat=_misCat;
-  var L=misBase().filter(function(t){ return misCats(t).indexOf(cat)>=0; });
-  if(q) L=L.filter(function(t){ return (t.n_documento+' '+t.n_orden_compra+' '+t.cod_abasto+' '+t.proveedor+' '+t.descripcion).toLowerCase().indexOf(q)>=0; });
+  var L=q ? misBase() : misBase().filter(function(t){ return misCats(t).indexOf(cat)>=0; });   // al buscar se busca en todo lo suyo, cerrados incluidos
+  if(q) L=L.filter(function(t){ return (t.n_documento+' '+t.n_orden_compra+' '+t.cod_abasto+' '+(t.cod_sap||'')+' '+t.proveedor+' '+t.descripcion).toLowerCase().indexOf(q)>=0; });
   if(cat==='SOC'){ var g={};
     L.forEach(function(t){ var k=normDoc(t.n_documento); if(!g[k]) g[k]=Object.assign({},t,{_ced:[],_n:0,_sal:0}); g[k]._ced.push(t.cedi||'—'); g[k]._n++; g[k]._sal+=trSaldo(t); });
     L=Object.keys(g).map(function(k){ return g[k]; }); }
