@@ -2278,7 +2278,11 @@ function misEntrega(t){
 }
 function misSituacion(t){
   var e=EVID[String(t.id)]||{}, s=situacionEv(t), v=e.evidencia;
-  if(s==='CONFIRMADO_POR_PLANIFICADOR') return '<b style="color:#1f6b36">Recepción confirmada</b>'+(Number(t.cant_entregada)>0?'<br><span class="sm">'+fmtNum(t.cant_entregada)+' u</span>':'');
+  if(s==='CONFIRMADO_POR_PLANIFICADOR'){
+    var cp=e.confirmadoPor||{}, qn=cp.tipo==='AUTOMATICO'?'automática · '+(cp.fuente==='RECEPCION'?'Recepción CEDIS Panamá':'Kardex SAP-SAFIRO')
+      :cp.tipo==='BARRIDO'?'por la Torre de Control':cp.tipo==='REGISTRO_MANUAL'?'registrada por '+esc(cp.por||'el planificador'):cp.tipo==='PLANIFICADOR'?'por '+esc(cp.por||'el planificador'):'';
+    return '<b style="color:#1f6b36">Recepción confirmada</b><br><span class="sm">'+(Number(t.cant_entregada)>0?fmtNum(t.cant_entregada)+' u':'')+(qn?(Number(t.cant_entregada)>0?' · ':'')+qn:'')+(cp.fecha?' · '+esc(fFecha(cp.fecha)):'')+(e.evidencia&&e.evidencia.cedisDeducido?'<br>CEDIS tomado del almacén del Kardex':'')+'</span>';
+  }
   if(s==='_NO_CORRESPONDE') return '<span class="sm">Marcada «no corresponde»: se revisa con las entradas siguientes</span>';
   if((s==='RECIBIDO_SIN_CONFIRMAR'||s==='RECIBIDO_PARCIAL_SIN_CONFIRMAR')&&v){
     return '<b style="color:#1f6b36">'+(s==='RECIBIDO_PARCIAL_SIN_CONFIRMAR'?'Recibida en parte':'Recibida')+': '+fmtNum(v.recibido)+' u</b><br><span class="sm">'+(v.fuente==='KARDEX'?'Kardex SAP-SAFIRO':'Recepción CEDIS Panamá')+' · '+esc(fFecha(v.ultimaEntrada))+' · confianza '+esc(v.confianza||'')+(Number(v.sinPresupuesto)>0?'<br>entrada 561 (sin presupuesto asignado)':'')+'</span>';
