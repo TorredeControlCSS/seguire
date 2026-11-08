@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Trazabilidad de OC y Tránsitos — SEGUIRE (Seguimiento Inteligente de Requisiciones)</title>
-<link rel="icon" href="https://torredecontrolcss.github.io/seguire/favicon.ico">
-<link rel="apple-touch-icon" href="https://torredecontrolcss.github.io/seguire/icons/icon-192.png">
+<link rel="icon" href="https://torrecontrolcss.org/seguire/favicon.ico">
+<link rel="apple-touch-icon" href="https://torrecontrolcss.org/seguire/icons/icon-192.png">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
   :root{
@@ -603,7 +603,7 @@ const API_SEGUIRE = 'https://script.google.com/macros/s/AKfycbyLjga90kMJ4_4zB7P2
 const API_SIGUELO = 'https://script.google.com/macros/s/AKfycbwVw0ACNMhdN6d-JsI1lyP2iKHBVgWXI5nK3rA6blEhF3l8t2Wuwk2TpRmaanB186Dk/exec';
 /* Evidencia de recepción: SÍGUELO cruza cada tránsito con las entradas de CEDIS Panamá
    (TRANSITOS_EVIDENCIA.gs) y la publica aquí. Solo lectura; si no carga, el panel sigue igual. */
-const URL_EVIDENCIA = 'https://torredecontrolcss.github.io/SIGUELO/transitos_evidencia.json';
+const URL_EVIDENCIA = 'https://torrecontrolcss.org/SIGUELO/transitos_evidencia.json';
 var EVID = {};
 
 let TRANSITOS = [];
@@ -1183,7 +1183,7 @@ $('btnGuardar').addEventListener('click',function(){
    2) en segundo plano, listarTransitos del GAS (lo último manda) y se repinta solo si cambió.
    Si el usuario está escribiendo en una tarjeta, el repintado espera a que termine.
    Después de guardar, se consulta directo al GAS sin borrar la lista que ya se ve. */
-const URL_PANEL_JSON='https://torredecontrolcss.github.io/SIGUELO/transitos_panel.json';
+const URL_PANEL_JSON='https://torrecontrolcss.org/SIGUELO/transitos_panel.json';
 var _gasOk=false, _firmaTr='';
 function firmaTr(l){ return JSON.stringify((l||[]).map(function(t){ return [t.id,t.estado_transito,t.cant_entregada,t.saldo,t.cantidad,t.cedi,t.vencimiento_entrega,t.termino_entrega,t.planificador,t.archivo_url?1:0]; })); }
 function pintarTransitos(lista){
