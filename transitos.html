@@ -1590,8 +1590,14 @@ function trEsDe(yo,nombre){ var a=bTok(yo), b=bTok(nombre); if(!a.length||!b.len
   return a.slice(1).every(function(w){ return b.some(function(u){ return u===w||(u.length===1&&w.charAt(0)===u)||(w.length===1&&u.charAt(0)===w); }); }); }
 function poblarBandeja(){
   var sel=$('bYo'); if(!sel) return;
-  var vistos={}, nombres=[];
-  TRANSITOS.forEach(function(t){ var n=String(t.planificador||'').trim(); if(!n) return; var k=bTok(n).join(' '); if(vistos[k]) return; vistos[k]=1; nombres.push(n); });
+  // Una sola entrada por persona: «Selene itzel Fernandez vega» y «Selene Fernández» son la misma;
+  // queda la forma que más se usa en los tránsitos. Solo aparece quien tiene algún tránsito abierto:
+  // los cerrados de un planificador que ya rotó siguen en la Vista Jefatura («Mostrar cerrados»).
+  var cuenta={};
+  TRANSITOS.forEach(function(t){ var n=String(t.planificador||'').trim(); if(n && !trCerrado(t)) cuenta[n]=(cuenta[n]||0)+1; });
+  var nombres=[];
+  Object.keys(cuenta).sort(function(a,b){ return cuenta[b]-cuenta[a]; }).forEach(function(n){
+    if(nombres.some(function(m){ return trEsDe(m,n)||trEsDe(n,m); })) return; nombres.push(n); });
   nombres.sort(function(a,b){ return a.localeCompare(b,'es'); });
   var q=new URLSearchParams(location.search), pUrl=q.get('p')||'', guardado=''; try{ guardado=localStorage.getItem('seg_yo')||''; }catch(e){}
   var quiere=_yo||pUrl||guardado;
