@@ -510,8 +510,8 @@ function segCrearConfigAlertas() {
   if (!sh) { Logger.log('SEG no existe la hoja ' + SEG.CONFIG_SH); return; }
   var v = sh.getDataRange().getValues(), hay = {};
   v.forEach(function (r) { hay[String(r[0] || '').trim().toUpperCase()] = true; });
-  var nuevas = SEG_CFG_FILAS.filter(function (r) { return !hay[r[0]]; });
-  if (!nuevas.length) { Logger.log('SEG CONFIG_ALERTAS ya tiene las filas INCUMP_*: no se tocó nada.'); return; }
+  var nuevas = SEG_CFG_FILAS.concat(SEG_OC_FILAS).filter(function (r) { return !hay[r[0]]; });
+  if (!nuevas.length) { Logger.log('SEG CONFIG_ALERTAS ya tiene las filas INCUMP_* y SEGUIRE_*: no se tocó nada.'); return; }
   sh.getRange(sh.getLastRow() + 1, 1, nuevas.length, 3).setValues(nuevas);
   Logger.log('SEG agregadas a CONFIG_ALERTAS: ' + nuevas.map(function (r) { return r[0]; }).join(', '));
 }
@@ -831,4 +831,343 @@ function segDiagnostico() {
   L.push('    activador diario: ' + (ScriptApp.getProjectTriggers().some(function (t) { return t.getHandlerFunction() === 'segIncCorreoDiario'; }) ? 'instalado' : 'no instalado (de esta cuenta)'));
   Logger.log(L.join('\n'));
   return L;
+}
+
+
+/* ══════════════════════════════════════════════════════════════════════════
+ *  CORREO DIARIO · SEGUIRE (estado de la compra de los medicamentos en falta)
+ *  11-nov-2026
+ *
+ *  Lee seguire/data/consolidado.json, el mismo que muestra SEGUIRE, y con las
+ *  mismas reglas del tablero (medicamentos; «en falta» = agotado o crítico):
+ *    · Solicitud vencida       comprado, con solicitud de entrega vencida
+ *    · Sin solicitud de entrega comprado (refrendado con saldo) sin solicitud
+ *    · Solicitud por vencer     vence en 15 días o menos
+ *    · Sin trámite de compra    en falta y sin contrato
+ *    · Otros en falta           sin refrendo, sin presupuesto o consumido
+ *  Las fechas se miden contra el corte del consolidado, igual que el tablero.
+ *
+ *  Dos envíos, lunes a viernes 6:50 a. m. (activador segOcCorreoDiario):
+ *    1. Jefaturas (SEGUIRE_TO / SEGUIRE_CC): resumen nacional y por planificador.
+ *    2. Cada planificador: solo sus renglones. Su correo sale de
+ *       DIRECTORIO_PLANIFICADORES (el mismo del aviso de tránsitos); las
+ *       iniciales del consolidado se traducen con SEG_ANA.
+ *  Interruptores en CONFIG_ALERTAS: SEGUIRE_ACTIVO, SEGUIRE_PLAN_ACTIVO,
+ *  SEGUIRE_PRUEBA_A (si tiene valor, TODO va solo ahí), SEGUIRE_DIAS.
+ *
+ *  Editor: segOcEnviarmePrueba · segOcSimular · segOcActivar · segOcEnviarAhora
+ * ══════════════════════════════════════════════════════════════════════════ */
+var SEG_OC = { PROP: 'SEG_OC_PREVIO', POR_VENCER: 15, ATRASO_CONS: 10, TOPE: 5,
+  PANEL: 'https://torrecontrolcss.org/seguire/' };
+
+var SEG_ANA = {
+  SS: 'Simón Sotillo', VD: 'Vladimir De León', BS: 'Braulio Serrano', JME: 'José M. Espinosa', JE: 'José M. Espinosa',
+  FC: 'Fernando Calderón', WP: 'William Pui', NS: 'Nohelia Sánchez', OC: 'Orlando Cerrud', JL: 'Jenny López',
+  LM: 'Lorena Montero', MF: 'Marisol Flores', DC: 'Dax Castro', YR: 'Yaricell Rivera', ON: 'Orlando Navarro',
+  DH: 'Daira Herrera', EB: 'Edilma Batista', DD: 'Desiluz Doviaza', EM: 'Edwin Macías', FM: 'Francisco Mora',
+  RG: 'Rubén González', SF: 'Selene Fernández', YV: 'Yarelis Vásquez'
+};
+
+var SEG_OC_FILAS = [
+  ['SEGUIRE_ACTIVO', 'NO', 'SI/NO · correo diario de SEGUIRE (estado de la compra de los medicamentos en falta) a jefaturas y planificadores'],
+  ['SEGUIRE_TO', 'yassjimenez@css.gob.pa, marlperalta@css.gob.pa, ygarcia@css.gob.pa, hherrera@css.gob.pa, mcernichiaro@css.gob.pa, vdeleon@css.gob.pa, sisotillo@css.gob.pa, almaitin@css.gob.pa, edilbatista@css.gob.pa, argelismoreno@css.gob.pa',
+    'Jefaturas que reciben el resumen diario de SEGUIRE · PARA (separados por coma)'],
+  ['SEGUIRE_CC', '', 'Resumen diario de SEGUIRE · copia (CC)'],
+  ['SEGUIRE_PLAN_ACTIVO', 'SI', 'SI/NO · además del resumen, cada planificador recibe sus renglones (correo de DIRECTORIO_PLANIFICADORES)'],
+  ['SEGUIRE_PRUEBA_A', '', 'Correo de prueba: si tiene valor, el resumen y los correos de planificadores van SOLO a este correo'],
+  ['SEGUIRE_DIAS', 'L-V', 'Días de envío de SEGUIRE: L-V, L-S, DIARIO o L,M,X,J,V,S,D']
+];
+
+var SEG_OC_CAT = [
+  { k: 'ven', t: 'Solicitud vencida', tono: 'r', hoja: 'Solicitud vencida',
+    acc: 'gestionar la entrega con el proveedor y con Seguimiento (incumplimiento)' },
+  { k: 'sin', t: 'Sin solicitud de entrega', tono: 'r', hoja: 'Sin solicitud',
+    acc: 'emitir la solicitud de entrega del saldo contratado' },
+  { k: 'pv', t: 'Solicitud por vencer', tono: 'a', hoja: 'Por vencer',
+    acc: 'confirmar con el proveedor la fecha de entrega' },
+  { k: 'com', t: 'Sin trámite de compra', tono: 'a', hoja: 'Sin trámite',
+    acc: 'iniciar o acelerar el trámite de compra, vitales primero' },
+  { k: 'otr', t: 'Otros en falta', tono: 'n', hoja: 'Otros en falta',
+    acc: 'revisar el estatus del contrato (sin refrendo, sin presupuesto o consumido)' }
+];
+
+function segOcCfg_() {
+  var sh = SpreadsheetApp.openById(SEG.CONFIG_SS).getSheetByName(SEG.CONFIG_SH);
+  var v = sh.getDataRange().getValues(), m = {};
+  for (var i = 1; i < v.length; i++) { var k = String(v[i][0] || '').trim().toUpperCase(); if (k) m[k] = String(v[i][1] === null ? '' : v[i][1]).trim(); }
+  var lista = function (s) { return String(s || '').split(/[,;\s]+/).map(function (x) { return x.trim(); }).filter(function (x) { return /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(x); }); };
+  return { activo: String(m.SEGUIRE_ACTIVO || 'NO').toUpperCase() === 'SI', plan: String(m.SEGUIRE_PLAN_ACTIVO || 'NO').toUpperCase() === 'SI',
+           to: lista(m.SEGUIRE_TO), cc: lista(m.SEGUIRE_CC), prueba: lista(m.SEGUIRE_PRUEBA_A),
+           dias: String(m.SEGUIRE_DIAS || 'L-V').toUpperCase(), existe: m.SEGUIRE_TO !== undefined };
+}
+
+function segOcCat_(r) {
+  if (r.seg === 'Ejecución') return r.ent === 'Vencida' ? 'ven' : r.ent === 'Sin solicitud' ? 'sin' : r.ent === 'Por vencer' ? 'pv' : null;
+  if (r.seg === 'Compra') return 'com';
+  if (r.seg === 'Otros') return 'otr';
+  return null;
+}
+
+function segOcConstruir_() {
+  var g = segGitLeer_(SEG.RUTA.cons);
+  if (!g || !g.obj || !g.obj.rows) throw new Error('No se pudo leer ' + SEG.RUTA.cons + ' del repositorio ' + SEG.GH_REPO + '.');
+  var D = g.obj, hoy = Utilities.formatDate(new Date(), SEG.TZ, 'yyyy-MM-dd');
+  var R = D.rows.map(function (a) { var o = {}; D.cols.forEach(function (c, i) { o[c] = a[i]; }); return o; })
+                .filter(function (r) { return r.tipo === 'Medicamento'; });
+  var F = R.filter(function (r) { return r.seg; });
+  var E = F.filter(function (r) { return r.seg === 'Ejecución'; });
+  var dem = R.filter(function (r) { return r.despacho > 0 && r.consDensyps > 5 * r.despacho; });
+  var L = {}; SEG_OC_CAT.forEach(function (c) { L[c.k] = []; });
+  F.forEach(function (r) { var k = segOcCat_(r); r.cat = k; if (k) L[k].push(r); });
+  var ord = function (a, b) { return (b.ven === 'V') - (a.ven === 'V') || (b.saldoB || 0) - (a.saldoB || 0) || (b.despacho || 0) - (a.despacho || 0); };
+  Object.keys(L).forEach(function (k) { L[k].sort(k === 'ven' ? function (a, b) { return (a.dias || 0) - (b.dias || 0) || ord(a, b); } : ord); });
+  var plan = {};
+  F.forEach(function (r) {
+    if (!r.cat) return;
+    var ini = r.analista || '—', o = plan[ini] = plan[ini] || { ini: ini, nombre: SEG_ANA[ini] || ini, n: 0, v: 0, saldo: 0, c: {} };
+    o.n++; if (r.ven === 'V') o.v++; o.saldo += r.saldoB || 0; o.c[r.cat] = (o.c[r.cat] || 0) + 1;
+  });
+  var planes = Object.keys(plan).map(function (k) { return plan[k]; }).sort(function (a, b) { return b.n - a.n; });
+  var suma = function (a) { return a.reduce(function (s, r) { return s + (r.saldoB || 0); }, 0); };
+  var diasCons = Math.round((Date.UTC(+hoy.slice(0, 4), +hoy.slice(5, 7) - 1, +hoy.slice(8, 10)) - Date.UTC(+D.corte.slice(0, 4), +D.corte.slice(5, 7) - 1, +D.corte.slice(8, 10))) / 86400000);
+  return { corte: D.corte, generado: D._meta && D._meta.generado, hoy: hoy, diasCons: diasCons, R: R, F: F, E: E, dem: dem, L: L, planes: planes,
+           vitales: F.filter(function (r) { return r.ven === 'V'; }).length, saldoE: suma(E),
+           k: { falta: F.length, ven: L.ven.length, sin: L.sin.length, com: L.com.length } };
+}
+
+function segOcAcciones_(R, items, quien) {
+  var nf = segNf_, A = [];
+  if (!items && R.diasCons > SEG_OC.ATRASO_CONS) A.push({ resp: 'Planificación', tono: 'r', n: R.diasCons + ' d',
+    corto: 'el consolidado tiene ' + R.diasCons + ' días: cargar el nuevo en la Ventanilla Única' });
+  SEG_OC_CAT.forEach(function (c) {
+    var L = items ? items.filter(function (r) { return r.cat === c.k; }) : R.L[c.k];
+    if (!L.length) return;
+    var v = L.filter(function (r) { return r.ven === 'V'; }).length;
+    A.push({ resp: quien || 'Planificación', tono: c.tono, n: nf(L.length), k: c.k,
+      corto: c.t.toLowerCase() + (v ? ' (' + nf(v) + (v === 1 ? ' vital)' : ' vitales)') : '') + ': ' + c.acc,
+      valor: (c.k === 'com') ? 0 : L.reduce(function (s, r) { return s + (r.saldoB || 0); }, 0) });
+  });
+  return A;
+}
+
+function segOcHtml_(R, opt) {
+  /* opt: { prueba, cfg, prev, plan: {nombre, items} } — sin plan = resumen de jefaturas */
+  var e = segEsc_, nf = segNf_, TOP = SEG_OC.TOPE, P = opt.plan;
+  var S = { v: ['#E1F5EE', '#0F6E56'], a: ['#FAEEDA', '#854F0B'], r: ['#FCEBEB', '#791F1F'], n: ['#E6F1FB', '#185FA5'], g: ['#F1EFE8', '#5F5E5A'] };
+  var th = function (x, al) { return '<th style="background:#1E5A9E;color:#fff;font-size:10.5px;padding:6px 7px;text-align:' + (al || 'center') + ';font-weight:bold">' + x + '</th>'; };
+  var td = function (x, al) { return '<td style="padding:5px 7px;border-bottom:1px solid #E5EAF0;font-size:12px;text-align:' + (al || 'center') + '">' + x + '</td>'; };
+  var tabla = function (cab, filas) { return '<table style="border-collapse:collapse;width:100%"><tr>' + cab.join('') + '</tr>' + filas.join('') + '</table>'; };
+  var zebra = function (i) { return '<tr style="background:' + (i % 2 ? '#F8FAFC' : '#fff') + '">'; };
+  var chip = function (t, tono) { var c = S[tono] || S.g; return '<span style="background:' + c[0] + ';color:' + c[1] + ';font-weight:bold;border-radius:4px;padding:2px 7px;display:inline-block">' + t + '</span>'; };
+  var h2 = function (t, s) { return '<div style="font-size:14px;font-weight:bold;color:#0C447C;margin:20px 0 6px;border-bottom:1px solid #C9D6E6;padding-bottom:3px">' + t + (s ? ' <span style="font-weight:normal;color:#666;font-size:11.5px">' + s + '</span>' : '') + '</div>'; };
+  var cinta = function (t) { return '<div style="background:#FFE9A8;color:#5C4400;border-radius:6px;padding:8px 11px;margin-top:6px;font-size:12.5px;font-weight:bold">' + t + '</div>'; };
+  var dl = function (k) {
+    var prev = opt.prev; if (P || !prev || !prev.k || prev.k[k] === undefined) return '';
+    var d = R.k[k] - prev.k[k];
+    return '<div style="font-size:10.5px;font-weight:normal;margin-top:2px">' + (Math.abs(d) < 1 ? '= igual que el envío anterior' : (d > 0 ? '▲ ' : '▼ ') + nf(Math.abs(d)) + ' vs. ' + e(segFechaTxt_(prev.hoy).slice(0, 5))) + '</div>';
+  };
+  var tile = function (tit, num, sub, tono, k) {
+    var c = S[tono] || S.n;
+    return '<td style="vertical-align:top;width:20%;padding:0 3px"><div style="background:' + c[0] + ';border-radius:8px;padding:9px 10px;color:' + c[1] + '">' +
+      '<div style="font-size:10.5px;text-transform:uppercase;letter-spacing:.04em;font-weight:bold;min-height:26px">' + tit + '</div>' +
+      '<div style="font-size:22px;font-weight:bold;font-family:Consolas,monospace;margin:2px 0">' + num + '</div>' +
+      '<div style="font-size:11px;line-height:1.3">' + sub + '</div>' + (k ? dl(k) : '') + '</div></td>';
+  };
+  var items = P ? P.items : null, Lc = function (k) { return items ? items.filter(function (r) { return r.cat === k; }) : R.L[k]; };
+  var suma = function (a) { return a.reduce(function (s, r) { return s + (r.saldoB || 0); }, 0); };
+  var falta = items || R.F.filter(function (r) { return r.cat; });
+
+  var html = '<div style="font-family:Arial,Helvetica,sans-serif;color:#1a1a1a;max-width:980px">' +
+    (opt.prueba ? '<div style="background:#FAEEDA;color:#854F0B;border-radius:6px;padding:6px 10px;font-size:12px;margin-bottom:8px">PRUEBA · ' +
+      (P ? 'correo de ' + e(P.nombre) + (P.correo ? ' (' + e(P.correo) + ')' : ' · sin correo en DIRECTORIO_PLANIFICADORES') : 'lista real: ' + e((opt.cfg.to.join(', ') || 'sin PARA') + (opt.cfg.cc.length ? ' · CC ' + opt.cfg.cc.join(', ') : ''))) + '</div>' : '') +
+    '<table role="presentation" width="100%" style="border-collapse:collapse;margin-bottom:12px;border-bottom:2px solid #1E5A9E"><tr>' +
+      '<td style="width:54px;vertical-align:middle;padding:0 10px 8px 0"><img src="' + SEG.LOGO + '" alt="CSS" width="46" height="46" style="display:block"></td>' +
+      '<td style="vertical-align:middle;padding-bottom:8px"><div style="font-size:15px;font-weight:bold;color:#1E5A9E">Caja de Seguro Social</div><div style="font-size:12px;color:#555">Dirección Nacional de Logística · Torre de Control</div></td>' +
+      '<td style="text-align:right;vertical-align:middle;padding-bottom:8px;font-size:11px;color:#666">Consolidado de Planificación al<br><b>' + segFechaTxt_(R.corte) + '</b><br>enviado el ' + segFechaTxt_(R.hoy) + '</td></tr></table>' +
+    '<div style="font-size:18px;font-weight:bold;color:#1E5A9E;margin-bottom:2px">' + (P ? 'Sus medicamentos en falta · ' + e(P.nombre) : 'Seguimiento de compras · medicamentos en falta') + '</div>' +
+    '<div style="font-size:12px;color:#555;margin-bottom:10px">' + (P ? 'Medicamentos a su cargo agotados o en nivel crítico en los CEDIS, y en qué punto está su compra. ' : 'Medicamentos agotados o en nivel crítico en los CEDIS y en qué punto está su compra, a nivel nacional y por planificador. ') +
+      'Fuente: Consolidado de Suministros de Planificación, el mismo que muestra SEGUIRE.</div>';
+
+  html += '<table role="presentation" width="100%" style="border-collapse:collapse;table-layout:fixed"><tr>' +
+    tile('En falta', nf(falta.length), nf(falta.filter(function (r) { return r.ven === 'V'; }).length) + ' vitales', 'r', 'falta') +
+    tile('Solicitud vencida', nf(Lc('ven').length), segMillones_(suma(Lc('ven'))) + ' por entregar', 'r', 'ven') +
+    tile('Sin solicitud de entrega', nf(Lc('sin').length), segMillones_(suma(Lc('sin'))) + ' contratados', 'r', 'sin') +
+    tile('Sin trámite de compra', nf(Lc('com').length), 'en falta y sin contrato', 'a', 'com') +
+    tile(P ? 'Por vencer' : 'Demanda fuera de rango', nf(P ? Lc('pv').length : R.dem.length), P ? 'solicitudes en ' + SEG_OC.POR_VENCER + ' días o menos' : 'consumo DENSYPS > 5 × despacho', P ? 'a' : 'n') +
+    '</tr></table>';
+
+  var acc = segOcAcciones_(R, items, P ? 'Usted' : null);
+  html += h2('Acciones de hoy', 'número · qué hacer · quién') + (acc.length ? '<table role="presentation" width="100%" style="border-collapse:collapse">' + acc.map(function (a) {
+    var c = S[a.tono] || S.n;
+    return '<tr><td style="padding:3px 0"><table role="presentation" width="100%" style="border-collapse:collapse;background:' + c[0] + ';border-radius:6px"><tr>' +
+      '<td style="width:74px;text-align:center;font-family:Consolas,monospace;font-size:20px;font-weight:bold;color:' + c[1] + ';padding:6px 4px">' + a.n + '</td>' +
+      '<td style="font-size:12.5px;color:#1a1a1a;padding:6px 6px">' + e(a.corto) + (a.valor ? ' <b>(' + segMillones_(a.valor) + ')</b>' : '') + '</td>' +
+      '<td style="width:150px;text-align:right;padding:6px 10px"><span style="background:#fff;color:' + c[1] + ';font-weight:bold;font-size:11px;border-radius:10px;padding:2px 8px;white-space:nowrap">' + e(a.resp) + '</span></td>' +
+      '</tr></table></td></tr>';
+  }).join('') + '</table>' : '<div style="background:#E1F5EE;color:#0F6E56;border-radius:6px;padding:8px 11px;font-size:12.5px">Sin medicamentos en falta a su cargo.</div>');
+
+  if (!P && R.planes.length) {
+    html += h2('Por planificador', 'medicamentos en falta a cargo de cada uno');
+    html += tabla([th('Planificador', 'left'), th('En falta'), th('Vitales'), th('Solicitud vencida'), th('Sin solicitud'), th('Sin trámite'), th('Por vencer'), th('Otros'), th('Saldo por entregar B/.')],
+      R.planes.map(function (o, i) {
+        var c = function (k, tono) { var n = o.c[k] || 0; return n ? chip(nf(n), tono) : '—'; };
+        return zebra(i) + td('<b>' + e(o.nombre) + '</b> <span style="color:#888">' + e(o.ini) + '</span>', 'left') + td(nf(o.n)) + td(nf(o.v)) +
+          td(c('ven', 'r')) + td(c('sin', 'r')) + td(c('com', 'a')) + td(c('pv', 'a')) + td(c('otr', 'n')) + td(nf(o.saldo), 'right') + '</tr>';
+      }));
+  }
+
+  html += h2('Para empezar hoy', 'vitales y mayor saldo primero');
+  var nL = 0;
+  [['ven', function (r) { return td(chip(nf(Math.abs(r.dias || 0)) + ' d', 'r')); }, 'Venció hace'],
+   ['sin', function (r) { return td(e(r.doc || '—')); }, 'Orden'],
+   ['com', function (r) { return td(nf(r.despacho)); }, 'Despacho al mes (u)']].forEach(function (x) {
+    var L = Lc(x[0]); if (!L.length) return;
+    var cat = SEG_OC_CAT.filter(function (c) { return c.k === x[0]; })[0];
+    html += '<div style="font-size:12.5px;font-weight:bold;color:#1E5A9E;margin:10px 0 4px">' + (++nL) + ' · ' + cat.t + '</div>' +
+      tabla([th(x[2]), th('VEN'), th('Medicamento', 'left'), th('Proveedor', 'left'), th('Inventario CEDIS (u)'), th(x[0] === 'com' ? 'Cobertura (meses)' : 'Saldo B/.')].concat(P ? [] : [th('Planif.')]),
+        L.slice(0, TOP).map(function (r, i) {
+          return zebra(i) + x[1](r) + td(r.ven === 'V' ? chip('Vital', 'r') : 'Esencial') + td('<b>' + e(r.cod) + '</b> ' + e(String(r.desc || '').slice(0, 34)), 'left') +
+            td(e(String(r.prov || '—').slice(0, 26)), 'left') + td(nf(r.inv), 'right') + td(x[0] === 'com' ? (Math.round((r.cob || 0) * 10) / 10).toFixed(1) : nf(r.saldoB), 'right') +
+            (P ? '' : td(e(r.analista || '—'))) + '</tr>';
+        })) + (L.length > TOP ? cinta('Aquí se muestran ' + TOP + ' de ' + nf(L.length) + '. Abra el Excel adjunto, hoja «' + cat.hoja + '», para la lista completa.') : '');
+  });
+
+  html += cinta('El Excel adjunto trae ' + (P ? 'todos sus medicamentos en falta' : 'el resumen por planificador y todas las listas') + ', con su orden, solicitud de entrega, proveedor, inventario y saldo.');
+  html += '<div style="background:#E6F1FB;border-radius:6px;padding:9px 12px;margin-top:16px;font-size:11px;line-height:1.5;color:#233"><b style="color:#185FA5">Cómo se calcula.</b> ' +
+    'En falta: medicamento agotado o crítico en los CEDIS según el consolidado. Comprado: contrato refrendado con saldo por entregar. ' +
+    'Solicitud vencida: la fecha de término de entrega es anterior al corte del consolidado y queda cantidad por recibir; por vencer: vence en ' + SEG_OC.POR_VENCER + ' días o menos. ' +
+    'Sin trámite: el estatus del consolidado es «sin trámite». Saldo B/. = saldo de la orden en balboas, del consolidado. Se sugiere validar cada caso con su expediente.</div>' +
+    '<div style="font-size:12px;margin-top:10px"><a href="' + SEG_OC.PANEL + '" style="color:#185FA5">Abrir SEGUIRE · Seguimiento de Compras</a></div>' +
+    '<div style="font-size:11px;color:#888;margin-top:8px">Correo automático de la Dirección Nacional de Logística · se envía cada mañana con el último consolidado cargado en la Ventanilla Única.</div></div>';
+  return html;
+}
+
+function segOcExcel_(R, P) {
+  var tmp = SpreadsheetApp.create('_TEMP_SEGUIRE_' + R.hoy);
+  var logo = null; try { logo = UrlFetchApp.fetch(SEG.LOGO).getBlob(); } catch (e0) {}
+  var primera = true;
+  var hoja = function (nombre, titulo, sub, cab, filas, anchos, txt) {
+    var ws;
+    if (primera) { ws = tmp.getActiveSheet(); ws.setName(nombre); primera = false; } else ws = tmp.insertSheet(nombre);
+    if (logo) { try { ws.insertImage(logo, 1, 1).setWidth(46).setHeight(46); } catch (eL) {} }
+    ws.setRowHeight(1, 26); ws.setRowHeight(2, 22);
+    ws.getRange(1, 2).setValue('Caja de Seguro Social · Dirección Nacional de Logística').setFontSize(10).setFontColor('#555555');
+    ws.getRange(2, 2).setValue(titulo).setFontSize(15).setFontWeight('bold').setFontColor('#1E5A9E');
+    ws.getRange(3, 2).setValue(sub).setFontSize(9).setFontStyle('italic').setFontColor('#666666');
+    ws.getRange(4, 1, 1, Math.max(cab.length, 2)).setBackground('#1E5A9E'); ws.setRowHeight(4, 3);
+    if (txt && filas.length) ws.getRange(7, 1, filas.length, txt).setNumberFormat('@');
+    ws.getRange(6, 1, 1, cab.length).setValues([cab]).setBackground('#1E5A9E').setFontColor('#FFFFFF').setFontWeight('bold')
+      .setFontSize(9).setWrap(true).setHorizontalAlignment('center').setVerticalAlignment('middle');
+    ws.setRowHeight(6, 36);
+    if (filas.length) { ws.getRange(7, 1, filas.length, cab.length).setValues(filas).setFontSize(10); ws.getRange(6, 1, filas.length + 1, cab.length).createFilter(); }
+    else ws.getRange(7, 1).setValue('Sin casos en este corte.').setFontStyle('italic').setFontColor('#666666');
+    (anchos || []).forEach(function (w, j) { ws.setColumnWidth(j + 1, w); });
+    ws.setFrozenRows(6);
+  };
+  var s = function (v) { return v === null || v === undefined ? '' : String(v); };
+  var sub = 'Consolidado de Suministros de Planificación al ' + R.corte + '. Medicamentos agotados o críticos en los CEDIS.';
+  var cab = ['Código', 'SAP', 'Medicamento', 'VEN', 'Planificador', 'Condición', 'Inventario CEDIS (u)', 'Cobertura (meses)', 'Despacho al mes (u)', 'Proveedor', 'Tipo de compra', 'Acto', 'Estatus', 'Orden / documento', 'Término de entrega', 'Días al corte', 'Solicitud de entrega', 'Saldo de la orden (u)', 'Saldo B/.', 'Observaciones'];
+  var fila = function (r) { return [s(r.cod), s(r.sap), s(r.desc), r.ven === 'V' ? 'Vital' : 'Esencial', SEG_ANA[r.analista] || s(r.analista), s(r.cond), r.inv || 0, Math.round((r.cob || 0) * 100) / 100, r.despacho || 0, s(r.prov), s(r.compra), s(r.acto), s(r.estatus), s(r.doc), s(r.fTermino), r.dias === null || r.dias === undefined ? '' : r.dias, s(r.ent), r.saldo || 0, Math.round(r.saldoB || 0), s(r.obs)]; };
+  var an = [95, 95, 300, 70, 140, 90, 100, 80, 100, 220, 110, 100, 140, 110, 100, 70, 110, 100, 100, 260];
+  try {
+    hoja('Acciones', P ? 'Sus medicamentos en falta · ' + P.nombre : 'Seguimiento de compras · acciones del día', sub, ['#', 'Responsable', 'Renglones', 'Acción'],
+      segOcAcciones_(R, P ? P.items : null, P ? P.nombre : null).map(function (a, i) { return [i + 1, a.resp, a.n, a.corto]; }), [40, 180, 90, 760]);
+    if (!P) hoja('Por planificador', 'Medicamentos en falta por planificador', sub,
+      ['Iniciales', 'Planificador', 'En falta', 'Vitales', 'Solicitud vencida', 'Sin solicitud', 'Sin trámite', 'Por vencer', 'Otros en falta', 'Saldo por entregar B/.'],
+      R.planes.map(function (o) { return [o.ini, o.nombre, o.n, o.v, o.c.ven || 0, o.c.sin || 0, o.c.com || 0, o.c.pv || 0, o.c.otr || 0, Math.round(o.saldo)]; }), [80, 200, 80, 80, 110, 100, 100, 90, 100, 140]);
+    SEG_OC_CAT.forEach(function (c) {
+      var L = P ? P.items.filter(function (r) { return r.cat === c.k; }) : R.L[c.k];
+      hoja(c.hoja, c.t, sub + ' Acción sugerida: ' + c.acc + '.', cab, L.map(fila), an, 2);
+    });
+    SpreadsheetApp.flush();
+    var blob = UrlFetchApp.fetch('https://docs.google.com/spreadsheets/d/' + tmp.getId() + '/export?format=xlsx',
+      { headers: { Authorization: 'Bearer ' + ScriptApp.getOAuthToken() }, muteHttpExceptions: true }).getBlob();
+    blob.setName((P ? 'SEGUIRE_' + P.ini + '_' : 'SEGUIRE_') + R.hoy + '.xlsx');
+    return blob;
+  } finally {
+    try { DriveApp.getFileById(tmp.getId()).setTrashed(true); } catch (e) {}
+  }
+}
+
+/* Correos de cada planificador: iniciales -> nombre (SEG_ANA) -> correo (DIRECTORIO_PLANIFICADORES). */
+function segOcPlanificadores_(R) {
+  var dir = null;
+  try { dir = (typeof avpLeerDirectorios_ === 'function') ? avpLeerDirectorios_() : null; } catch (e) { Logger.log('SEG no se pudo leer DIRECTORIO_PLANIFICADORES: ' + e); }
+  return R.planes.filter(function (o) { return o.ini !== '—'; }).map(function (o) {
+    var correo = '';
+    try { correo = dir && dir.planDe ? (dir.planDe(o.nombre) || '') : ''; } catch (e) {}
+    var items = []; SEG_OC_CAT.forEach(function (c) { items = items.concat(R.L[c.k].filter(function (r) { return r.analista === o.ini; })); });
+    return { ini: o.ini, nombre: o.nombre, correo: correo, items: items };
+  });
+}
+
+function segOcArmar_(R, opt) {
+  var excel = null;
+  try { excel = segOcExcel_(R, opt.plan); } catch (e) { Logger.log('SEG el Excel de SEGUIRE falló: ' + (e && e.stack ? e.stack : e)); }
+  var P = opt.plan, n = P ? P.items.length : R.k.falta;
+  return { asunto: (opt.prueba ? '[PRUEBA ' + Utilities.formatDate(new Date(), SEG.TZ, 'HH:mm') + '] ' : '') +
+             (P ? 'SEGUIRE · ' + segNf_(n) + ' medicamentos en falta a su cargo · ' + P.nombre
+                : 'SEGUIRE · ' + segNf_(n) + ' medicamentos en falta · ' + segNf_(R.k.ven) + ' solicitudes vencidas · ' + segNf_(R.k.sin) + ' sin solicitud'),
+           html: segOcHtml_(R, opt), excel: excel };
+}
+
+/* Registro de lo que se enviaría, sin enviar nada. */
+function segOcSimular() {
+  var cfg = segOcCfg_(), R = segOcConstruir_(), pl = segOcPlanificadores_(R);
+  Logger.log('SEG SEGUIRE · consolidado ' + R.corte + ' · en falta ' + R.k.falta + ' · vencidas ' + R.k.ven + ' · sin solicitud ' + R.k.sin + ' · sin trámite ' + R.k.com);
+  Logger.log('Jefaturas: ' + (cfg.to.join(', ') || '(sin SEGUIRE_TO)') + (cfg.cc.length ? ' · CC ' + cfg.cc.join(', ') : ''));
+  pl.forEach(function (p) { Logger.log('  ' + p.ini + ' ' + p.nombre + ' → ' + (p.correo || 'SIN CORREO en DIRECTORIO_PLANIFICADORES') + ' · ' + p.items.length + ' renglones'); });
+}
+
+function segOcEnviarmePrueba() {
+  var cfg = segOcCfg_(), R = segOcConstruir_();
+  var yo = cfg.prueba;
+  if (!yo.length) { var q = ''; try { q = Session.getEffectiveUser().getEmail(); } catch (eU) {} yo = [q || 'info@torrecontrolcss.org']; }
+  segIncMandar_(yo, [], segOcArmar_(R, { prueba: true, cfg: cfg, prev: null }));
+  var pl = segOcPlanificadores_(R).sort(function (a, b) { return b.items.length - a.items.length; })[0];
+  if (pl) segIncMandar_(yo, [], segOcArmar_(R, { prueba: true, cfg: cfg, plan: pl }));
+  Logger.log('SEG SEGUIRE prueba enviada a ' + yo.join(', ') + ' (resumen' + (pl ? ' + ' + pl.nombre : '') + ').');
+}
+
+function segOcCorreoDiario() { segOcEnviar_(false); }
+function segOcEnviarAhora()  { segOcEnviar_(true); }
+
+function segOcEnviar_(forzar) {
+  var cfg = segOcCfg_();
+  if (!forzar && !cfg.activo) { Logger.log('SEG SEGUIRE_ACTIVO = NO: no se envía.'); return; }
+  if (!forzar && !segToca_(cfg.dias, new Date())) { Logger.log('SEG SEGUIRE: hoy no es día de envío (' + cfg.dias + ').'); return; }
+  var hoy = Utilities.formatDate(new Date(), SEG.TZ, 'yyyy-MM-dd'), pr = PropertiesService.getScriptProperties(), prev = null;
+  try { prev = JSON.parse(pr.getProperty(SEG_OC.PROP) || 'null'); } catch (e) {}
+  if (!forzar && prev && prev.hoy === hoy) { Logger.log('SEG SEGUIRE ya se envió hoy.'); return; }
+  var R = segOcConstruir_(), prueba = !!cfg.prueba.length;
+  var para = prueba ? cfg.prueba : cfg.to, cc = prueba ? [] : cfg.cc;
+  if (para.length) segIncMandar_(para, cc, segOcArmar_(R, { prueba: prueba, cfg: cfg, prev: prev }));
+  var env = 0, sin = [];
+  if (cfg.plan) segOcPlanificadores_(R).forEach(function (p) {
+    if (!p.items.length) return;
+    if (!p.correo) { sin.push(p.nombre); return; }
+    try { segIncMandar_(prueba ? cfg.prueba : [p.correo], [], segOcArmar_(R, { prueba: prueba, cfg: cfg, plan: p })); env++; }
+    catch (e) { Logger.log('SEG SEGUIRE no se pudo enviar a ' + p.nombre + ': ' + e); }
+  });
+  pr.setProperty(SEG_OC.PROP, JSON.stringify({ hoy: hoy, corte: R.corte, k: R.k }));
+  Logger.log('SEG SEGUIRE enviado · jefaturas ' + para.length + ' · planificadores ' + env + (sin.length ? ' · sin correo: ' + sin.join(', ') : '') + (prueba ? ' · MODO PRUEBA' : ''));
+}
+
+/* Crea el activador de las 6:50 (L-V según SEGUIRE_DIAS). No toca SEGUIRE_ACTIVO. */
+function segOcInstalar() {
+  var ya = ScriptApp.getProjectTriggers().some(function (t) { return t.getHandlerFunction() === 'segOcCorreoDiario'; });
+  if (ya) { Logger.log('SEG el activador de SEGUIRE ya existe.'); return; }
+  ScriptApp.newTrigger('segOcCorreoDiario').timeBased().everyDays(1).atHour(6).nearMinute(50).inTimezone(SEG.TZ).create();
+  Logger.log('SEG activador de SEGUIRE creado (6:50 a. m., hora de Panamá).');
+}
+
+/* Pone SEGUIRE_ACTIVO = SI y crea el activador. Para pausar: SEGUIRE_ACTIVO = NO en la hoja. */
+function segOcActivar() {
+  var sh = SpreadsheetApp.openById(SEG.CONFIG_SS).getSheetByName(SEG.CONFIG_SH);
+  var v = sh.getDataRange().getValues(), fila = -1;
+  for (var i = 0; i < v.length; i++) if (String(v[i][0] || '').trim().toUpperCase() === 'SEGUIRE_ACTIVO') { fila = i + 1; break; }
+  if (fila < 0) { Logger.log('SEG falta la fila SEGUIRE_ACTIVO: ejecute segCrearConfigAlertas.'); return; }
+  sh.getRange(fila, 2).setValue('SI');
+  segOcInstalar();
+  Logger.log('SEG correo diario de SEGUIRE ACTIVO (fila ' + fila + ').');
 }
