@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Cumplimiento de Entregas · DINALOG</title>
+<link rel="icon" href="favicon.ico">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
+<style>
+/* Estilo SIGUELO / Tablero de Mando: cabecera azul institucional, tarjetas pastel, tablas ordenables */
+:root{--az:#0C447C;--az2:#1E5A9E;--bg:#ececec;--bd:#a8a8a8;--tx:#1c1c1c;--tx2:#3a3a3a;--tx3:#555;--wh:#ffffff;--pn:#ffffff;
+  --okt:#1d5a27;--okb:#e3f2e4;--amt:#7a4a00;--amb:#fdf0d8;--rjt:#9b1c1c;--rjb:#fbe3e3;--azb:#e3ecf6;--grb:#eeeeee;--yb:#fff2b3;
+  --zeb:#f4f7fb;--hov:#e8f0f9;--ln:#d9d9d9;--mono:Consolas,'Courier New',monospace}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#12181f;--bd:#3a4654;--tx:#e8edf2;--tx2:#c6cfd8;--tx3:#a9b4bf;--pn:#1b232c;--okt:#9fd8a8;--okb:#1f3524;--amt:#f2c879;--amb:#3a2f17;--rjt:#f3a6a0;--rjb:#3e2222;--azb:#1d2d40;--grb:#26303a;--zeb:#1f2933;--hov:#24384d;--ln:#2e3a46;--yb:#4a4020;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#12181f;--bd:#3a4654;--tx:#e8edf2;--tx2:#c6cfd8;--tx3:#a9b4bf;--pn:#1b232c;--okt:#9fd8a8;--okb:#1f3524;--amt:#f2c879;--amb:#3a2f17;--rjt:#f3a6a0;--rjb:#3e2222;--azb:#1d2d40;--grb:#26303a;--zeb:#1f2933;--hov:#24384d;--ln:#2e3a46;--yb:#4a4020;color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);font-family:'Segoe UI',Tahoma,Arial,sans-serif;color:var(--tx);font-size:14px}
+header{background:var(--az);color:#fff;padding:10px max(16px,env(safe-area-inset-right,0px)) 10px max(16px,env(safe-area-inset-left,0px));display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+header img{width:44px;height:44px}
+.ht{flex:1 1 320px;min-width:0}.ht h1{margin:0;font-size:20px}.ht div{font-size:12px}
+.hr{display:flex;flex-direction:column;align-items:flex-end;gap:6px}.stamp{font-size:12px}.stamp b{font-family:var(--mono)}
+.hb{min-height:30px;min-width:34px;padding:0 10px;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;background:transparent;color:#fff;border:1px solid rgba(255,255,255,.7);border-radius:15px;cursor:pointer;font-size:15px}
+nav{background:var(--az);padding:0 max(16px,env(safe-area-inset-right,0px)) 0 max(16px,env(safe-area-inset-left,0px));display:flex;gap:4px;overflow-x:auto}
+nav .tab{padding:9px 14px;font-family:inherit;font-size:14px;font-weight:600;color:#fff;background:var(--az2);border:1px solid var(--az2);cursor:pointer;white-space:nowrap;border-radius:6px 6px 0 0}
+nav .tab.on{background:var(--pn);color:var(--az);border-color:var(--bd);margin-bottom:-1px}
+:root[data-theme="dark"] nav .tab.on{color:var(--tx)}
+main{max-width:1640px;margin:0 auto;padding-block:10px 18px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:10px}
+.dummy{background:var(--yb);border-radius:8px;padding:8px 12px;font-size:13px;font-weight:600}
+.vh{background:var(--pn);border:1px solid var(--bd);border-radius:8px;padding:10px 14px;display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+.vh h2{margin:0;font-size:18px;color:var(--az2)}.vh p{margin:0;font-size:13px;color:var(--tx2);flex:1 1 300px}
+.kp{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:8px}
+.kc{border-radius:8px;padding:8px 12px;display:flex;flex-direction:column;gap:2px;min-width:0;background:var(--azb);border:1px solid transparent;cursor:pointer;text-align:left;font-family:inherit;color:var(--tx)}
+.kc:hover{border-color:var(--az2)}
+.kc .l{font-size:12px;font-weight:700;color:var(--tx2)}.kc .v{font-family:var(--mono);font-size:22px;font-weight:700}.kc .s{font-size:11px;color:var(--tx3);line-height:1.25}
+.kc.r{background:var(--rjb)}.kc.r .v{color:var(--rjt)}.kc.a{background:var(--amb)}.kc.a .v{color:var(--amt)}.kc.g{background:var(--okb)}.kc.g .v{color:var(--okt)}.kc.n{background:var(--grb)}
+.pn{background:var(--pn);border:1px solid var(--bd);border-radius:8px;padding:10px 12px;display:flex;flex-direction:column;gap:8px;min-width:0}
+.ph{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.ph h3{margin:0;font-size:13px;font-weight:700;color:var(--az2);flex-grow:1}
+.nota{font-size:11px;color:var(--tx3)}
+.two{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:10px}
+@media (max-width:900px){.two{grid-template-columns:1fr}}
+.chev{display:flex;gap:4px;flex-wrap:wrap}
+.chev button{flex:1 1 140px;padding:6px 22px;min-height:58px;display:flex;flex-direction:column;gap:1px;align-items:flex-start;border:none;cursor:pointer;font-family:inherit;text-align:left;clip-path:polygon(0 0,calc(100% - 16px) 0,100% 50%,calc(100% - 16px) 100%,0 100%,16px 50%)}
+.chev button:first-child{clip-path:polygon(0 0,calc(100% - 16px) 0,100% 50%,calc(100% - 16px) 100%,0 100%)}
+.chev b{font-size:12px}.chev span{font-size:11px}.chev em{font-style:normal;font-family:var(--mono);font-size:18px;font-weight:700}
+.c0{background:var(--rjb);color:var(--rjt)}.c1{background:var(--amb);color:var(--amt)}.c2{background:var(--azb);color:var(--az2)}.c3{background:var(--grb);color:var(--tx2)}.c4{background:var(--okb);color:var(--okt)}
+.fl{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.fl select,.fl input{min-height:30px;border:1px solid var(--bd);border-radius:6px;padding:0 8px;font-size:13px;font-family:inherit;background:var(--pn);color:var(--tx);max-width:100%}
+.fl .sp{flex:1}
+.bx{min-height:30px;padding:0 12px;border-radius:6px;font-weight:700;font-size:12px;cursor:pointer;font-family:inherit;border:1px solid var(--az2);background:var(--pn);color:var(--az2)}
+.bx.p{background:#2f7d3b;border-color:#2f7d3b;color:#fff}
+.tw{overflow:auto;max-height:560px;border:1px solid var(--ln);border-radius:6px}
+table.t{border-collapse:collapse;width:100%;font-size:12px}
+table.t thead th{position:sticky;top:0;z-index:2;background:var(--az);color:#fff;text-align:left;padding:7px 8px;font-weight:600;vertical-align:bottom;line-height:1.2;cursor:pointer;user-select:none}
+table.t th .ar{font-size:9px;opacity:.85;margin-left:3px}
+table.t td{border-bottom:1px solid var(--ln);padding:6px 8px;vertical-align:top}
+table.t td.n{font-family:var(--mono);text-align:right;white-space:nowrap}
+table.t tbody tr:nth-child(even) td{background:var(--zeb)}
+.ch{display:inline-block;padding:1px 8px;font-size:11px;font-weight:700;white-space:nowrap;border-radius:10px}
+.k-r{background:var(--rjb);color:var(--rjt)}.k-a{background:var(--amb);color:var(--amt)}.k-g{background:var(--okb);color:var(--okt)}.k-b{background:var(--azb);color:var(--az2)}.k-n{background:var(--grb);color:var(--tx2)}
+.pg{display:flex;gap:6px;align-items:center;justify-content:flex-end;font-size:12px;color:var(--tx3)}
+.pg button{min-height:28px;padding:0 10px;border-radius:6px;background:var(--pn);color:var(--az2);border:1px solid var(--az2);font-size:12px;font-weight:600;cursor:pointer;font-family:inherit}.pg button:disabled{opacity:.45;cursor:default}
+svg text{fill:var(--tx2);font-family:'Segoe UI',Arial,sans-serif}
+.lg{display:flex;gap:12px;flex-wrap:wrap;font-size:12px}.lg i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:4px;vertical-align:-1px}
+.sec{background:var(--pn);border:1px solid var(--bd);border-radius:8px;padding:12px 14px;display:flex;flex-direction:column;gap:8px}
+.sec h3{margin:0;font-size:15px;color:var(--az2)}.sec p{margin:0;line-height:1.45}
+.res{background:var(--amb);color:var(--tx);border-radius:6px;padding:8px 12px;font-size:13px;line-height:1.45}
+.mail{max-width:760px;border:1px solid var(--bd);border-radius:8px;overflow:hidden;background:#fff;color:#1c1c1c}
+.mail .mh{background:#0C447C;color:#fff;padding:12px 16px;display:flex;gap:12px;align-items:center}.mail .mh img{width:40px;height:40px}
+.mail .mb{padding:14px 16px;display:flex;flex-direction:column;gap:10px;font-size:13px;line-height:1.45}
+.mail table{border-collapse:collapse;width:100%;font-size:12px}.mail th{background:#1E5A9E;color:#fff;text-align:left;padding:5px 6px}.mail td{border-bottom:1px solid #ddd;padding:5px 6px}
+.mail .rib{background:#FFE066;font-weight:700;padding:8px 10px;border-radius:6px}
+.mail .tile{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}.mail .tile div{border-radius:6px;padding:6px 8px}.mail .tile b{display:block;font-family:Consolas,monospace;font-size:18px}
+.acts{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+.load{padding:30px;text-align:center;color:var(--tx3)}
+:focus-visible{outline:2px solid var(--az2);outline-offset:2px}
+</style>
+</head>
+<body>
+
+
+<header>
+<img src="icons/icon-192.png" alt="Logo CSS">
+<div class="ht"><h1>Cumplimiento de Entregas de Proveedores</h1><div>Caja de Seguro Social · Dirección Nacional de Logística · Departamento de Seguimiento</div></div>
+<div class="hr"><div class="stamp" id="stamp">Cargando el libro de Seguimiento…</div><div class="acts"><a class="hb" href="./" target="_blank" rel="noopener">SEGUIRE</a><a class="hb" href="https://torrecontrolcss.org/SIGUELO_DINALOG/" target="_blank" rel="noopener">SIGUELO</a><button class="hb" id="tema" title="Cambiar tema" aria-label="Cambiar tema">☀</button></div></div>
+</header>
+<nav id="nav">
+<button class="tab on" data-v="res">Resumen</button>
+<button class="tab" data-v="ven">Vencidas</button>
+<button class="tab" data-v="pro">Proveedores</button>
+<button class="tab" data-v="prx">Próximos vencimientos</button>
+<button class="tab" data-v="cal">Cómo se calcula</button>
+</nav>
+<main>
+<div class="load" id="cargando">Cargando el libro de Incumplimientos…</div>
+
+<section id="v-res" hidden>
+<div class="vh"><h2>Resumen</h2><p>Cada fila del libro es una nota de solicitud de entrega a un CEDIS. Aquí se ve cómo terminó cada una y en qué punto quedó el seguimiento de las vencidas.</p></div>
+<div class="kp" id="kpis"></div>
+<div class="pn">
+<div class="ph"><h3>Seguimiento de las notas vencidas: dónde se detiene la cadena</h3><span class="nota">Columnas Q a W del libro · cada etapa cuenta las notas que llegaron al menos hasta ahí</span></div>
+<div class="chev" id="cadena"></div>
+</div>
+<div class="two">
+<div class="pn"><div class="ph"><h3>Notas por mes de vencimiento y resultado</h3><span class="nota">Número de notas</span></div><div id="mes"></div><div class="lg" id="lgmes"></div></div>
+<div class="pn"><div class="ph"><h3>Por tipo de inventario</h3></div><div class="tw" style="max-height:none"><table class="t" id="tinv"></table></div></div>
+</div>
+</section>
+
+<section id="v-ven" hidden>
+<div class="vh"><h2>Notas vencidas</h2><p>Notas cuya fecha de entrega ya pasó y todavía tienen saldo. La columna «Etapa» dice hasta dónde avanzó su seguimiento.</p></div>
+<div class="pn">
+<div class="fl">
+<select id="fInv" aria-label="Inventario"></select><select id="fCed" aria-label="CEDIS"></select><select id="fEt" aria-label="Etapa"></select><select id="fPlan" aria-label="Planificador"></select>
+<input id="fQ" placeholder="Buscar código, medicamento, proveedor u orden" style="flex:1 1 240px" aria-label="Buscar">
+<button class="bx" id="lim">Limpiar filtros</button><button class="bx p" id="xV">Excel de la vista</button><button class="bx" id="xA">Excel completo</button>
+</div>
+<div class="nota" id="nV"></div>
+<div class="tw"><table class="t" id="tV"></table></div>
+<div class="pg" id="pgV"></div>
+</div>
+</section>
+
+<section id="v-pro" hidden>
+<div class="vh"><h2>Proveedores</h2><p>Cómo entrega cada proveedor las notas de 2026. Ordenado por saldo vencido; haga clic en un encabezado para ordenar.</p></div>
+<div class="pn"><div class="fl"><input id="pQ" placeholder="Buscar proveedor" style="flex:1 1 240px" aria-label="Buscar proveedor"><button class="bx p" id="xP">Excel</button></div>
+<div class="tw"><table class="t" id="tP"></table></div></div>
+</section>
+
+<section id="v-prx" hidden>
+<div class="vh"><h2>Próximos vencimientos</h2><p>Notas con saldo que vencen en los próximos 15 días: el aviso preventivo al proveedor y al planificador sale de esta lista.</p></div>
+<div class="pn"><div class="fl"><button class="bx p" id="xX">Excel</button></div><div class="tw"><table class="t" id="tX"></table></div></div>
+</section>
+
+
+<section id="v-cal" hidden>
+<div class="vh"><h2>Cómo se calcula</h2><p>Reglas que usa el tablero, con los nombres de las columnas del libro de Seguimiento.</p></div>
+<div class="sec"><h3>Unidades recibidas y saldo de cada nota</h3><div id="k1"></div><p>Se suman todas las entradas de la hoja Entradas con la misma orden (Requisición) y la misma Nota.</p></div>
+<div class="sec"><h3>Resultado de cada nota</h3><div id="k2"></div><p><b>v</b> = fecha de vencimiento de la entrega · <b>u</b> = fecha de la última entrada · <b>hoy</b> = fecha del corte. Una nota con saldo pendiente no cuenta como cumplida, aunque su primera entrega haya llegado a tiempo.</p></div>
+<div class="sec"><h3>Días de atraso</h3><div id="k3"></div></div>
+<div class="sec"><h3>Valor del saldo</h3><div id="k4"></div><p>El precio unitario es el de la columna «Precio Unitario» del libro, tomado del catálogo de Seguimiento.</p></div>
+<div class="sec"><h3>Etapa del seguimiento de una nota vencida</h3><p>0 · sin notificación a Compras · 1 · notificada a Compras (columna Q con número de nota) · 2 · notificada al proveedor (S) · 3 · con descargos del proveedor (U) · 4 · con decisión de Abastos (V) · 5 · decisión notificada (W). Un texto «SIN NOTIFICACIÓN» en la columna Q cuenta como etapa 0.</p></div>
+<div class="sec"><h3>Diferencias con la hoja «reporte» del libro</h3><div id="dif"></div></div>
+<div class="sec"><h3>De dónde salen los datos y cuándo se actualizan</h3><p>El Departamento de Seguimiento carga su libro de Incumplimientos en la Ventanilla Única (cargar_reportes, insumo 7). SÍGUELO lo lee tal como lo guardó Excel y publica este tablero en cerca de un minuto. El resultado de cada nota y los días de atraso se calculan contra la fecha de hoy, así que el tablero no envejece entre una carga y la siguiente. El sello de arriba dice la fecha del libro y el día del cálculo.</p><p><b>Correo diario.</b> De lunes a viernes, a las 6:40 a. m., sale a las jefaturas un correo con las acciones del día (notificar a Compras, notificar al proveedor, aviso preventivo) y el Excel con las listas completas. Los destinatarios se administran en la hoja CONFIG_ALERTAS (filas INCUMP_*).</p></div>
+</section>
+</main>
+
+<script>
+/* El JSON lo publica SÍGUELO (SEGUIMIENTO_TABLEROS.gs) cada vez que Seguimiento carga su libro en la Ventanilla Única. */
+const FUENTE='data/cumplimiento_entregas.json';
+function app(DATA,LOGO){
+document.getElementById('cargando').hidden=true;document.getElementById('v-res').hidden=false;
+const C=DATA.cols, R=DATA.rows.map(r=>Object.fromEntries(C.map((c,i)=>[c,r[i]])));
+const _h=new Date(), HOYS=_h.getFullYear()+'-'+String(_h.getMonth()+1).padStart(2,'0')+'-'+String(_h.getDate()).padStart(2,'0');
+const HOY=new Date(HOYS+'T00:00:00');
+/* Mismo cálculo que segIncEstado_ en SEGUIMIENTO_TABLEROS.gs (correo diario) */
+const dd_=(a,b)=>Math.round((new Date(a+'T00:00:00')-new Date(b+'T00:00:00'))/864e5);
+R.forEach(r=>{let e;if(!r.venc)e='Sin fecha';else if(r.saldo<=0)e=(r.ult&&r.ult<=r.venc)?'Cumplida a tiempo':'Cumplida con atraso';else if(r.venc>=HOYS)e='En plazo';else if(r.recib>0)e='Vencida con entrega parcial';else e='Vencida sin entrega';
+ r.est=e;const ref=r.saldo<=0?r.ult:HOYS;r.atraso=(r.venc&&ref&&ref>r.venc)?dd_(ref,r.venc):0;});
+const fd=s=>s?s.split('-').reverse().join('/'):'—';
+document.getElementById('stamp').innerHTML='Fuente: libro de Incumplimientos de Seguimiento al <b>'+fd(DATA.corte)+'</b> · calculado al <b>'+fd(HOYS)+'</b>'+(DATA._meta&&DATA._meta.generado?'<br>Publicado '+String(DATA._meta.generado).slice(0,16):'');
+const MESES=R.map(r=>r.venc).filter(Boolean).sort(), MN_=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'], mtx=s=>MN_[+s.slice(5,7)-1]+'-'+s.slice(0,4);
+const RANGO=MESES.length?mtx(MESES[0])+' a '+mtx(MESES[MESES.length-1]):'';
+const fmt=n=>Math.round(n).toLocaleString('en-US'), fm=n=>'B/. '+(n>=1e6?(n/1e6).toFixed(2)+' M':fmt(n)), pct=n=>(n*100).toFixed(0)+' %';
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const val=r=>(r.saldo||0)*(r.precio||0);
+const EST=['Cumplida a tiempo','Cumplida con atraso','En plazo','Vencida con entrega parcial','Vencida sin entrega'];
+const ECL={'Cumplida a tiempo':'k-g','Cumplida con atraso':'k-a','En plazo':'k-b','Vencida con entrega parcial':'k-r','Vencida sin entrega':'k-r','Sin fecha':'k-n'};
+const ECOL={'Cumplida a tiempo':'#7FB58A','Cumplida con atraso':'#E9B04A','En plazo':'#6F9BD1','Vencida con entrega parcial':'#E58A5A','Vencida sin entrega':'#C83A3A'};
+const ETN=['Sin notificar a Compras','Notificada a Compras','Notificada al proveedor','Con descargos','Con decisión de Abastos','Decisión notificada'];
+const venc=R.filter(r=>r.est.startsWith('Vencida'));
+// tema
+const th=document.getElementById('tema');
+function setT(t){document.documentElement.setAttribute('data-theme',t);th.textContent=t==='dark'?'☾':'☀';try{localStorage.setItem('ce_tema',t)}catch(e){}}
+let t0='light';try{t0=localStorage.getItem('ce_tema')||'light'}catch(e){} setT(t0);
+th.onclick=()=>setT(document.documentElement.getAttribute('data-theme')==='dark'?'light':'dark');
+// tabs
+document.querySelectorAll('#nav .tab').forEach(b=>b.onclick=()=>show(b.dataset.v));
+function show(v){document.querySelectorAll('#nav .tab').forEach(b=>b.classList.toggle('on',b.dataset.v===v));document.querySelectorAll('main>section').forEach(s=>s.hidden=s.id!=='v-'+v)}
+// KPIs
+function kpis(){const n=R.length,c=e=>R.filter(r=>r.est===e);
+ const at=c('Cumplida a tiempo').length,ct=c('Cumplida con atraso').length,ep=c('En plazo').length,vp=c('Vencida con entrega parcial').length,vs=c('Vencida sin entrega').length;
+ const cerr=at+ct;
+ const K=[['n','Notas de solicitud','' +fmt(n),'vencimientos de '+RANGO],['g','Cumplidas a tiempo',fmt(at),pct(at/cerr)+' de las cumplidas'],['a','Cumplidas con atraso',fmt(ct),'atraso mediano '+med(c('Cumplida con atraso').map(r=>r.atraso))+' días'],['','En plazo',fmt(ep),'con saldo, aún no vencen'],
+ ['r','Vencidas sin entrega',fmt(vs),'no ha entrado nada'],['r','Vencidas con entrega parcial',fmt(vp),'entró una parte'],['r','Saldo vencido',fm(venc.reduce((s,r)=>s+val(r),0)),'atraso mediano '+med(venc.map(r=>r.atraso))+' días']];
+ document.getElementById('kpis').innerHTML=K.map(([k,l,v,s])=>`<button class="kc ${k}" data-k="${l}"><span class="l">${l}</span><span class="v">${v}</span><span class="s">${s}</span></button>`).join('');
+ document.querySelectorAll('#kpis .kc').forEach(b=>b.onclick=()=>{if(/Vencid|Saldo/.test(b.dataset.k))show('ven');else if(/plazo/.test(b.dataset.k))show('prx')});}
+function med(a){if(!a.length)return 0;a=[...a].sort((x,y)=>x-y);return a[Math.floor(a.length/2)]}
+// cadena
+function cadena(){const n=venc.length;const cnt=[0,1,2,3,4,5].map(k=>venc.filter(r=>r.et>=k).length);
+ const cls=['c0','c1','c1','c2','c2','c4'];
+ document.getElementById('cadena').innerHTML=cnt.map((v,k)=>`<button class="${cls[k]}" data-et="${k}"><b>${k===0?'Vencidas con saldo':ETN[k]}</b><em>${fmt(v)}</em><span>${k===0?fm(venc.reduce((s,r)=>s+val(r),0)):pct(v/n)+' de las vencidas'}</span></button>`).join('');
+ document.querySelectorAll('#cadena button').forEach(b=>b.onclick=()=>{document.getElementById('fEt').value=b.dataset.et==='0'?'0':'';show('ven');pag=0;renderV()});}
+// mes chart
+function mes(){const ms={};R.forEach(r=>{if(!r.venc)return;const k=r.venc.slice(0,7);(ms[k]=ms[k]||{})[r.est]=(ms[k][r.est]||0)+1});
+ const ks=Object.keys(ms).sort();const mx=Math.max(...ks.map(k=>EST.reduce((s,e)=>s+(ms[k][e]||0),0)));
+ const W=640,H=260,pl=40,pb=34,bw=(W-pl-10)/ks.length;const sc=v=>(H-pb-26)*v/mx;
+ const MN=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+ let g='';const step=mx>400?100:50;for(let y=0;y<=mx;y+=step){const yy=H-pb-sc(y);g+=`<line x1="${pl}" x2="${W-10}" y1="${yy}" y2="${yy}" stroke="currentColor" stroke-opacity=".12"/><text x="${pl-6}" y="${yy+4}" font-size="11" text-anchor="end">${y}</text>`}
+ ks.forEach((k,i)=>{let y=H-pb;EST.forEach(e=>{const v=ms[k][e]||0;if(!v)return;const h=sc(v);g+=`<rect x="${pl+i*bw+3}" y="${y-h}" width="${bw-6}" height="${h}" fill="${ECOL[e]}"><title>${k} · ${e}: ${v}</title></rect>`;y-=h});
+  const tot=EST.reduce((s,e)=>s+(ms[k][e]||0),0);g+=`<text x="${pl+i*bw+bw/2}" y="${y-4}" font-size="10" text-anchor="middle">${tot}</text><text x="${pl+i*bw+bw/2}" y="${H-pb+14}" font-size="11" text-anchor="middle">${MN[+k.slice(5)-1]}</text><text x="${pl+i*bw+bw/2}" y="${H-pb+27}" font-size="10" text-anchor="middle">${k.slice(2,4)}</text>`});
+ document.getElementById('mes').innerHTML=`<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="Notas por mes de vencimiento">${g}</svg>`;
+ document.getElementById('lgmes').innerHTML=EST.map(e=>`<span><i style="background:${ECOL[e]}"></i>${e}</span>`).join('');}
+// inventario
+let sortI={k:'n',d:-1};
+function tinv(){const g={};R.forEach(r=>{const k=r.inv||'—';g[k]=g[k]||{n:0,at:0,ct:0,v:0,s:0};const o=g[k];o.n++;if(r.est==='Cumplida a tiempo')o.at++;if(r.est==='Cumplida con atraso')o.ct++;if(r.est.startsWith('Vencida')){o.v++;o.s+=val(r)}});
+ const vi=([k,o],c)=>c==='k'?k:c==='at'?(o.at+o.ct?o.at/(o.at+o.ct):-1):o[c];const rows=Object.entries(g).filter(([k])=>k!=='*').sort((a,b)=>{const p=vi(a,sortI.k),q=vi(b,sortI.k);return (typeof p==='number'?p-q:String(p).localeCompare(String(q)))*sortI.d});
+ const ci=[['k','Inventario'],['n','Notas'],['at','A tiempo'],['v','Vencidas'],['s','Saldo vencido']];
+ document.getElementById('tinv').innerHTML='<thead><tr>'+ci.map(([c,l])=>`<th data-k="${c}">${l}<span class="ar">${sortI.k===c?(sortI.d>0?'▲':'▼'):'↕'}</span></th>`).join('')+'</tr></thead><tbody>'+rows.map(([k,o])=>`<tr><td>${esc(k)}</td><td class="n">${fmt(o.n)}</td><td class="n">${o.at+o.ct?pct(o.at/(o.at+o.ct)):'—'}</td><td class="n">${fmt(o.v)}</td><td class="n">${fm(o.s)}</td></tr>`).join('')+'</tbody>';document.querySelectorAll('#tinv th').forEach(h=>h.onclick=()=>{const c=h.dataset.k;sortI={k:c,d:sortI.k===c?-sortI.d:-1};tinv()});}
+// vencidas
+let sortV={k:'atraso',d:-1},pag=0;const PG=100;
+const colsV=[['cod','Código'],['desc','Medicamento o insumo'],['inv','Inventario'],['cedis','CEDIS'],['prov','Proveedor'],['req','Orden'],['nota','Nota'],['venc','Vencía'],['qty','Solicitado (u)'],['recib','Recibido (u)'],['saldo','Saldo (u)'],['valor','Saldo B/.'],['atraso','Días de atraso'],['et','Etapa'],['plan','Planificador']];
+function opts(id,lab,vals){const s=document.getElementById(id);s.innerHTML=`<option value="">${lab}</option>`+vals.map(v=>`<option value="${esc(v[0])}">${esc(v[1])}</option>`).join('')}
+opts('fInv','Todos los inventarios',[...new Set(venc.map(r=>r.inv))].filter(Boolean).sort().map(v=>[v,v]));
+opts('fCed','Todos los CEDIS',['CDPA','CDDI','CDCH'].map(v=>[v,v]));
+opts('fEt','Todas las etapas',ETN.map((n,i)=>[String(i),i+' · '+n]));
+opts('fPlan','Todos los planificadores',[...new Set(venc.map(r=>r.plan).filter(p=>p&&p.trim()))].sort().map(v=>[v,v]));
+['fInv','fCed','fEt','fPlan'].forEach(id=>document.getElementById(id).onchange=()=>{pag=0;renderV()});
+document.getElementById('fQ').oninput=()=>{pag=0;renderV()};
+document.getElementById('lim').onclick=()=>{['fInv','fCed','fEt','fPlan','fQ'].forEach(id=>document.getElementById(id).value='');pag=0;renderV()};
+function filtV(){const fi=fInv.value,fc=fCed.value,fe=fEt.value,fp=fPlan.value,q=fQ.value.trim().toUpperCase();
+ return venc.filter(r=>(!fi||r.inv===fi)&&(!fc||r.cedis===fc)&&(fe===''||String(r.et)===fe)&&(!fp||r.plan===fp)&&(!q||[r.cod,r.desc,r.prov,r.req,r.nota].join(' ').toUpperCase().includes(q)))}
+function rv(r,k){return k==='valor'?val(r):r[k]}
+function renderV(){let a=filtV();const {k,d}=sortV;a.sort((x,y)=>{const p=rv(x,k),q=rv(y,k);return (typeof p==='number'&&typeof q==='number'?p-q:String(p??'').localeCompare(String(q??'')))*d});
+ document.getElementById('nV').textContent=`${fmt(a.length)} notas vencidas en la vista · saldo ${fm(a.reduce((s,r)=>s+val(r),0))}`;
+ const pgN=Math.max(1,Math.ceil(a.length/PG));pag=Math.min(pag,pgN-1);const sl=a.slice(pag*PG,pag*PG+PG);
+ document.getElementById('tV').innerHTML='<thead><tr>'+colsV.map(([c,l])=>`<th data-k="${c}">${l}<span class="ar">${sortV.k===c?(sortV.d>0?'▲':'▼'):'↕'}</span></th>`).join('')+'</tr></thead><tbody>'+sl.map(r=>`<tr><td class="n">${esc(r.cod)}</td><td>${esc(r.desc)}</td><td>${esc(r.inv)}</td><td>${esc(r.cedis)}</td><td>${esc(r.prov)}</td><td class="n">${esc(r.req)}</td><td class="n">${esc(r.nota)}</td><td class="n">${esc(r.venc)}</td><td class="n">${fmt(r.qty)}</td><td class="n">${fmt(r.recib)}</td><td class="n">${fmt(r.saldo)}</td><td class="n">${fmt(val(r))}</td><td class="n">${r.atraso}</td><td><span class="ch ${['k-r','k-a','k-a','k-b','k-b','k-g'][r.et]}">${r.et} · ${ETN[r.et]}</span></td><td>${esc(r.plan)}</td></tr>`).join('')+'</tbody>';
+ document.querySelectorAll('#tV th').forEach(h=>h.onclick=()=>{const c=h.dataset.k;sortV={k:c,d:sortV.k===c?-sortV.d:-1};renderV()});
+ document.getElementById('pgV').innerHTML=`<button id="pa" ${pag?'':'disabled'}>Anterior</button><span>Página ${pag+1} de ${pgN}</span><button id="ps" ${pag<pgN-1?'':'disabled'}>Siguiente</button>`;
+ pa.onclick=()=>{pag--;renderV()};ps.onclick=()=>{pag++;renderV()};}
+// proveedores
+let sortP={k:'sv',d:-1};
+function provs(){const g={};R.forEach(r=>{const k=r.prov||'—';const o=g[k]=g[k]||{prov:k,n:0,at:0,ct:0,v:0,sv:0,atr:[]};o.n++;if(r.est==='Cumplida a tiempo')o.at++;if(r.est==='Cumplida con atraso'){o.ct++;o.atr.push(r.atraso)}if(r.est.startsWith('Vencida')){o.v++;o.sv+=val(r);o.atr.push(r.atraso)}});
+ return Object.values(g).map(o=>({...o,pt:o.at+o.ct?o.at/(o.at+o.ct):null,am:o.atr.length?Math.round(o.atr.reduce((a,b)=>a+b,0)/o.atr.length):0}))}
+const PR=provs();
+function renderP(){const q=pQ.value.trim().toUpperCase();let a=PR.filter(o=>!q||o.prov.includes(q));const {k,d}=sortP;a.sort((x,y)=>((x[k]??-1)>(y[k]??-1)?1:(x[k]??-1)<(y[k]??-1)?-1:0)*d);
+ const cols=[['prov','Proveedor'],['n','Notas'],['pt','Cumplidas a tiempo'],['ct','Cumplidas con atraso'],['v','Vencidas'],['sv','Saldo vencido B/.'],['am','Atraso promedio (días)']];
+ tP.innerHTML='<thead><tr>'+cols.map(([c,l])=>`<th data-k="${c}">${l}<span class="ar">${sortP.k===c?(sortP.d>0?'▲':'▼'):'↕'}</span></th>`).join('')+'</tr></thead><tbody>'+a.map(o=>`<tr><td>${esc(o.prov)}</td><td class="n">${fmt(o.n)}</td><td class="n"><span class="ch ${o.pt==null?'k-n':o.pt>=.8?'k-g':o.pt>=.6?'k-a':'k-r'}">${o.pt==null?'—':pct(o.pt)}</span></td><td class="n">${fmt(o.ct)}</td><td class="n">${fmt(o.v)}</td><td class="n">${fmt(o.sv)}</td><td class="n">${o.am}</td></tr>`).join('')+'</tbody>';
+ tP.querySelectorAll('th').forEach(h=>h.onclick=()=>{const c=h.dataset.k;sortP={k:c,d:sortP.k===c?-sortP.d:-1};renderP()});}
+pQ.oninput=renderP;
+// próximos
+const lim=new Date(HOY);lim.setDate(lim.getDate()+15);
+const PX=R.filter(r=>r.est==='En plazo'&&r.venc&&new Date(r.venc+'T00:00:00')<=lim).sort((a,b)=>a.venc.localeCompare(b.venc));
+let sortX={k:'venc',d:1};const colsX=[['venc','Vence'],['dias','Días'],['cod','Código'],['desc','Medicamento o insumo'],['cedis','CEDIS'],['prov','Proveedor'],['req','Orden · Nota'],['saldo','Saldo (u)'],['valor','Saldo B/.'],['plan','Planificador']];
+function renderX(){const vx=(r,k)=>k==='valor'?val(r):k==='dias'?Math.round((new Date(r.venc+'T00:00:00')-HOY)/864e5):r[k];PX.sort((x,y)=>{const p=vx(x,sortX.k),q=vx(y,sortX.k);return (typeof p==='number'&&typeof q==='number'?p-q:String(p??'').localeCompare(String(q??'')))*sortX.d});
+ tX.innerHTML='<thead><tr>'+colsX.map(([c,l])=>`<th data-k="${c}">${l}<span class="ar">${sortX.k===c?(sortX.d>0?'▲':'▼'):'↕'}</span></th>`).join('')+'</tr></thead><tbody>'+(PX.length?'':'<tr><td colspan="10" class="load">Ninguna nota con saldo vence en los próximos 15 días.</td></tr>')+PX.map(r=>{const dd=Math.round((new Date(r.venc+'T00:00:00')-HOY)/864e5);return `<tr><td class="n">${r.venc}</td><td class="n"><span class="ch ${dd<=3?'k-r':dd<=7?'k-a':'k-b'}">${dd}</span></td><td class="n">${esc(r.cod)}</td><td>${esc(r.desc)}</td><td>${esc(r.cedis)}</td><td>${esc(r.prov)}</td><td class="n">${esc(r.req)} · ${esc(r.nota)}</td><td class="n">${fmt(r.saldo)}</td><td class="n">${fmt(val(r))}</td><td>${esc(r.plan)}</td></tr>`}).join('')+'</tbody>';tX.querySelectorAll('th').forEach(h=>h.onclick=()=>{const c=h.dataset.k;sortX={k:c,d:sortX.k===c?-sortX.d:1};renderX()})}
+// cómo se calcula
+function tex(id,s){try{katex.render(s,document.getElementById(id),{displayMode:true,throwOnError:false})}catch(e){document.getElementById(id).textContent=s}}
+function calc(){tex('k1','\\text{Recibido}_n=\\sum_{e\\,\\in\\,\\text{Entradas}(\\text{orden}_n,\\,\\text{nota}_n)} q_e \\qquad \\text{Saldo}_n=\\max(0,\\;\\text{Solicitado}_n-\\text{Recibido}_n)');
+ tex('k2','\\text{Resultado}_n=\\begin{cases}\\text{Cumplida a tiempo} & \\text{Saldo}_n=0\\;\\wedge\\;u_n\\le v_n\\\\ \\text{Cumplida con atraso} & \\text{Saldo}_n=0\\;\\wedge\\;u_n> v_n\\\\ \\text{En plazo} & \\text{Saldo}_n>0\\;\\wedge\\;v_n\\ge \\text{hoy}\\\\ \\text{Vencida con entrega parcial} & \\text{Saldo}_n>0\\;\\wedge\\;v_n<\\text{hoy}\\;\\wedge\\;\\text{Recibido}_n>0\\\\ \\text{Vencida sin entrega} & v_n<\\text{hoy}\\;\\wedge\\;\\text{Recibido}_n=0\\end{cases}');
+ tex('k3','\\text{Atraso}_n=\\begin{cases}u_n-v_n & \\text{si la nota se completó}\\\\ \\text{hoy}-v_n & \\text{si todavía tiene saldo}\\end{cases}');
+ tex('k4','\\text{Saldo B/.}_n=\\text{Saldo}_n\\times p_n');
+ const m=(a,b)=>R.filter(r=>r.estHoja===a&&r.est===b).length;
+ document.getElementById('dif').innerHTML=`<p>La hoja «reporte» asigna el estatus con la <b>primera</b> entrada de cada nota, sin mirar el saldo. Con la regla de arriba cambian estas notas:</p>
+ <table class="t" style="max-width:760px"><thead><tr><th>Estatus en el libro</th><th>Resultado en el tablero</th><th>Notas</th></tr></thead><tbody>
+ <tr><td>CUMPLE</td><td>Vencida con entrega parcial</td><td class="n">${m('CUMPLE','Vencida con entrega parcial')}</td></tr>
+ <tr><td>CUMPLE</td><td>Cumplida con atraso (la última entrega llegó tarde)</td><td class="n">${m('CUMPLE','Cumplida con atraso')}</td></tr>
+ <tr><td>ENTREGA TARDIA</td><td>Vencida con entrega parcial</td><td class="n">${m('ENTREGA TARDIA','Vencida con entrega parcial')}</td></tr>
+ <tr><td>Sin estatus</td><td>Vencida sin entrega</td><td class="n">${m(null,'Vencida sin entrega')}</td></tr></tbody></table>
+ <p>Además, la hoja «reporte» agrupa por número de mes sin el año, así que diciembre de 2025 y diciembre de 2026 se suman juntos, y sus porcentajes usan bases distintas en cada bloque. El tablero agrupa por año y mes.</p>`}
+// Excel institucional
+async function excel(nombre,titulo,cols,rows){const wb=new ExcelJS.Workbook();const ws=wb.addWorksheet('Datos');
+ if(LOGO){const id=wb.addImage({base64:LOGO.split(',')[1],extension:'png'});ws.addImage(id,{tl:{col:0,row:0},ext:{width:48,height:48}});}
+ ws.getCell('B1').value='CAJA DE SEGURO SOCIAL · DIRECCIÓN NACIONAL DE LOGÍSTICA';ws.getCell('B1').font={bold:true,size:13,color:{argb:'FF0C447C'}};
+ ws.getCell('B2').value=titulo;ws.getCell('B2').font={bold:true,size:11};ws.getCell('B3').value='Fuente: libro de Incumplimientos, Departamento de Seguimiento, al '+fd(DATA.corte)+' · calculado al '+fd(HOYS);ws.getCell('B3').font={size:9,color:{argb:'FF555555'}};
+ const hr=ws.getRow(5);cols.forEach((c,i)=>{const cl=hr.getCell(i+1);cl.value=c[0];cl.font={bold:true,color:{argb:'FFFFFFFF'}};cl.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FF1E5A9E'}};cl.alignment={wrapText:true,vertical:'middle'};ws.getColumn(i+1).width=c[2]||14});hr.height=32;
+ rows.forEach((r,j)=>{const row=ws.getRow(6+j);cols.forEach((c,i)=>{row.getCell(i+1).value=c[1](r)})});
+ ws.autoFilter={from:{row:5,column:1},to:{row:5+rows.length,column:cols.length}};ws.views=[{state:'frozen',ySplit:5}];
+ const buf=await wb.xlsx.writeBuffer();const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([buf]));a.download=nombre;a.click();}
+const XV=[['Código',r=>r.cod,12],['Medicamento o insumo',r=>r.desc,40],['Inventario',r=>r.inv,16],['CEDIS',r=>r.cedis,8],['Proveedor',r=>r.prov,30],['Orden',r=>r.req,13],['Nota',r=>r.nota,9],['Vencía',r=>r.venc,11],['Solicitado (u)',r=>r.qty],['Recibido (u)',r=>r.recib],['Saldo (u)',r=>r.saldo],['Saldo B/.',r=>Math.round(val(r))],['Días de atraso',r=>r.atraso],['Resultado',r=>r.est,22],['Etapa del seguimiento',r=>r.et+' · '+ETN[r.et],24],['Planificador',r=>r.plan,10]];
+xV.onclick=()=>excel('Notas_vencidas_vista.xlsx','Notas de solicitud de entrega vencidas · vista filtrada',XV,filtV());
+xA.onclick=()=>excel('Notas_de_solicitud_completo.xlsx','Todas las notas de solicitud de entrega · '+RANGO,XV,R);
+xP.onclick=()=>excel('Cumplimiento_por_proveedor.xlsx','Cumplimiento de entregas por proveedor',[['Proveedor',o=>o.prov,38],['Notas',o=>o.n],['Cumplidas a tiempo',o=>o.at],['Cumplidas con atraso',o=>o.ct],['% a tiempo',o=>o.pt==null?'':Math.round(o.pt*100)],['Vencidas',o=>o.v],['Saldo vencido B/.',o=>Math.round(o.sv)],['Atraso promedio (días)',o=>o.am]],[...PR].sort((a,b)=>b.sv-a.sv));
+xX.onclick=()=>excel('Proximos_vencimientos.xlsx','Notas con saldo que vencen en 15 días',XV,PX);
+kpis();cadena();mes();tinv();renderV();renderP();renderX();calc();
+}
+Promise.all([fetch(FUENTE+'?t='+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.json():Promise.reject(r.status)),
+  fetch('icons/icon-192.png').then(r=>r.blob()).then(b=>new Promise(ok=>{const f=new FileReader();f.onload=()=>ok(f.result);f.readAsDataURL(b)})).catch(()=>null)])
+ .then(([D,L])=>app(D,L))
+ .catch(e=>{document.getElementById('cargando').innerHTML='Todavía no hay un libro de Incumplimientos publicado. Se publica al cargarlo en la <a href="https://torrecontrolcss.org/SIGUELO_DINALOG/cargar_reportes.html">Ventanilla Única</a>.';});
+</script>
+</body>
+</html>

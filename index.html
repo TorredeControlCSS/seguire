@@ -247,7 +247,7 @@ form.rg select,form.rg input,form.rg textarea{min-height:30px;border:1px solid v
 
 <script>
 /* ===== Configuración ===== */
-var FUENTES={cons:'data/consolidado_2026-10-26.json',compra:'data/compra90_densyp_2026-11-10.json',recep:'https://torrecontrolcss.org/SIGUELO/entradas_recepcion.json'};
+var FUENTES={cons:'data/consolidado.json',consRespaldo:'data/consolidado_2026-10-26.json',compra:'data/compra90_densyp_2026-11-10.json',recep:'https://torrecontrolcss.org/SIGUELO/entradas_recepcion.json'};
 /* Web App de Apps Script para la bitácora compartida (gas/Acciones_SEGUIRE.gs). Vacío = la bitácora se guarda en este navegador. */
 var WEBAPP_ACCIONES='';
 
@@ -299,7 +299,9 @@ function excel(nombre,titulo,cols,rows,nota){
     a.download='SEGUIRE_'+nombre.replace(/\s+/g,'_')+'_'+new Date().toISOString().slice(0,10)+'.xlsx';document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(a.href)},4000);toast('Excel descargado ('+f0(rows.length)+' filas).')})}
 
 /* ===== Carga ===== */
-Promise.all([fetch(FUENTES.cons).then(function(r){return r.json()}),fetch(FUENTES.compra).then(function(r){return r.json()}),
+/* data/consolidado.json lo publica SÍGUELO (SEGUIMIENTO_TABLEROS.gs) cada vez que se carga el consolidado en la Ventanilla Única.
+   Si todavía no existe, se usa el corte fijo del 26-oct. */
+Promise.all([fetch(FUENTES.cons+'?t='+Date.now(),{cache:'no-store'}).then(function(r){return r.ok?r.json():Promise.reject(r.status)}).catch(function(){return fetch(FUENTES.consRespaldo).then(function(r){return r.json()})}),fetch(FUENTES.compra).then(function(r){return r.json()}),
   fetch(FUENTES.recep).then(function(r){return r.ok?r.json():null}).catch(function(){return null})]).then(function(res){
   var D=res[0];CORTE='Consolidado de Planificación, corte '+D.corte;
   R=D.rows.map(function(a){var o={};D.cols.forEach(function(c,i){o[c]=a[i]});return o});
@@ -307,7 +309,7 @@ Promise.all([fetch(FUENTES.cons).then(function(r){return r.json()}),fetch(FUENTE
     o.pend=Math.max(0,o.ordenado-o.entrado);o.neto=Math.max(0,o.aComprar-o.pend);var p=o.precioLibro||0,q=o.precioLic!=null?o.precioLic:p;
     o.costo=o.aComprar*p;o.ajust=o.neto*q;o.rel=(o.precioLic&&p)?p/o.precioLic:null;return o});
   if(res[2]&&res[2].rows){res[2].rows.forEach(function(x){if(x.cumpl!=='A TIEMPO'&&x.cumpl!=='TARDIA')return;var k=norm(x.prov),o=REC[k]||(REC[k]={n:0,t:0,d:[]});o.n++;if(x.cumpl==='TARDIA'){o.t++;if(typeof x.dias==='number')o.d.push(x.dias)}})}
-  $('#stamp').innerHTML='Consolidado: <b>'+D.corte+'</b> · Libro DENSYP: <b>'+K.corte+'</b>'+(res[2]?' · Recepción: <b>en línea</b>':'');
+  $('#stamp').innerHTML='Consolidado: <b>'+D.corte+'</b>'+(D._meta&&D._meta.generado?' <span style="opacity:.8">(publicado '+String(D._meta.generado).slice(0,16)+')</span>':'')+' · Libro DENSYP: <b>'+K.corte+'</b>'+(res[2]?' · Recepción: <b>en línea</b>':'');
   llenarFiltros();cargarAcciones();render();
 }).catch(function(e){$('#tR tbody').innerHTML='<tr><td class="load">No se pudieron cargar los datos ('+esc(e.message)+'). Recargue la página.</td></tr>'});
 
