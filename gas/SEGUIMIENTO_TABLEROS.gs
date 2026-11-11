@@ -1011,7 +1011,7 @@ function segOcHtml_(R, opt) {
     html += tabla([th('Planificador', 'left'), th('En falta'), th('Vitales'), th('Solicitud vencida'), th('Sin solicitud'), th('Sin trámite'), th('Por vencer'), th('Otros'), th('Saldo por entregar B/.')],
       R.planes.map(function (o, i) {
         var c = function (k, tono) { var n = o.c[k] || 0; return n ? chip(nf(n), tono) : '—'; };
-        return zebra(i) + td('<b>' + e(o.nombre) + '</b> <span style="color:#888">' + e(o.ini) + '</span>', 'left') + td(nf(o.n)) + td(nf(o.v)) +
+        return zebra(i) + td('<b>' + e(o.nombre) + '</b>', 'left') + td(nf(o.n)) + td(nf(o.v)) +
           td(c('ven', 'r')) + td(c('sin', 'r')) + td(c('com', 'a')) + td(c('pv', 'a')) + td(c('otr', 'n')) + td(nf(o.saldo), 'right') + '</tr>';
       }));
   }
@@ -1024,11 +1024,11 @@ function segOcHtml_(R, opt) {
     var L = Lc(x[0]); if (!L.length) return;
     var cat = SEG_OC_CAT.filter(function (c) { return c.k === x[0]; })[0];
     html += '<div style="font-size:12.5px;font-weight:bold;color:#1E5A9E;margin:10px 0 4px">' + (++nL) + ' · ' + cat.t + '</div>' +
-      tabla([th(x[2]), th('VEN'), th('Medicamento', 'left'), th('Proveedor', 'left'), th('Inventario CEDIS (u)'), th(x[0] === 'com' ? 'Cobertura (meses)' : 'Saldo B/.')].concat(P ? [] : [th('Planif.')]),
+      tabla([th(x[2]), th('VEN'), th('Medicamento', 'left'), th('Proveedor', 'left'), th('Inventario CEDIS (u)'), th(x[0] === 'com' ? 'Cobertura (meses)' : 'Saldo B/.')].concat(P ? [] : [th('Planificador', 'left')]),
         L.slice(0, TOP).map(function (r, i) {
           return zebra(i) + x[1](r) + td(r.ven === 'V' ? chip('Vital', 'r') : 'Esencial') + td('<b>' + e(r.cod) + '</b> ' + e(String(r.desc || '').slice(0, 34)), 'left') +
             td(e(String(r.prov || '—').slice(0, 26)), 'left') + td(nf(r.inv), 'right') + td(x[0] === 'com' ? (Math.round((r.cob || 0) * 10) / 10).toFixed(1) : nf(r.saldoB), 'right') +
-            (P ? '' : td(e(r.analista || '—'))) + '</tr>';
+            (P ? '' : td(e(SEG_ANA[r.analista] || r.analista || '—'), 'left')) + '</tr>';
         })) + (L.length > TOP ? cinta('Aquí se muestran ' + TOP + ' de ' + nf(L.length) + '. Abra el Excel adjunto, hoja «' + cat.hoja + '», para la lista completa.') : '');
   });
 
@@ -1073,8 +1073,8 @@ function segOcExcel_(R, P) {
     hoja('Acciones', P ? 'Sus medicamentos en falta · ' + P.nombre : 'Seguimiento de compras · acciones del día', sub, ['#', 'Responsable', 'Renglones', 'Acción'],
       segOcAcciones_(R, P ? P.items : null, P ? P.nombre : null).map(function (a, i) { return [i + 1, a.resp, a.n, a.corto]; }), [40, 180, 90, 760]);
     if (!P) hoja('Por planificador', 'Medicamentos en falta por planificador', sub,
-      ['Iniciales', 'Planificador', 'En falta', 'Vitales', 'Solicitud vencida', 'Sin solicitud', 'Sin trámite', 'Por vencer', 'Otros en falta', 'Saldo por entregar B/.'],
-      R.planes.map(function (o) { return [o.ini, o.nombre, o.n, o.v, o.c.ven || 0, o.c.sin || 0, o.c.com || 0, o.c.pv || 0, o.c.otr || 0, Math.round(o.saldo)]; }), [80, 200, 80, 80, 110, 100, 100, 90, 100, 140]);
+      ['Planificador', 'En falta', 'Vitales', 'Solicitud vencida', 'Sin solicitud', 'Sin trámite', 'Por vencer', 'Otros en falta', 'Saldo por entregar B/.'],
+      R.planes.map(function (o) { return [o.nombre, o.n, o.v, o.c.ven || 0, o.c.sin || 0, o.c.com || 0, o.c.pv || 0, o.c.otr || 0, Math.round(o.saldo)]; }), [200, 80, 80, 110, 100, 100, 90, 100, 140]);
     SEG_OC_CAT.forEach(function (c) {
       var L = P ? P.items.filter(function (r) { return r.cat === c.k; }) : R.L[c.k];
       hoja(c.hoja, c.t, sub + ' Acción sugerida: ' + c.acc + '.', cab, L.map(fila), an, 2);
