@@ -21,6 +21,7 @@
  *  2. UN SOLO NOMBRE POR PERSONA
  *     «Selene itzel Fernandez vega» y «Selene Fernández» son la misma persona:
  *     todas sus filas quedan con la forma que más se usa en TRANSITOS_OC.
+ *     Los nombres mal escritos se corrigen con TP.CORRIGE (p. ej. Espinosa → Espinoza).
  *
  *  Cada cambio queda en TRANSITOS_CAMBIOS (CAMPO = PLANIFICADOR), con ANTES,
  *  DESPUES y POR. Lee las columnas por nombre. No usa LockService: escribe
@@ -46,7 +47,10 @@ var TP = {
   POR_CAMBIO: 'Torre de Control · cambio de planificador del renglón (Reporte_Abastecimiento)',
   POR_NOMBRE: 'Torre de Control · un solo nombre por persona',
   // Primera corrida (sin foto): iniciales nuevas → nombres de quienes tenían esos renglones antes.
-  SEMILLA: { 'EE': ['Jenny López', 'Braulio Serrano'] }
+  SEMILLA: { 'EE': ['Jenny López', 'Braulio Serrano'] },
+  // Nombres mal escritos → forma correcta. Se aplica en cada corrida, también a lo que se cargue después.
+  // 11-nov-2026: el apellido es Espinoza (confirmado por la Jefatura: eliespinoza@css.gob.pa).
+  CORRIGE: { 'Elias Espinosa': 'Elias Espinoza' }
 };
 
 function tpSimular() { var r = tpEjecutar_(false); Logger.log(JSON.stringify(r, null, 1)); return r; }
@@ -93,7 +97,10 @@ function tpEjecutar_(escribir) {
   var cuenta = {};
   vals.forEach(function (r) { var p = String(r[idx['PLANIFICADOR']] || '').trim(); if (p) cuenta[p] = (cuenta[p] || 0) + 1; });
   var formas = Object.keys(cuenta).sort(function (a, b) { return cuenta[b] - cuenta[a]; });
-  function canon(nombre) { var f = formas.filter(function (x) { return tpMisma_(x, nombre); })[0]; return f || nombre; }
+  var CORR = {}; Object.keys(TP.CORRIGE || {}).forEach(function (k) { CORR[tpTok_(k).join(' ')] = TP.CORRIGE[k]; });
+  function corr(nombre) { return CORR[tpTok_(nombre).join(' ')] || nombre; }
+  formas = formas.map(corr).filter(function (x, i, a) { return a.indexOf(x) === i; });
+  function canon(nombre) { nombre = corr(nombre); var f = formas.filter(function (x) { return tpMisma_(x, nombre); })[0]; return f || nombre; }
 
   // Foto anterior
   var hf = ss.getSheetByName(TP.HOJA_FOTO), prev = null;
