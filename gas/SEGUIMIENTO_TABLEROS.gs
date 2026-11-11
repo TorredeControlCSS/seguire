@@ -540,7 +540,8 @@ function segIncEnviarAhora()  { segIncEnviar_(true); }
 
 function segIncEnviarmePrueba() {
   var cfg = segCfgLeer_();
-  var yo = cfg.prueba.length ? cfg.prueba : [Session.getActiveUser().getEmail() || Session.getEffectiveUser().getEmail()];
+  var yo = cfg.prueba;
+  if (!yo.length) { var q = ''; try { q = Session.getEffectiveUser().getEmail(); } catch (eU) {} yo = [q || 'info@torrecontrolcss.org']; }
   var R = segIncConstruir_();
   segIncMandar_(yo, [], segIncArmar_(R, true, cfg));
   Logger.log('SEG prueba enviada a ' + yo.join(', ') + ' · lista real: ' + cfg.to.join(', ') + (cfg.cc.length ? ' · CC ' + cfg.cc.join(', ') : ''));
