@@ -849,7 +849,7 @@ function segDiagnostico() {
  *
  *  Dos envíos, lunes a viernes 6:50 a. m. (activador segOcCorreoDiario):
  *    1. Jefaturas (SEGUIRE_TO / SEGUIRE_CC): resumen nacional y por planificador.
- *    2. Cada planificador: solo sus renglones. Su correo sale de
+ *    2. Cada planificador: solo sus renglones, con copia a las jefaturas. Su correo sale de
  *       DIRECTORIO_PLANIFICADORES (el mismo del aviso de tránsitos); las
  *       iniciales del consolidado se traducen con SEG_ANA.
  *  Interruptores en CONFIG_ALERTAS: SEGUIRE_ACTIVO, SEGUIRE_PLAN_ACTIVO,
@@ -1116,7 +1116,7 @@ function segOcSimular() {
   var cfg = segOcCfg_(), R = segOcConstruir_(), pl = segOcPlanificadores_(R);
   Logger.log('SEG SEGUIRE · consolidado ' + R.corte + ' · en falta ' + R.k.falta + ' · vencidas ' + R.k.ven + ' · sin solicitud ' + R.k.sin + ' · sin trámite ' + R.k.com);
   Logger.log('Jefaturas: ' + (cfg.to.join(', ') || '(sin SEGUIRE_TO)') + (cfg.cc.length ? ' · CC ' + cfg.cc.join(', ') : ''));
-  pl.forEach(function (p) { Logger.log('  ' + p.ini + ' ' + p.nombre + ' → ' + (p.correo || 'SIN CORREO en DIRECTORIO_PLANIFICADORES') + ' · ' + p.items.length + ' renglones'); });
+  pl.forEach(function (p) { Logger.log('  ' + p.ini + ' ' + p.nombre + ' → ' + (p.correo || 'SIN CORREO en DIRECTORIO_PLANIFICADORES') + ' · ' + p.items.length + ' renglones · CC jefaturas'); });
 }
 
 function segOcEnviarmePrueba() {
@@ -1146,7 +1146,9 @@ function segOcEnviar_(forzar) {
   if (cfg.plan) segOcPlanificadores_(R).forEach(function (p) {
     if (!p.items.length) return;
     if (!p.correo) { sin.push(p.nombre); return; }
-    try { segIncMandar_(prueba ? cfg.prueba : [p.correo], [], segOcArmar_(R, { prueba: prueba, cfg: cfg, plan: p })); env++; }
+    /* copia a las jefaturas (SEGUIRE_TO y SEGUIRE_CC) en cada correo de planificador */
+    var ccP = prueba ? [] : cfg.to.concat(cfg.cc).filter(function (m, i, a) { return m !== p.correo && a.indexOf(m) === i; });
+    try { segIncMandar_(prueba ? cfg.prueba : [p.correo], ccP, segOcArmar_(R, { prueba: prueba, cfg: cfg, plan: p })); env++; }
     catch (e) { Logger.log('SEG SEGUIRE no se pudo enviar a ' + p.nombre + ': ' + e); }
   });
   pr.setProperty(SEG_OC.PROP, JSON.stringify({ hoy: hoy, corte: R.corte, k: R.k }));
