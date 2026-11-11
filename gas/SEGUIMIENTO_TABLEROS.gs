@@ -716,15 +716,16 @@ function segIncHtml_(R, prev, prueba, cfg) {
   }).join('') + '</table>' : '<div style="background:#E1F5EE;color:#0F6E56;border-radius:6px;padding:8px 11px;font-size:12.5px">Sin acciones pendientes.</div>');
 
   html += h2('Para empezar hoy', 'lo más urgente de cada lista');
-  if (R.sinN.length) html += '<div style="font-size:12.5px;font-weight:bold;color:#1E5A9E;margin:6px 0 4px">1 · Notificar a Compras · mayor saldo primero</div>' +
+  var nL = 0;
+  if (R.sinN.length) html += '<div style="font-size:12.5px;font-weight:bold;color:#1E5A9E;margin:6px 0 4px">' + (++nL) + ' · Notificar a Compras · mayor saldo primero</div>' +
     tabla([th('Días'), th('Medicamento o insumo', 'left'), th('Proveedor', 'left'), th('CEDIS'), th('Orden · nota'), th('Saldo B/.')],
       R.sinN.slice(0, TOP).map(function (r, i) { return zebra(i) + td(chip(nf(r.atraso), 'r')) + td('<b>' + e(r.cod) + '</b> ' + e(String(r.desc || '').slice(0, 34)), 'left') +
         td(e(String(r.prov).slice(0, 28)), 'left') + td(e(r.cedis)) + td(e(r.req) + ' · ' + e(r.nota)) + td(nf(r.valor), 'right') + '</tr>'; })) + mas(R.sinN.length, 'Sin notificar');
-  if (R.sinP.length) html += '<div style="font-size:12.5px;font-weight:bold;color:#1E5A9E;margin:12px 0 4px">2 · Notificar al proveedor</div>' +
+  if (R.sinP.length) html += '<div style="font-size:12.5px;font-weight:bold;color:#1E5A9E;margin:12px 0 4px">' + (++nL) + ' · Notificar al proveedor</div>' +
     tabla([th('Días'), th('Medicamento o insumo', 'left'), th('Proveedor', 'left'), th('Nota a Compras'), th('Saldo B/.')],
       R.sinP.slice(0, TOP).map(function (r, i) { return zebra(i) + td(chip(nf(r.atraso), 'r')) + td('<b>' + e(r.cod) + '</b> ' + e(String(r.desc || '').slice(0, 34)), 'left') +
         td(e(String(r.prov).slice(0, 28)), 'left') + td(e(r.notC) + (r.fAviso ? ' · ' + segFechaTxt_(r.fAviso) : '')) + td(nf(r.valor), 'right') + '</tr>'; })) + mas(R.sinP.length, 'Sin notificar al proveedor');
-  if (R.prox3.length) html += '<div style="font-size:12.5px;font-weight:bold;color:#1E5A9E;margin:12px 0 4px">3 · Aviso preventivo · vencen en 3 días o menos</div>' +
+  if (R.prox3.length) html += '<div style="font-size:12.5px;font-weight:bold;color:#1E5A9E;margin:12px 0 4px">' + (++nL) + ' · Aviso preventivo · vencen en 3 días o menos</div>' +
     tabla([th('Vence'), th('Faltan'), th('Medicamento o insumo', 'left'), th('Proveedor', 'left'), th('Saldo (u)'), th('Planificador')],
       R.prox3.slice(0, TOP).map(function (r, i) { return zebra(i) + td(segFechaTxt_(r.venc)) + td(chip(nf(r.faltan) + ' d', r.faltan <= 1 ? 'r' : 'a')) + td('<b>' + e(r.cod) + '</b> ' + e(String(r.desc || '').slice(0, 34)), 'left') +
         td(e(String(r.prov).slice(0, 28)), 'left') + td(nf(r.saldo), 'right') + td(e(r.plan || '—')) + '</tr>'; })) + mas(R.prox3.length, 'Próximos vencimientos');
