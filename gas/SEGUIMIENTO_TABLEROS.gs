@@ -535,6 +535,17 @@ function segInstalarCorreoDiario() {
   Logger.log('SEG activador diario creado (6:40 a. m., hora de Panamá).');
 }
 
+/* Pone INCUMP_ACTIVO = SI en CONFIG_ALERTAS y crea el activador diario. Para pausar: INCUMP_ACTIVO = NO en la hoja. */
+function segActivarCorreoDiario() {
+  var sh = SpreadsheetApp.openById(SEG.CONFIG_SS).getSheetByName(SEG.CONFIG_SH);
+  var v = sh.getDataRange().getValues(), fila = -1;
+  for (var i = 0; i < v.length; i++) if (String(v[i][0] || '').trim().toUpperCase() === 'INCUMP_ACTIVO') { fila = i + 1; break; }
+  if (fila < 0) { Logger.log('SEG falta la fila INCUMP_ACTIVO: ejecute segCrearConfigAlertas.'); return; }
+  sh.getRange(fila, 2).setValue('SI');
+  segInstalarCorreoDiario();
+  Logger.log('SEG correo diario ACTIVO (INCUMP_ACTIVO = SI, fila ' + fila + ').');
+}
+
 function segIncCorreoDiario() { segIncEnviar_(false); }
 function segIncEnviarAhora()  { segIncEnviar_(true); }
 
