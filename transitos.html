@@ -252,9 +252,9 @@
   .mt-tabla .sm{font-size:11px;color:#5b6775;}
   .mt-tabla .nm{text-align:right;font-family:Consolas,monospace;}
   .mt-pill{display:inline-block;border-radius:12px;padding:2px 8px;font-size:11px;font-weight:600;white-space:nowrap;}
-  .mt-sit{font-size:11.5px;line-height:1.35;max-width:260px;}
-  .mt-acc{white-space:nowrap;}
-  .mt-acc .btn{padding:4px 9px;font-size:11.5px;margin:0 3px 3px 0;}
+  .mt-sit{font-size:11.5px;line-height:1.35;min-width:170px;max-width:280px;}
+  .mt-acc{white-space:normal;min-width:180px;max-width:240px;font-size:11.5px;line-height:1.35;}
+  .mt-acc .btn{padding:4px 9px;font-size:11.5px;margin:0 3px 3px 0;white-space:nowrap;}
   .btn.ok{background:#1f6b36;border-color:#1f6b36;}.btn.ok:hover{background:#185a2c;}
   .mt-oc{display:flex;gap:5px;align-items:center;}
   .mt-oc input{width:150px;padding:4px 6px;font:12px Consolas,monospace;border:1px solid #9bb7d6;border-radius:4px;}
@@ -2368,7 +2368,7 @@ function renderMis(){
   if(!TRANSITOS.length){ $('mtTablaBox').innerHTML='<div class="mt-vacio">Cargando…</div>'; return; }
   if(!L.length){ $('mtTablaBox').innerHTML='<div class="mt-vacio">No hay tránsitos en esta lista'+(_yo?' para '+esc(_yo):'')+'.</div>'; $('mtPie').textContent=''; return; }
   var h='<table class="mt-tabla"><thead><tr>'+M_COLS.map(function(c){ var o=!!M_KEY[c[0]];
-    return '<th'+(o?' data-o="'+c[0]+'"':' class="nos"')+(c[0]==='sal'?' style="text-align:right"':'')+(c[0]==='acc'?' style="white-space:normal;min-width:190px"':'')+'>'+(c[0]==='acc'?((($('mtBuscar').value||'').trim()?'Siguiente paso':M_ACC[_misCat])||c[1]):c[1])+(o?'<span class="ar">'+(_misOrden.k===c[0]?(_misOrden.dir>0?'▲':'▼'):'▲▼')+'</span>':'')+'</th>'; }).join('')+'</tr></thead><tbody>';
+    return '<th'+(o?' data-o="'+c[0]+'"':' class="nos"')+(c[0]==='sal'?' style="text-align:right"':'')+(c[0]==='acc'?' style="white-space:normal;min-width:180px;max-width:240px"':'')+'>'+(c[0]==='acc'?((($('mtBuscar').value||'').trim()?'Siguiente paso':M_ACC[_misCat])||c[1]):c[1])+(o?'<span class="ar">'+(_misOrden.k===c[0]?(_misOrden.dir>0?'▲':'▼'):'▲▼')+'</span>':'')+'</th>'; }).join('')+'</tr></thead><tbody>';
   L.forEach(function(t){
     var id=esc(t.id), esOC=String(t.tipo).toUpperCase()==='ORDEN_COMPRA', ab=_misAbierto===String(t.id);
     var oc=esOC?'<span class="sm">OC madre</span>':(/10\d{8}/.test(String(t.n_orden_compra||''))?'<span class="sm" style="font-family:Consolas,monospace">'+esc(t.n_orden_compra)+'</span>':'<span class="sm" style="color:#1e5a9e">sin OC</span>');
@@ -2379,7 +2379,7 @@ function renderMis(){
       '<td class="nm">'+fmtNum(Math.round(t._sal!=null?t._sal:trSaldo(t)))+'</td>'+
       '<td>'+misEntrega(t)+'</td>'+
       '<td class="mt-sit">'+(t._ced?'<span class="sm">'+t._n+' fila'+(t._n>1?'s':'')+' de este documento se cotejan al anotar la OC</span>':misSituacion(t))+'</td>'+
-      '<td class="mt-acc">'+misAccion(t,_misCat)+'</td></tr>';
+      '<td class="mt-acc">'+misAccion(t,($('mtBuscar').value||'').trim()?'ALL':_misCat)+'</td></tr>';
     if(ab){ var est=String(t.estado_transito||'').toUpperCase();
       h+='<tr class="mt-det"><td colspan="8"><div class="mt-dgrid">'+
         '<div><span>Emisión</span>'+esc(t.fecha_emision||'—')+'</div><div><span>Cantidad</span>'+fmtNum(t.cantidad)+'</div><div><span>Entregado</span>'+fmtNum(t.cant_entregada||0)+'</div>'+
