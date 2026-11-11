@@ -218,6 +218,13 @@
   .hd-soy select{width:auto;min-width:190px;border:0;border-radius:4px;padding:4px 6px;font:inherit;font-weight:600;color:#0C447C;}
   .hbtn{background:rgba(255,255,255,.14);border:0;color:#fff;border-radius:6px;padding:7px 10px;font:600 12px 'Segoe UI',Arial,sans-serif;cursor:pointer;display:inline-flex;align-items:center;gap:6px;white-space:nowrap;}
   .hbtn:hover{background:rgba(255,255,255,.24);}
+  #vidOv{position:fixed;inset:0;background:rgba(8,20,40,.78);z-index:9000;display:none;align-items:center;justify-content:center;padding:24px;}
+  #vidOv.on{display:flex;}
+  #vidBox{background:#0c2850;border-radius:10px;padding:12px 12px 10px;width:min(1180px,96vw);box-shadow:0 12px 40px rgba(0,0,0,.45);}
+  #vidBox .vh{display:flex;align-items:center;justify-content:space-between;color:#fff;font:600 14px 'Segoe UI',Arial,sans-serif;margin:0 2px 8px;}
+  #vidBox .vh button{background:rgba(255,255,255,.16);border:0;color:#fff;border-radius:6px;padding:6px 12px;font:600 12px 'Segoe UI',Arial,sans-serif;cursor:pointer;}
+  #vidBox video{width:100%;max-height:78vh;border-radius:6px;background:#000;display:block;}
+  #vidBox .vp{color:#a9c3e0;font:12px 'Segoe UI',Arial,sans-serif;margin:7px 2px 0;}
   .hbtn svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
   .hbtn.prim{background:#fff;color:#0C447C;}
   @media(max-width:1180px){ header .sub{display:none;} .hsello{display:none;} header h1{white-space:nowrap;font-size:15px;} .hbtn{padding:7px 8px;} }
@@ -306,6 +313,7 @@
   <div class="hd-der">
     <label class="hd-soy" title="Elija su nombre: el panel le muestra sus tránsitos y lo recuerda">Planificador <select id="bYo"><option value="">— Elija su nombre —</option></select></label>
     <button class="hbtn prim" id="btnCargar" type="button"><svg viewBox="0 0 24 24"><path d="M12 16V4M6 10l6-6 6 6M4 20h16"/></svg>Cargar OC / Solicitud de Entrega</button>
+    <button class="hbtn" id="btnVideo" type="button" title="Video de 3 minutos: cómo usar el panel"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="13" height="14" rx="2"/><path d="M16 10l5-3v10l-5-3z"/></svg>Video</button>
     <button class="hbtn" id="btnTutorial" type="button" title="Tutorial guiado"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M10 8.5l5.5 3.5-5.5 3.5z"/></svg>Tutorial</button>
     <button class="hbtn" id="btnTema" type="button" title="Modo claro / oscuro"><svg viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></svg></button>
     <div class="hsello" id="selloDatos">Cargando datos…</div>
@@ -2517,6 +2525,23 @@ function misExcel(todo){
 /* ====== INICIO ====== */
 cargarTransitos();
 cargarAnalistas();
+</script>
+<div id="vidOv" role="dialog" aria-label="Video: cómo usar el panel"><div id="vidBox">
+  <div class="vh"><span>Cómo usar el panel de Tránsitos de OC · 3 min</span><button type="button" id="vidCerrar">Cerrar</button></div>
+  <video id="vidPlayer" controls preload="none" playsinline poster="videos/transitos_planificadores.jpg"><source src="videos/transitos_planificadores.mp4" type="video/mp4"></video>
+  <div class="vp">Qué confirma el sistema solo y qué le corresponde registrar: Divisa y Chiriquí, vencidos sin entrada, entradas propuestas, CEDIS y fechas por verificar.</div>
+</div></div>
+<script>
+(function(){
+  var ov=document.getElementById('vidOv'), v=document.getElementById('vidPlayer');
+  function abrir(){ ov.classList.add('on'); try{ v.play(); }catch(e){} }
+  function cerrar(){ ov.classList.remove('on'); try{ v.pause(); }catch(e){} }
+  document.getElementById('btnVideo').addEventListener('click',abrir);
+  document.getElementById('vidCerrar').addEventListener('click',cerrar);
+  ov.addEventListener('click',function(e){ if(e.target===ov) cerrar(); });
+  document.addEventListener('keydown',function(e){ if(e.key==='Escape'&&ov.classList.contains('on')) cerrar(); });
+  if(/[?&]video=1\b/.test(location.search)) setTimeout(abrir,600);
+})();
 </script>
 </body>
 </html>
