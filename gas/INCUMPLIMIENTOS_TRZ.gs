@@ -683,7 +683,7 @@ function incCorreoDiario(forzar) {
   hoyRojo.forEach(function (o) { var dr = INC_ETAPAS[o.act - 1][2]; (porD[dr] = porD[dr] || []).push(o); });
   Object.keys(porD).forEach(function (dr) {
     var L = porD[dr];
-    var intro = 'Buenos días. <b>' + L.length + '</b> expediente' + (L.length > 1 ? 's' : '') + ' de la ' + incEsc_(dr) + ' <b style="color:#c83a3a">pasó hoy el plazo de su etapa</b> sin registro. El responsable ya lo tenía en su correo diario; se avisa a la dirección para que dé seguimiento.';
+    var intro = 'Buenos días. <b>' + L.length + '</b> expediente' + (L.length > 1 ? 's' : '') + ' de la ' + incEsc_(dr) + ' <b style="color:#c83a3a">' + (L.length > 1 ? 'pasaron' : 'pasó') + ' hoy el plazo de su etapa</b> sin registro. El responsable ya lo tenía en su correo diario; se avisa a la dirección para que dé seguimiento.';
     mandar(dest.porDir[incNorm_(dr)] || [], 'Plazo vencido hoy · ' + L.length + ' expediente' + (L.length > 1 ? 's' : '') + ' · ' + dr + ' · ' + fd(E.hoy),
       incHtml_('Escalamiento · ' + dr, intro, L, true, pie), 'Escalamiento · ' + dr);
   });
