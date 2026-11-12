@@ -77,6 +77,11 @@ svg text{fill:var(--tx2);font-family:'Segoe UI',Arial,sans-serif}
 :focus-visible{outline:2px solid var(--az2);outline-offset:2px}
 
 
+.acw{position:relative;flex:1 1 360px}.acw input{width:100%}
+.acl{position:absolute;left:0;right:0;top:calc(100% + 2px);background:var(--pn);border:1px solid var(--bd);border-radius:6px;box-shadow:0 6px 18px rgba(0,0,0,.18);max-height:360px;overflow:auto;z-index:40}
+.acl[hidden]{display:none}.acl div{padding:7px 10px;border-bottom:1px solid var(--ln);cursor:pointer;font-size:13px;line-height:1.3}
+.acl div:hover,.acl div.on{background:var(--hov)}.acl b{font-family:var(--mono);font-size:12.5px;margin-right:6px}.acl span{color:var(--tx3);font-size:12px;display:block}
+.acl mark{background:var(--yb);color:inherit;padding:0}
 .proto{background:var(--yb);border-radius:8px;padding:8px 12px;font-size:13px;line-height:1.4}
 .chev.big button{min-height:74px}.chev .sm{display:flex;gap:4px;margin-top:2px}.chev .sm i{font-style:normal;font-family:var(--mono);font-size:11px;padding:0 5px;border-radius:8px;background:rgba(255,255,255,.65)}
 .c5{background:var(--okb);color:var(--okt)}.cx{background:var(--grb);color:var(--tx3)}.cn5{background:var(--amb);color:var(--amt)}
@@ -135,13 +140,13 @@ svg text{fill:var(--tx2);font-family:'Segoe UI',Arial,sans-serif}
 
 <section id="v-fic" hidden>
 <div class="vh"><h2>Ficha y registro de hitos</h2><p>Todo el caso en una pantalla. Cada responsable registra su etapa con su PIN y adjunta el documento; el sistema no deja saltar etapas.</p></div>
-<div class="pn"><div class="fl"><input id="qF" list="lsF" placeholder="Expediente, orden, proveedor o renglón" style="flex:1 1 360px" aria-label="Expediente"><datalist id="lsF"></datalist><button class="bx" id="abrir">Abrir</button></div></div>
+<div class="pn"><div class="fl"><div class="acw"><input id="qF" placeholder="Escriba expediente, orden, proveedor o renglón" aria-label="Expediente" autocomplete="off"><div class="acl" id="acF" hidden></div></div><button class="bx" id="abrir">Abrir</button></div></div>
 <div id="ficha"></div>
 </section>
 
 <section id="v-pro" hidden>
 <div class="vh"><h2>Vista del proveedor</h2><p>Historial de cada proveedor: notas vencidas, saldo, multa mínima que permite la ley y en qué etapa están sus casos. La reincidencia cuenta para la sanción (Ley 419, art. 230).</p></div>
-<div class="pn"><div class="fl"><input id="pQ" placeholder="Buscar proveedor" style="flex:1 1 240px" aria-label="Buscar proveedor"><button class="bx p" id="xP">Excel</button></div><div class="tw"><table class="t" id="tP"></table></div></div>
+<div class="pn"><div class="fl"><div class="acw" style="flex:1 1 240px"><input id="pQ" placeholder="Escriba el proveedor" aria-label="Buscar proveedor" autocomplete="off"><div class="acl" id="acP" hidden></div></div><button class="bx p" id="xP">Excel</button></div><div class="tw"><table class="t" id="tP"></table></div></div>
 </section>
 
 <section id="v-ley" hidden>
@@ -254,7 +259,19 @@ function renderV(){const L=filt().sort((a,b)=>{const p=gv(a,sortK),q=gv(b,sortK)
 [fInv,fEt,fSe,fCed].forEach(e=>e.onchange=()=>{pag=0;renderV()});fQ.oninput=()=>{pag=0;renderV()};
 document.getElementById('lim').onclick=()=>{[fInv,fEt,fSe,fCed,fQ].forEach(e=>e.value='');pag=0;renderV();};
 // Ficha
-document.getElementById('lsF').innerHTML=X.slice().sort((a,b)=>b.val-a.val).map(o=>`<option value="${o.id}">${esc(o.prov)} · ${esc(o.desc).slice(0,60)}</option>`).join('');
+// Búsqueda predictiva (mismo patrón que Curvas de Inventario / Tablero de Cobertura): lista propia, filtra mientras se escribe, flechas y Enter
+function autoc(inp,box,items,pick){let cur=-1,L=[];const norm=t=>String(t||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toUpperCase();
+ const hl=(t,q)=>{if(!q)return esc(t);const i=norm(t).indexOf(q);return i<0?esc(t):esc(t.slice(0,i))+'<mark>'+esc(t.slice(i,i+q.length))+'</mark>'+esc(t.slice(i+q.length));};
+ const draw=()=>{const q=norm(inp.value.trim());const ws=q.split(/\s+/).filter(Boolean);L=items.filter(it=>ws.every(w=>it.s.includes(w))).slice(0,60);cur=L.length?0:-1;
+  box.innerHTML=L.length?L.map((it,i)=>`<div data-i="${i}" class="${i===cur?'on':''}"><b>${hl(it.k,ws[0]||'')}</b>${hl(it.t,ws[0]||'')}<span>${esc(it.sub||'')}</span></div>`).join(''):'<div style="cursor:default;color:var(--tx3)">Sin coincidencias</div>';box.hidden=false;};
+ const mark=()=>{[...box.children].forEach((d,i)=>d.classList.toggle('on',i===cur));const e=box.children[cur];if(e&&e.scrollIntoView)e.scrollIntoView({block:'nearest'});};
+ inp.addEventListener('focus',draw);inp.addEventListener('input',draw);
+ inp.addEventListener('keydown',e=>{if(box.hidden&&(e.key==='ArrowDown'))draw();if(e.key==='ArrowDown'){cur=Math.min(cur+1,L.length-1);mark();e.preventDefault();}else if(e.key==='ArrowUp'){cur=Math.max(cur-1,0);mark();e.preventDefault();}
+  else if(e.key==='Enter'){if(cur>=0&&L[cur]){pick(L[cur]);box.hidden=true;}e.preventDefault();}else if(e.key==='Escape'){box.hidden=true;}});
+ box.addEventListener('mousedown',e=>{const d=e.target.closest('div[data-i]');if(!d)return;e.preventDefault();pick(L[+d.dataset.i]);box.hidden=true;});
+ inp.addEventListener('blur',()=>setTimeout(()=>{box.hidden=true},120));}
+const nrm=t=>String(t||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toUpperCase();
+autoc(document.getElementById('qF'),document.getElementById('acF'),X.slice().sort((a,b)=>b.val-a.val).map(o=>({k:o.id,t:o.prov+' · '+o.desc,sub:'Orden '+o.req+' · '+o.inv+' · saldo '+fm(o.val)+' · espera la etapa '+(o.st.act>7?'—':o.st.act),s:nrm([o.id,o.req,o.prov,o.cod,o.desc].join(' ')),id:o.id})),it=>abrirF(it.id));
 let CUR=null;
 function abrirF(id){const q=String(id||'').trim().toUpperCase();const o=X.find(x=>x.id.toUpperCase()===q)||X.find(x=>[x.id,x.req,x.prov,x.cod].join(' ').toUpperCase().includes(q));
  const F=document.getElementById('ficha');if(!o){F.innerHTML='<div class="pn">No se encontró el expediente.</div>';return;}CUR=o;document.getElementById('qF').value=o.id;const s=o.st;
@@ -273,7 +290,7 @@ function abrirF(id){const q=String(id||'').trim().toUpperCase();const o=X.find(x
  <div class="tw" style="max-height:none"><table class="t"><thead><tr><th>Etapa</th><th>Fecha</th><th>Registró</th><th>Documento</th><th>Observación</th></tr></thead><tbody>${bit.map(e=>`<tr><td>${e.etapa} · ${ETAPAS[e.etapa-1].nm}</td><td class="n">${fd(e.fecha)}</td><td>${esc(e.quien)}</td><td>${esc(e.doc||'')}</td><td>${esc(e.obs||'')}</td></tr>`).join('')}</tbody></table></div></div>`;
  const rb=document.getElementById('reg');if(rb)rb.onclick=()=>abrirM(o);
  document.getElementById('xB').onclick=()=>excel('Bitacora_'+o.id+'.xlsx','Bitácora del expediente '+o.id+' · '+o.prov,[['Etapa',e=>e.etapa+' · '+ETAPAS[e.etapa-1].nm,34],['Fecha',e=>e.fecha,12],['Registró',e=>e.quien,24],['Documento',e=>e.doc,30],['Observación',e=>e.obs,40]],bit);}
-document.getElementById('abrir').onclick=()=>abrirF(document.getElementById('qF').value);document.getElementById('qF').onkeydown=e=>{if(e.key==='Enter')abrirF(e.target.value)};
+document.getElementById('abrir').onclick=()=>abrirF(document.getElementById('qF').value);
 // Modal de registro
 const M=document.getElementById('mdw'),mEr=document.getElementById('mEr');
 function abrirM(o){const s=o.st;document.getElementById('mdT').textContent='Registrar etapa '+s.act+' · '+s.E.nm;document.getElementById('mdS').textContent=o.id+' · '+o.prov+' · registra: '+s.E.q;
@@ -294,6 +311,8 @@ let PR=[];function renderP(){const g={};X.forEach(o=>{const p=g[o.prov]=g[o.prov
  PR.filter(p=>!q||p.prov.toUpperCase().includes(q)).map(p=>`<tr data-p="${esc(p.prov)}" style="cursor:pointer"><td>${esc(p.prov)}</td><td class="n">${p.n}</td><td class="n">${fmt(p.sv)}</td><td class="n">${fmt(p.mu)}</td><td class="n">${p.e2}</td><td class="n">${p.rj}</td><td class="n">${p.max}</td></tr>`).join('')+'</tbody>';
  document.querySelectorAll('#tP tbody tr').forEach(tr=>tr.onclick=()=>{fQ.value=tr.dataset.p;[fInv,fEt,fSe,fCed].forEach(e=>e.value='');pag=0;go('exp');renderV();});}
 document.getElementById('pQ').oninput=renderP;
+{const g={};X.forEach(o=>{g[o.prov]=(g[o.prov]||{n:0,v:0});g[o.prov].n++;g[o.prov].v+=o.val;});
+ autoc(document.getElementById('pQ'),document.getElementById('acP'),Object.entries(g).sort((a,b)=>b[1].v-a[1].v).map(([p,o])=>({k:'',t:p,sub:o.n+' expedientes · '+fm(o.v)+' de saldo vencido',s:nrm(p),p})),it=>{document.getElementById('pQ').value=it.p;renderP();});}
 // Ley y cálculo
 function ley(){document.getElementById('tLey').innerHTML='<thead><tr><th>Artículo</th><th>Qué establece</th><th>Etapa</th></tr></thead><tbody>'+LEY.map(l=>`<tr><td><b>${l[0]}</b></td><td>${l[1]}</td><td>${l[2]}</td></tr>`).join('')+'</tbody>';
  const K=(id,tx)=>{try{katex.render(tx,document.getElementById(id),{displayMode:true,throwOnError:false})}catch(e){document.getElementById(id).textContent=tx}};
@@ -317,7 +336,7 @@ document.getElementById('xV').onclick=()=>excel('Expedientes_vista.xlsx','Expedi
 document.getElementById('xA').onclick=()=>excel('Expedientes_completo.xlsx','Expedientes de incumplimiento · todos',XE,X);
 document.getElementById('xP').onclick=()=>excel('Expedientes_por_proveedor.xlsx','Expedientes de incumplimiento por proveedor',[['Proveedor',p=>p.prov,38],['Expedientes',p=>p.n],['Saldo vencido B/.',p=>Math.round(p.sv)],['Multa mínima B/.',p=>Math.round(p.mu)],['Sin informe',p=>p.e2],['Etapa vencida',p=>p.rj],['Mayor atraso (días hábiles)',p=>p.max]],PR);
 kpis();cadena();semaf();tresp();renderV();renderP();ley();
-const top=X.slice().sort((a,b)=>b.val-a.val)[0];abrirF((new URLSearchParams(location.search)).get('exp')||(top&&top.id));
+const top=X.slice().sort((a,b)=>b.val-a.val)[0];abrirF((new URLSearchParams(location.search)).get('exp')||(top&&top.id));document.getElementById('qF').value='';
 const v0=(new URLSearchParams(location.search)).get('v');if(v0)go(v0);
 }
 Promise.all([fetch(FUENTE+'?t='+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.json():Promise.reject(r.status)),
