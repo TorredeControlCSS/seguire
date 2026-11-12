@@ -541,6 +541,7 @@ function incPrueba() {
 
 var INC_TABLERO = 'https://torrecontrolcss.org/seguire/incumplimientos.html';
 var INC_SISCOMP = 'https://torrecontrolcss.org/seguire/data/siscomp_cruce.json';
+var INC_LOGO = 'https://torrecontrolcss.org/seguire/icons/icon-192.png';
 var INC_ANTECED = 'https://torrecontrolcss.org/seguire/data/antecedentes.json';
 var INC_PLAZOS = { 1: 0, 2: 2, 3: 3, 4: 5, 5: 10, 6: null, 7: 3 };
 var INC_SEM = { r: ['Vencido', '#c83a3a', '#fbe3e3'], a: ['Por vencer', '#a87500', '#fff4d6'], v: ['Dentro del plazo', '#2f8a3e', '#e3f4e6'], g: ['Sin plazo acordado', '#5f6b78', '#eef1f4'], w: ['Verificar antes del informe', '#5b3f8a', '#efe8f8'] };
@@ -620,7 +621,7 @@ function incHtml_(titulo, intro, L, conEtapa, pie, aviso) {
   var th = function (t) { return '<th style="padding:6px;text-align:left;background:#1e5a9e;color:#fff;font-weight:600">' + t + '</th>'; };
   return '<div style="font-family:Arial,sans-serif;font-size:13px;color:#1f2937;max-width:900px">' +
     (aviso ? '<div style="background:#fff4d6;border:1px solid #f2dc7a;padding:8px 12px;border-radius:6px;margin-bottom:12px;font-size:12px">' + aviso + '</div>' : '') +
-    '<div style="background:#0c447c;color:#fff;padding:14px 18px;border-radius:8px 8px 0 0"><div style="font-size:11px;opacity:.85">CAJA DE SEGURO SOCIAL · EXPEDIENTE DE INCUMPLIMIENTO DE ENTREGA</div><div style="font-size:18px;font-weight:700">' + titulo + '</div></div>' +
+    incCabecera_(titulo, 18) +
     '<div style="padding:14px 18px;border:1px solid #e5e7eb;border-top:0;border-radius:0 0 8px 8px">' +
     '<p style="margin:0 0 12px">' + intro + '</p>' +
     '<table cellspacing="0" cellpadding="0"><tr>' + pill('r', n('r')) + pill('a', n('a')) + (n('w') ? pill('w', n('w')) : '') + pill('v', n('v')) + (n('g') ? pill('g', n('g')) : '') + '</tr></table>' +
@@ -630,12 +631,20 @@ function incHtml_(titulo, intro, L, conEtapa, pie, aviso) {
     '<p style="font-size:11px;color:#6b7280;margin-top:14px">' + pie + '</p></div></div>';
 }
 
+function incCabecera_(titulo, tam) {
+  return '<table cellspacing="0" cellpadding="0" width="100%" style="background:#0c447c;border-radius:8px 8px 0 0"><tr>' +
+    '<td width="64" style="padding:12px 0 12px 16px"><img src="' + INC_LOGO + '" width="48" height="48" alt="CSS" style="display:block;border:0;background:#fff;border-radius:50%"></td>' +
+    '<td style="padding:12px 16px;color:#fff;font-family:Arial,sans-serif"><div style="font-size:11px;opacity:.85">CAJA DE SEGURO SOCIAL · DIRECCIÓN NACIONAL DE LOGÍSTICA</div>' +
+    '<div style="font-size:11px;opacity:.85">EXPEDIENTE DE INCUMPLIMIENTO DE ENTREGA</div><div style="font-size:' + tam + 'px;font-weight:700;margin-top:2px">' + titulo + '</div></td></tr></table>';
+}
+
 function incEnviar_(o) {
   if (typeof correoEnviar_ === 'function') correoEnviar_(o); else MailApp.sendEmail(o);
 }
 
 function incCorreoDiario(forzar) {
-  forzar = (forzar === 'PRUEBA') ? 'PRUEBA' : null; // el disparador pasa un objeto de evento
+  var demo = forzar === 'DEMO';
+  forzar = (forzar === 'PRUEBA' || demo) ? 'PRUEBA' : null; // el disparador pasa un objeto de evento
   var props = PropertiesService.getScriptProperties();
   var modo = String(props.getProperty('INC_CORREO_MODO') || 'PRUEBA').toUpperCase();
   if (modo === 'APAGADO' && !forzar) return 'apagado';
@@ -680,6 +689,7 @@ function incCorreoDiario(forzar) {
   mandar(dest.resumen, 'Expedientes de incumplimiento · resumen · ' + E.X.length + ' abiertos · ' + fd(E.hoy), incHtml_('Resumen de las tres direcciones', introR, E.X, true, pie), 'Resumen para directores');
   // 3) Escalamiento: expedientes que hoy pasaron el plazo de su etapa, al director de la dirección que debe actuar
   var hoyRojo = E.X.filter(function (o) { return o.se === 'r' && o.p && o.d === o.p + 1; }), porD = {};
+  if (demo && !hoyRojo.length) hoyRojo = E.X.filter(function (o) { return o.se === 'r'; }).slice(0, 2);  // muestra del escalamiento
   hoyRojo.forEach(function (o) { var dr = INC_ETAPAS[o.act - 1][2]; (porD[dr] = porD[dr] || []).push(o); });
   Object.keys(porD).forEach(function (dr) {
     var L = porD[dr];
@@ -698,11 +708,11 @@ function incSumarHabiles_(f, n) {
   return incFmt_(d);
 }
 
-function incAvisoEtapa_(exp, nota, etapa, fecha, u) {
+function incAvisoEtapa_(exp, nota, etapa, fecha, u, forzarPrueba) {
   var props = PropertiesService.getScriptProperties();
   var modo = String(props.getProperty('INC_CORREO_MODO') || 'PRUEBA').toUpperCase();
-  if (modo === 'APAGADO') return 'apagado';
-  var prueba = modo !== 'REAL', destPrueba = props.getProperty('INC_CORREO_PRUEBA') || Session.getEffectiveUser().getEmail();
+  if (modo === 'APAGADO' && !forzarPrueba) return 'apagado';
+  var prueba = forzarPrueba || modo !== 'REAL', destPrueba = props.getProperty('INC_CORREO_PRUEBA') || Session.getEffectiveUser().getEmail();
   var dest = incDestinatarios_(), fd = function (s) { return s ? s.split('-').reverse().join('/') : ''; };
   var sig = etapa + 1, para, asunto, cargoTxt, cuerpo;
   var link = INC_TABLERO + '?v=fic&exp=' + encodeURIComponent(exp);
@@ -722,7 +732,7 @@ function incAvisoEtapa_(exp, nota, etapa, fecha, u) {
       '<p>' + (plazo ? 'Su plazo: <b>' + plazo + ' días hábiles, hasta el ' + fd(hasta) + '</b>.' : 'Esta etapa todavía no tiene plazo acordado.') + ' Al registrar, adjunte el documento firmado.</p>' + dato;
   }
   var html = '<div style="font-family:Arial,sans-serif;font-size:13px;color:#1f2937;max-width:720px">' +
-    '<div style="background:#0c447c;color:#fff;padding:12px 16px;border-radius:8px 8px 0 0"><div style="font-size:11px;opacity:.85">CAJA DE SEGURO SOCIAL · EXPEDIENTE DE INCUMPLIMIENTO DE ENTREGA</div><div style="font-size:17px;font-weight:700">' + incEsc_(cargoTxt) + '</div></div>' +
+    incCabecera_(incEsc_(cargoTxt), 17) +
     '<div style="padding:12px 16px;border:1px solid #e5e7eb;border-top:0;border-radius:0 0 8px 8px">' + cuerpo +
     '<p style="margin:14px 0 0"><a href="' + link + '" style="background:#1e5a9e;color:#fff;padding:8px 14px;border-radius:6px;text-decoration:none">Abrir la ficha</a></p>' +
     '<p style="font-size:11px;color:#6b7280;margin-top:14px">Aviso automático de la Torre de Control · DINALOG. Ley 419, arts. 228 a 233.</p></div></div>';
@@ -741,6 +751,17 @@ function incAvisoEtapa_(exp, nota, etapa, fecha, u) {
 }
 
 function incCorreoVistaPrevia() { return incCorreoDiario('PRUEBA'); }
+
+/* Muestra completa a INC_CORREO_PRUEBA (o a la cuenta del script): aviso inmediato, correos diarios,
+   resumen y una muestra del escalamiento. No registra nada ni escribe a nadie más. */
+function incCorreoPruebaCompleta() {
+  var E = incExpedientes_(), o = E.X.filter(function (x) { return x.act === 2; })[0];
+  if (o) {
+    var nota = incNotaDelLibro_(o.id);
+    if (!nota.error) Logger.log('aviso: ' + incAvisoEtapa_(o.id, nota, 2, incFmt_(new Date()), { nombre: '(muestra) Jefe del Departamento de Seguimiento', cargo: 'Jefe del Departamento de Seguimiento' }, true));
+  }
+  return incCorreoDiario('DEMO');
+}
 
 function incCorreoInstalar() {
   ScriptApp.getProjectTriggers().forEach(function (t) { if (t.getHandlerFunction() === 'incCorreoDiario') ScriptApp.deleteTrigger(t); });
