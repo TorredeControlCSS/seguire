@@ -96,7 +96,10 @@ svg text{fill:var(--tx2);font-family:'Segoe UI',Arial,sans-serif}
 .md input,.md textarea,.md select{border:1px solid var(--bd);border-radius:6px;padding:6px 8px;font-family:inherit;font-size:13px;background:var(--pn);color:var(--tx)}
 .md label[hidden]{display:none}.md .er{color:var(--rjt);font-size:12px;min-height:16px}
 .sem{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px;vertical-align:0}
-.sv{background:#2f8a3e}.sa{background:#d29a1c}.sr{background:#c83a3a}.sg{background:#9aa5b1}
+.sv{background:#2f8a3e}.sa{background:#d29a1c}.sr{background:#c83a3a}.sg{background:#9aa5b1}.sw{background:#7b5ea7}.k-w{background:#efe8f8;color:#5b3f8a}
+.tl{list-style:none;margin:6px 0 0;padding:0 0 0 14px;border-left:3px solid var(--bd)}.tl li{position:relative;margin:0 0 8px;padding-left:10px;font-size:13px}.tl li:before{content:'';position:absolute;left:-21px;top:4px;width:11px;height:11px;border-radius:50%;background:var(--bd);border:2px solid var(--pn)}
+.tl li b{font-family:var(--mono);font-size:12px;margin-right:8px}.tl li.nota:before{background:#1e5a9e}.tl li.cita:before{background:#d29a1c}.tl li.conf:before{background:#b47b00}.tl li.rec:before{background:#2f8a3e}.tl li.venc:before{background:#c83a3a}.tl li.venc{font-weight:700}
+.vb{border-radius:8px;padding:10px 12px;margin:0 0 8px;font-size:13px}
 
 .scp{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}@media(max-width:760px){.scp{grid-template-columns:1fr}}
 #vidOv{position:fixed;inset:0;background:rgba(8,20,40,.78);z-index:9000;display:none;align-items:center;justify-content:center;padding:24px}#vidOv.on{display:flex}
@@ -126,9 +129,10 @@ svg text{fill:var(--tx2);font-family:'Segoe UI',Arial,sans-serif}
 <section id="v-rec" hidden>
 <div class="vh"><h2>Recorrido del expediente</h2><p>Cada nota de entrega vencida con saldo abre un expediente. Aquí se ve en qué etapa está cada uno y si va dentro de su plazo.</p></div>
 <div class="kp" id="kpis"></div>
+<div class="pn" id="pVer" hidden><div class="ph"><h3>Verificación previa · antes del informe de incumplimiento</h3><span class="nota" id="verStamp"></span></div><div class="kp scp" id="verK"></div><div class="nota" id="verN"></div></div>
 <div class="pn" id="pSc" hidden><div class="ph"><h3>Contraste con SisCOMP · Dirección Nacional de Compras</h3><span class="nota" id="scStamp"></span><button class="bx" id="xSc">Excel para Compras</button></div><div class="kp scp" id="scK"></div><div class="nota" id="scN"></div></div>
 <div class="pn"><div class="ph"><h3>Las siete etapas: expedientes que esperan en cada una</h3><span class="nota">Plazos propuestos por DINALOG en días hábiles · clic en una etapa para ver sus expedientes</span></div><div class="chev big" id="cadena"></div>
-<div class="lg"><span><i class="sem sv"></i>Dentro del plazo: lleva menos del 80 % de los días de su etapa</span><span><i class="sem sa"></i>Por vencer: lleva entre el 80 % y el 100 %</span><span><i class="sem sr"></i>Vencido: pasó la fecha límite de su etapa</span><span><i class="sem sg"></i>Sin plazo acordado</span></div></div>
+<div class="lg"><span><i class="sem sv"></i>Dentro del plazo: lleva menos del 80 % de los días de su etapa</span><span><i class="sem sa"></i>Por vencer: lleva entre el 80 % y el 100 %</span><span><i class="sem sr"></i>Vencido: pasó la fecha límite de su etapa</span><span><i class="sem sg"></i>Sin plazo acordado</span><span><i class="sem sw"></i>En verificación previa: SIGUELO tiene antecedentes que revisar antes del informe</span></div></div>
 <div class="two">
 <div class="pn"><div class="ph"><h3>Semáforo de cada etapa</h3><span class="nota">Número de expedientes</span></div><div id="semaf"></div></div>
 <div class="pn"><div class="ph"><h3>Responsable y plazo propuesto por etapa</h3></div><div class="tw" style="max-height:none"><table class="t" id="tresp"></table></div></div>
@@ -138,7 +142,7 @@ svg text{fill:var(--tx2);font-family:'Segoe UI',Arial,sans-serif}
 <section id="v-exp" hidden>
 <div class="vh"><h2>Expedientes</h2><p>Un expediente por nota vencida con saldo. Haga clic en una fila para abrir su ficha.</p></div>
 <div class="pn">
-<div class="fl"><select id="fInv" aria-label="Inventario"></select><select id="fEt" aria-label="Etapa"></select><select id="fSe" aria-label="Semáforo"></select><select id="fCed" aria-label="CEDIS"></select><select id="fSc" aria-label="Contraste SisCOMP"></select>
+<div class="fl"><select id="fInv" aria-label="Inventario"></select><select id="fEt" aria-label="Etapa"></select><select id="fSe" aria-label="Semáforo"></select><select id="fCed" aria-label="CEDIS"></select><select id="fSc" aria-label="Contraste SisCOMP"></select><select id="fVer" aria-label="Verificación previa"></select>
 <input id="fQ" placeholder="Buscar proveedor, renglón, orden o expediente" style="flex:1 1 240px" aria-label="Buscar">
 <button class="bx" id="lim">Limpiar filtros</button><button class="bx p" id="xV">Excel de la vista</button><button class="bx" id="xA">Excel completo</button></div>
 <div class="nota" id="nV"></div><div class="tw"><table class="t" id="tV"></table></div><div class="pg" id="pgV"></div>
@@ -180,6 +184,7 @@ svg text{fill:var(--tx2);font-family:'Segoe UI',Arial,sans-serif}
 
 <script>
 const FUENTE='data/cumplimiento_entregas.json';
+const ANJ='data/antecedentes.json'; /* antecedentes de cada nota: tránsitos, citas y recepción (scripts/antecedentes.py) */
 const SCJ='data/siscomp_cruce.json'; /* cruce CON CERTEZA con SisCOMP: scripts/siscomp_cruce.py */
 /* Bitácora real: INCUMPLIMIENTOS_TRZ.gs (proyecto SIGUELO) la publica en Pages y la sirve por la API. */
 const API='https://script.google.com/macros/s/AKfycbwVw0ACNMhdN6d-JsI1lyP2iKHBVgWXI5nK3rA6blEhF3l8t2Wuwk2TpRmaanB186Dk/exec';
@@ -201,7 +206,7 @@ const LEY=[['Art. 228','El incumplimiento de los plazos de entrega imputable al 
  ['Art. 233','Causales de resolución administrativa para medicamentos e insumos; se tramita según el art. 139 de la Ley 22 de 2006.','6'],
  ['Art. 214, num. 22','Ante el incumplimiento, la entidad puede activar la entrega con los demás participantes, en el orden de precio de la resolución de adjudicación.','Opción en la etapa 2'],
  ['Art. 214, num. 23','La diferencia de precio con otro proponente puede cobrarse por jurisdicción coactiva.','Opción en la etapa 7']];
-function app(DATA,LOGO,EVD,SCD){
+function app(DATA,LOGO,EVD,SCD,AND){
 document.getElementById('cargando').hidden=true;document.getElementById('v-rec').hidden=false;
 const C=DATA.cols, ALL=DATA.rows.map(r=>Object.fromEntries(C.map((c,i)=>[c,r[i]])));
 const _h=new Date(), HOYS=_h.getFullYear()+'-'+String(_h.getMonth()+1).padStart(2,'0')+'-'+String(_h.getDate()).padStart(2,'0');
@@ -225,8 +230,10 @@ const X=ALL.filter(r=>r.venc&&r.venc<HOYS&&(r.saldo||0)>0).map(r=>{
 function estado(o){const ev=EVS(o.id).filter(e=>!e.anulado).slice().sort((a,b)=>a.etapa-b.etapa);let act=o.base+2,ini=o.ini;
  ev.forEach(e=>{if(e.etapa===act){act++;ini=e.fecha;}});act=Math.min(act,8);
  const E=ETAPAS[act-1];const d=habiles(ini,HOYS);let se='g';
- if(act>7)se='c';else if(E.p){se=d<0.8*E.p?'v':(d<=E.p?'a':'r');}
+ if(act>7)se='c';else if(act===2&&o.ver&&o.ver.c!=='PASA')se='w';else if(E.p){se=d<0.8*E.p?'v':(d<=E.p?'a':'r');}
  return {act,E,d,se,ini,ev};}
+const AN=AND&&AND.exp?AND.exp:null;X.forEach(o=>{o.ver=AN?(AN[o.id]||{c:'PASA',m:'Sin antecedentes en SIGUELO.',ev:[]}):null;});
+const VERL={PASA:'Pasa a la etapa 2',CONCILIAR:'Conciliar antes de notificar',NO_IMPUTABLE:'Atraso no imputable al proveedor',VERIFICAR:'Verificar la cita'};
 X.forEach(o=>Object.assign(o,{st:estado(o)}));
 // Contraste SisCOMP: solo el cruce con certeza (scripts/siscomp_cruce.py)
 const SC=SCD&&SCD.confirmados?SCD:null;const SCI={};if(SC)SC.confirmados.forEach(r=>r.exp.forEach(id=>(SCI[id]=SCI[id]||[]).push(r)));
@@ -234,8 +241,8 @@ const SCL={si:'Confirmado por SisCOMP',no:'Sin cruce confirmado',x:'Sin extracto
 X.forEach(o=>{const m=SCI[o.id]||[];o.scR=m;o.sc=!SC?'x':m.length?'si':'no';});
 const scB=s=>`<span class="ch ${s==='si'?'k-r':'k-n'}">${SCL[s]}</span>`;
 const SCB=SC?SC.cerrar:[];
-const SEN={v:'Dentro del plazo',a:'Por vencer',r:'Vencido',g:'Sin plazo acordado',c:'Cerrado'};
-const semB=s=>`<span class="ch ${s==='v'?'k-g':s==='a'?'k-a':s==='r'?'k-r':'k-n'}"><i class="sem s${s}"></i>${SEN[s]}</span>`;
+const SEN={v:'Dentro del plazo',a:'Por vencer',r:'Vencido',g:'Sin plazo acordado',c:'Cerrado',w:'En verificación previa'};
+const semB=s=>`<span class="ch ${s==='v'?'k-g':s==='a'?'k-a':s==='r'?'k-r':s==='w'?'k-w':'k-n'}"><i class="sem s${s}"></i>${SEN[s]}</span>`;
 document.getElementById('stamp').innerHTML='Fuente: libro de Incumplimientos de Seguimiento al <b>'+fd(DATA.corte)+'</b> · calculado al <b>'+fd(HOYS)+'</b>';
 // tema
 const th=document.getElementById('tema');function setT(t){document.documentElement.setAttribute('data-theme',t);th.textContent=t==='dark'?'☾':'☀';try{localStorage.setItem('ce_tema',t)}catch(e){}}
@@ -249,28 +256,28 @@ function kpis(){const k=(c,l,v,s,f)=>`<button class="kc ${c}" data-f="${f||''}">
  document.getElementById('kpis').innerHTML=k('n','Expedientes abiertos',fmt(X.length),'notas vencidas con saldo','')+k('r','Saldo vencido',fm(sv),'unidades pendientes × precio','')+
  k('r','Sin informe de incumplimiento',fmt(e2.length),fm(e2.reduce((a,o)=>a+o.val,0))+' · esperan la etapa 2','e2')+k('r','Etapa vencida',fmt(rj.length),'pasaron el plazo de su etapa','sr')+
  k('a','Multa mínima posible',fm(X.reduce((a,o)=>a+o.multa,0)),'10 % de lo no entregado (art. 232), sin el recargo diario','')+k('g','Con decisión notificada',fmt(dn.length),'llegaron a la etapa 7','e7');
- document.querySelectorAll('#kpis .kc').forEach(b=>b.onclick=()=>{const f=b.dataset.f;if(!f)return;fEt.value=f[0]==='e'?f.slice(1):'';fSe.value=f[0]==='s'?f.slice(1):'';fSc.value='';pag=0;go('exp');renderV();});}
+ document.querySelectorAll('#kpis .kc').forEach(b=>b.onclick=()=>{const f=b.dataset.f;if(!f)return;fEt.value=f[0]==='e'?f.slice(1):'';fSe.value=f[0]==='s'?f.slice(1):'';fSc.value='';fVer.value='';pag=0;go('exp');renderV();});}
 function cadena(){document.getElementById('cadena').innerHTML=ETAPAS.map(E=>{const L=X.filter(o=>o.st.act===E.n),c=s=>L.filter(o=>o.st.se===s).length;
  const cl=E.n===1?'cx':L.length===0?'c3':(c('r')?'c0':c('a')?'c1':'c2');
- return `<button class="${cl}" data-e="${E.n}"><b>${E.n} · ${E.nm}</b><span>${E.q.split(' · ')[0]} · ${E.p===null?'plazo por definir':E.p===0?'día 0':E.p+' días hábiles'}</span><em>${E.n===1?fmt(X.length):fmt(L.length)}</em>${E.n>1&&L.length?`<span class="sm"><i>${c('v')} verde</i><i>${c('a')} ámbar</i><i>${c('r')} rojo</i></span>`:''}</button>`}).join('');
+ return `<button class="${cl}" data-e="${E.n}"><b>${E.n} · ${E.nm}</b><span>${E.q.split(' · ')[0]} · ${E.p===null?'plazo por definir':E.p===0?'día 0':E.p+' días hábiles'}</span><em>${E.n===1?fmt(X.length):fmt(L.length)}</em>${E.n>1&&L.length?`<span class="sm"><i>${c('v')} verde</i><i>${c('a')} ámbar</i><i>${c('r')} rojo</i>${c('w')?`<i>${c('w')} verif.</i>`:''}</span>`:''}</button>`}).join('');
  document.querySelectorAll('#cadena button').forEach(b=>b.onclick=()=>{if(b.dataset.e==='1')return;fEt.value=b.dataset.e;fSe.value='';pag=0;go('exp');renderV();});}
 function semaf(){const W=560,rows=ETAPAS.slice(1),mx=Math.max(1,...rows.map(E=>X.filter(o=>o.st.act===E.n).length));
- const col={v:'#2f8a3e',a:'#d29a1c',r:'#c83a3a',g:'#9aa5b1'};let y=8,s='';
+ const col={v:'#2f8a3e',a:'#d29a1c',r:'#c83a3a',g:'#9aa5b1',w:'#7b5ea7'};let y=8,s='';
  rows.forEach(E=>{const L=X.filter(o=>o.st.act===E.n);let x=210;s+=`<text x="0" y="${y+15}" font-size="12">${E.n} · ${E.nm.length>30?E.nm.slice(0,29)+'…':E.nm}</text>`;
-  ['v','a','r','g'].forEach(k=>{const n=L.filter(o=>o.st.se===k).length;if(!n)return;const w=n/mx*(W-260);s+=`<rect x="${x}" y="${y}" width="${Math.max(2,w)}" height="22" rx="3" fill="${col[k]}"/>`;if(w>22)s+=`<text x="${x+w/2}" y="${y+15}" font-size="11" text-anchor="middle" style="fill:#fff;font-weight:700">${n}</text>`;x+=w+2;});
+  ['v','a','r','w','g'].forEach(k=>{const n=L.filter(o=>o.st.se===k).length;if(!n)return;const w=n/mx*(W-260);s+=`<rect x="${x}" y="${y}" width="${Math.max(2,w)}" height="22" rx="3" fill="${col[k]}"/>`;if(w>22)s+=`<text x="${x+w/2}" y="${y+15}" font-size="11" text-anchor="middle" style="fill:#fff;font-weight:700">${n}</text>`;x+=w+2;});
   s+=`<text x="${x+6}" y="${y+15}" font-size="12" font-weight="700">${L.length}</text>`;y+=32;});
  document.getElementById('semaf').innerHTML=`<svg viewBox="0 0 ${W} ${y}" width="100%">${s}</svg>`;}
 function tresp(){document.getElementById('tresp').innerHTML='<thead><tr><th>Etapa</th><th>Cargo que registra (titular o suplente, con su PIN)</th><th>Dirección</th><th>Plazo</th></tr></thead><tbody>'+ETAPAS.map(E=>`<tr><td><b>${E.n}</b> · ${E.nm}</td><td>${E.q}</td><td>${E.d}</td><td class="n">${E.p===null?'por definir':E.p===0?'día 0':E.p+' d'}</td></tr>`).join('')+'</tbody>';}
 // Expedientes
-const fInv=document.getElementById('fInv'),fEt=document.getElementById('fEt'),fSe=document.getElementById('fSe'),fCed=document.getElementById('fCed'),fQ=document.getElementById('fQ'),fSc=document.getElementById('fSc');
+const fInv=document.getElementById('fInv'),fEt=document.getElementById('fEt'),fSe=document.getElementById('fSe'),fCed=document.getElementById('fCed'),fQ=document.getElementById('fQ'),fSc=document.getElementById('fSc'),fVer=document.getElementById('fVer');
 const opts=(el,t,arr)=>{el.innerHTML=`<option value="">${t}</option>`+arr.map(([v,l])=>`<option value="${v}">${l}</option>`).join('');};
 opts(fInv,'Todos los inventarios',[...new Set(X.map(o=>o.inv))].sort().map(v=>[v,v]));opts(fEt,'Todas las etapas',ETAPAS.slice(1).map(E=>[E.n,'Espera etapa '+E.n+' · '+E.nm]));
-opts(fSe,'Todo el semáforo',[['v','Dentro del plazo'],['a','Por vencer'],['r','Vencido'],['g','Sin plazo acordado']]);opts(fCed,'Todos los CEDIS',[...new Set(X.map(o=>o.cedis||'Sin CEDIS'))].sort().map(v=>[v,v]));opts(fSc,'SisCOMP: todos',['si','no'].map(k=>[k,SCL[k]]));fSc.hidden=!SC;
+opts(fSe,'Todo el semáforo',[['v','Dentro del plazo'],['a','Por vencer'],['r','Vencido'],['g','Sin plazo acordado'],['w','En verificación previa']]);opts(fCed,'Todos los CEDIS',[...new Set(X.map(o=>o.cedis||'Sin CEDIS'))].sort().map(v=>[v,v]));opts(fSc,'SisCOMP: todos',['si','no'].map(k=>[k,SCL[k]]));fSc.hidden=!SC;opts(fVer,'Verificación: todas',Object.entries(VERL));fVer.hidden=!AN;
 let pag=0,sortK='val',sortD=-1;const PP=50;
-function filt(){const q=fQ.value.trim().toUpperCase();return X.filter(o=>(!fInv.value||o.inv===fInv.value)&&(!fEt.value||o.st.act==fEt.value)&&(!fSe.value||o.st.se===fSe.value)&&(!fCed.value||(o.cedis||'Sin CEDIS')===fCed.value)&&(!fSc.value||o.sc===fSc.value)&&
+function filt(){const q=fQ.value.trim().toUpperCase();return X.filter(o=>(!fInv.value||o.inv===fInv.value)&&(!fEt.value||o.st.act==fEt.value)&&(!fSe.value||o.st.se===fSe.value)&&(!fCed.value||(o.cedis||'Sin CEDIS')===fCed.value)&&(!fSc.value||o.sc===fSc.value)&&(!fVer.value||(o.ver&&(o.ver.c===fVer.value||(fVer.value==='NO_IMPUTABLE'&&o.ver.c==='VERIFICAR'))))&&
  (!q||[o.id,o.prov,o.cod,o.desc,o.req].join(' ').toUpperCase().includes(q)));}
 const CV=[['Expediente','id'],['Proveedor','prov'],['Renglón','desc'],['Inventario','inv'],['Venció','venc'],['Días hábiles vencida','dh'],['Saldo B/.','val'],['Espera la etapa','act'],['Le toca a','toca'],['Días en la etapa','d'],['Semáforo','se'],['SisCOMP','sc']];
-const gv=(o,k)=>k==='act'?o.st.act:k==='toca'?o.st.E.q:k==='d'?o.st.d:k==='se'?'rav g'.indexOf(o.st.se):o[k];
+const gv=(o,k)=>k==='act'?o.st.act:k==='toca'?o.st.E.q:k==='d'?o.st.d:k==='se'?'rawv g'.indexOf(o.st.se):o[k];
 function renderV(){const L=filt().sort((a,b)=>{const p=gv(a,sortK),q=gv(b,sortK);return (typeof p==='number'?p-q:String(p).localeCompare(String(q)))*sortD;});
  const np=Math.max(1,Math.ceil(L.length/PP));pag=Math.min(pag,np-1);
  document.getElementById('nV').textContent=fmt(L.length)+' expedientes · '+fm(L.reduce((a,o)=>a+o.val,0))+' de saldo vencido';
@@ -280,8 +287,8 @@ function renderV(){const L=filt().sort((a,b)=>{const p=gv(a,sortK),q=gv(b,sortK)
  document.getElementById('pA').onclick=()=>{pag--;renderV()};document.getElementById('pS').onclick=()=>{pag++;renderV()};
  document.querySelectorAll('#tV th').forEach(h=>h.onclick=()=>{const k=h.dataset.k;if(sortK===k)sortD*=-1;else{sortK=k;sortD=-1}renderV();});
  document.querySelectorAll('#tV tbody tr').forEach(tr=>tr.onclick=()=>{abrirF(tr.dataset.id);go('fic');});}
-[fInv,fEt,fSe,fCed,fSc].forEach(e=>e.onchange=()=>{pag=0;renderV()});fQ.oninput=()=>{pag=0;renderV()};
-document.getElementById('lim').onclick=()=>{[fInv,fEt,fSe,fCed,fQ,fSc].forEach(e=>e.value='');pag=0;renderV();};
+[fInv,fEt,fSe,fCed,fSc,fVer].forEach(e=>e.onchange=()=>{pag=0;renderV()});fQ.oninput=()=>{pag=0;renderV()};
+document.getElementById('lim').onclick=()=>{[fInv,fEt,fSe,fCed,fQ,fSc,fVer].forEach(e=>e.value='');pag=0;renderV();};
 // Ficha
 // Búsqueda predictiva (mismo patrón que Curvas de Inventario / Tablero de Cobertura): lista propia, filtra mientras se escribe, flechas y Enter
 function autoc(inp,box,items,pick){let cur=-1,L=[];const norm=t=>String(t||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toUpperCase();
@@ -309,7 +316,8 @@ function abrirF(id){const q=String(id||'').trim().toUpperCase();const o=X.find(x
  ${k('Venció',fd(o.venc)+' · '+o.dh+' días hábiles')}${k('Entregado',fmt(o.recib||0)+' de '+fmt(o.qty||0)+' u')}${k('Saldo vencido',fm(o.val),'r')}${k('Multa mínima, art. 232',fm(o.multa)+' + recargo diario','a')}
  ${k('SisCOMP · Compras',scB(o.sc)+(o.scR.length?'<br><small>Pedido SAFIRO '+esc(o.scR[0].ped)+(o.scR[0].fOC?' · OC emitida '+fd(o.scR[0].fOC)+' · requisición '+fd(o.scR[0].fReq)+' ('+(o.scR[0].adm==='Actual'?'administración actual':'administración anterior')+')':'')+' · '+esc(o.scR.map(r=>r.est.toLowerCase()+' con vencimiento '+fd(r.venc)).filter((v,i,a)=>a.indexOf(v)===i).slice(0,3).join(' · '))+'</small>':''))}${k('Contrato y fianza','del archivo de contratos')}${k('Prórroga solicitada','de Prórrogas y Multas')}${k('Publicación','de PanamáCompra')}</div>
  <div class="chev">${chev}</div>
- ${s.act<=7?`<div class="toca"><div><b>Le toca ahora:</b> ${esc(s.E.q)} registra «${esc(s.E.hito)}» y adjunta: ${esc(s.E.ev)}. Lleva ${s.d} días hábiles${s.E.p?' de un plazo de '+s.E.p:''}.</div><button class="bp" id="reg">Registrar etapa ${s.act} con PIN</button></div>`:'<div class="toca"><div><b>Expediente cerrado.</b></div></div>'}</div>
+ ${s.se==='w'?`<div class="vb k-w"><b>Antes de este paso:</b> ${esc(VERL[o.ver.c])}. ${esc(o.ver.m)} Ver «Antecedentes» abajo.</div>`:''}${s.act<=7?`<div class="toca"><div><b>Le toca ahora:</b> ${esc(s.E.q)} registra «${esc(s.E.hito)}» y adjunta: ${esc(s.E.ev)}. Lleva ${s.d} días hábiles${s.E.p?' de un plazo de '+s.E.p:''}.</div><button class="bp" id="reg">Registrar etapa ${s.act} con PIN</button></div>`:'<div class="toca"><div><b>Expediente cerrado.</b></div></div>'}</div>
+ ${o.ver?verPanel(o):''}
  <div class="pn"><div class="ph"><h3>Bitácora del expediente</h3><span class="nota">Nada se borra: un supervisor solo puede anular con motivo</span><button class="bx" id="xB">Excel</button></div>
  <div class="tw" style="max-height:none"><table class="t"><thead><tr><th>Etapa</th><th>Fecha</th><th>Registró</th><th>Documento</th><th>Observación</th>${sesV()&&SES.rol==='SUPERVISOR'?'<th></th>':''}</tr></thead><tbody>${bit.map(e=>`<tr style="${e.anulado?'opacity:.55;text-decoration:line-through':''}"><td>${e.etapa} · ${ETAPAS[e.etapa-1].nm}</td><td class="n">${fd(e.fecha)}</td><td>${esc(e.quien)}</td><td>${e.url?`<a href="${esc(e.url)}" target="_blank" rel="noopener">${esc(e.doc||'Documento')}</a>`:esc(e.doc||'')}</td><td>${esc(e.obs||'')}${e.anulado?' · Anulado: '+esc(e.anMot||''):''}</td>${sesV()&&SES.rol==='SUPERVISOR'?`<td>${e.id&&!e.anulado?`<button class="bx" data-an="${esc(e.id)}">Anular</button>`:''}</td>`:''}</tr>`).join('')}</tbody></table></div></div>`;
  const rb=document.getElementById('reg');if(rb)rb.onclick=()=>abrirM(o);
@@ -380,10 +388,23 @@ async function excel(nombre,titulo,cols,rows){const wb=new ExcelJS.Workbook();co
  rows.forEach((r,j)=>{const row=ws.getRow(6+j);cols.forEach((c,i)=>{row.getCell(i+1).value=c[1](r)})});
  ws.autoFilter={from:{row:5,column:1},to:{row:5+rows.length,column:cols.length}};ws.views=[{state:'frozen',ySplit:5}];
  const buf=await wb.xlsx.writeBuffer();const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([buf]));a.download=nombre;a.click();}
-const XE=[['Expediente',o=>o.id,24],['Proveedor',o=>o.prov,32],['Código',o=>o.cod,12],['Renglón',o=>o.desc,40],['Inventario',o=>o.inv,16],['CEDIS',o=>o.cedis,8],['Orden',o=>o.req,13],['Nota',o=>o.nota,9],['Venció',o=>o.venc,11],['Días hábiles vencida',o=>o.dh],['Saldo (u)',o=>o.saldo],['Saldo B/.',o=>Math.round(o.val)],['Multa mínima B/.',o=>Math.round(o.multa)],['Espera la etapa',o=>o.st.act>7?'Cerrado':o.st.act+' · '+o.st.E.nm,30],['Le toca a',o=>o.st.E.q,30],['Días en la etapa',o=>o.st.d],['Plazo (días)',o=>o.st.E.p],['Semáforo',o=>SEN[o.st.se],16],['SisCOMP',o=>SCL[o.sc],30],['Pedido SAFIRO',o=>(o.scR[0]||{}).ped||'',13]];
+const XE=[['Expediente',o=>o.id,24],['Proveedor',o=>o.prov,32],['Código',o=>o.cod,12],['Renglón',o=>o.desc,40],['Inventario',o=>o.inv,16],['CEDIS',o=>o.cedis,8],['Orden',o=>o.req,13],['Nota',o=>o.nota,9],['Venció',o=>o.venc,11],['Días hábiles vencida',o=>o.dh],['Saldo (u)',o=>o.saldo],['Saldo B/.',o=>Math.round(o.val)],['Multa mínima B/.',o=>Math.round(o.multa)],['Espera la etapa',o=>o.st.act>7?'Cerrado':o.st.act+' · '+o.st.E.nm,30],['Le toca a',o=>o.st.E.q,30],['Días en la etapa',o=>o.st.d],['Plazo (días)',o=>o.st.E.p],['Semáforo',o=>SEN[o.st.se],16],['Verificación previa',o=>o.ver?VERL[o.ver.c]:'',26],['Antecedente',o=>o.ver?o.ver.m:'',60],['SisCOMP',o=>SCL[o.sc],30],['Pedido SAFIRO',o=>(o.scR[0]||{}).ped||'',13]];
 document.getElementById('xV').onclick=()=>excel('Expedientes_vista.xlsx','Expedientes de incumplimiento · vista filtrada',XE,filt());
 document.getElementById('xA').onclick=()=>excel('Expedientes_completo.xlsx','Expedientes de incumplimiento · todos',XE,X);
 document.getElementById('xP').onclick=()=>excel('Expedientes_por_proveedor.xlsx','Expedientes de incumplimiento por proveedor',[['Proveedor',p=>p.prov,38],['Expedientes',p=>p.n],['Saldo vencido B/.',p=>Math.round(p.sv)],['Multa mínima B/.',p=>Math.round(p.mu)],['Sin informe',p=>p.e2],['Etapa vencida',p=>p.rj],['Mayor atraso (días hábiles)',p=>p.max]],PR);
+function verPanel(o){const v=o.ver,cl=v.c==='PASA'?'k-n':'k-w';const ic={nota:'Nota',notif:'Notificación',cita:'Cita pedida',conf:'Cita',rec:'Recepción',venc:'Vencimiento'};
+ return `<div class="pn"><div class="ph"><h3>Antecedentes · verificación previa</h3><span class="ch ${cl}">${esc(VERL[v.c])}</span><span class="nota">Lo que SIGUELO registra de esta nota antes y después del vencimiento</span></div>
+ <div class="vb ${cl}">${esc(v.m)}</div>${v.ev.length?`<ul class="tl">${v.ev.map(e=>`<li class="${e.t}"><b>${fd(e.f)}</b>${esc(e.x)}</li>`).join('')}</ul>`:'<div class="nota">SIGUELO no tiene citas, notas emitidas ni recepciones de esta orden y renglón alrededor del vencimiento.</div>'}
+ <div class="nota" style="margin-top:6px">${esc((AND._meta||{}).nota||'')}</div></div>`;}
+function verPanelR(){if(!AN)return;document.getElementById('pVer').hidden=false;const M=AND._meta||{},n=c=>X.filter(o=>o.ver&&o.ver.c===c);
+ document.getElementById('verStamp').textContent='Tránsitos de OC, citas de proveedores, Recepción y Kardex 101 · revisado el '+fd(String(M.generado||'').slice(0,10));
+ const k=(c,l,v,s,f)=>`<button class="kc ${c}" data-ver="${f}"><span class="l">${l}</span><span class="v">${v}</span><span class="s">${s}</span></button>`;
+ const ap=n('PASA'),cc=n('CONCILIAR'),ni=n('NO_IMPUTABLE'),vr=n('VERIFICAR'),sv=L=>fm(L.reduce((a,o)=>a+o.val,0));
+ document.getElementById('verK').innerHTML=k('r','Pasan a la etapa 2',fmt(ap.length),'sin antecedentes que liberen al proveedor · '+sv(ap),'PASA')+
+  k('n','Conciliar antes de notificar',fmt(cc.length),'la Recepción o la cita registran la entrega y el libro sigue con saldo · '+sv(cc),'CONCILIAR')+
+  k('n','No imputables o por verificar',fmt(ni.length+vr.length),'el proveedor pidió cita a tiempo y CSS la atendió después · '+sv(ni.concat(vr)),'NO_IMPUTABLE');
+ document.getElementById('verN').innerHTML='Ley 419, art. 228: el atraso debe ser imputable al contratista. Antes de pedir el informe, cada nota se mira contra sus antecedentes en SIGUELO. '+esc(M.nota||'');
+ document.querySelectorAll('#verK .kc').forEach(b=>b.onclick=()=>{[fInv,fEt,fSe,fCed,fQ,fSc].forEach(e=>e.value='');fVer.value=b.dataset.ver;pag=0;go('exp');renderV();});}
 function scPanel(){if(!SC)return;document.getElementById('pSc').hidden=false;const M=SC._meta||{};
  document.getElementById('scStamp').textContent='Extractos SisCOMP+ de Compras por administración · '+fmt(M.filasSisCOMP||0)+' filas · cruzado el '+fd(String(M.generado||'').slice(0,10));
  const n=k=>X.filter(o=>o.sc===k),k=(c,l,v,s,f)=>`<button class="kc ${c}" data-sc="${f}"><span class="l">${l}</span><span class="v">${v}</span><span class="s">${s}</span></button>`;
@@ -393,15 +414,16 @@ function scPanel(){if(!SC)return;document.getElementById('pSc').hidden=false;con
  document.getElementById('scN').innerHTML='Solo se muestra lo que coincide con certeza: '+esc(M.regla||'')+' Las cantidades no se infieren.';
  document.querySelectorAll('#scK .kc').forEach(b=>b.onclick=()=>{const f=b.dataset.sc;if(f==='b'){document.getElementById('xSc').click();return;}if(!f)return;[fInv,fEt,fSe,fCed,fQ].forEach(e=>e.value='');fSc.value=f;pag=0;go('exp');renderV();});}
 document.getElementById('xSc').onclick=()=>excel('SisCOMP_para_cerrar.xlsx','Entregas abiertas en SisCOMP que el libro de Seguimiento registra completas',[['OC (NUM_SAP)',r=>r.oc,13],['Pedido SAFIRO',r=>r.ped,13],['Código Abasto',r=>r.cod,12],['Producto',r=>r.prod,40],['Proveedor',r=>r.prov,30],['CEDIS',r=>r.cedis,8],['Estado en SisCOMP',r=>r.est,16],['Vencimiento SisCOMP',r=>r.venc,12],['Saldo SisCOMP B/.',r=>r.saldo],['Solicitado según libro (u)',r=>r.qty],['Recibido según libro (u)',r=>r.recib],['Última recepción',r=>r.ult,12],['Administración',r=>r.adm,12],['Fecha requisición',r=>r.fReq,12],['Fecha OC',r=>r.fOC,12]],SCB);
-kpis();scPanel();cadena();semaf();tresp();renderV();renderP();ley();
+kpis();verPanelR();scPanel();cadena();semaf();tresp();renderV();renderP();ley();
 const top=X.slice().sort((a,b)=>b.val-a.val)[0];abrirF((new URLSearchParams(location.search)).get('exp')||(top&&top.id));document.getElementById('qF').value='';
 const v0=(new URLSearchParams(location.search)).get('v');if(v0)go(v0);
 }
 Promise.all([fetch(FUENTE+'?t='+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.json():Promise.reject(r.status)),
   fetch(EVJ+'?t='+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.json():null).catch(()=>null),
   fetch(SCJ+'?t='+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.json():null).catch(()=>null),
+  fetch(ANJ+'?t='+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.json():null).catch(()=>null),
   fetch('icons/icon-192.png').then(r=>r.blob()).then(b=>new Promise(ok=>{const f=new FileReader();f.onload=()=>ok(f.result);f.readAsDataURL(b)})).catch(()=>null)])
- .then(([D,E,S,L])=>app(D,L,E,S))
+ .then(([D,E,S,A,L])=>app(D,L,E,S,A))
  .catch(e=>{console.error(e);document.getElementById('cargando').innerHTML='Todavía no hay un libro de Incumplimientos publicado. Se publica al cargarlo en la <a href="https://torrecontrolcss.org/SIGUELO_DINALOG/cargar_reportes.html">Ventanilla Única</a>.';});
 </script>
 <div id="vidOv" role="dialog" aria-label="Video: cómo funciona el Expediente de Incumplimiento"><div id="vidBox">

@@ -1,0 +1,32 @@
+name: Antecedentes del Expediente de Incumplimiento
+# Recalcula data/antecedentes.json (verificación previa) con los datos que SIGUELO publica:
+# cada vez que Seguimiento carga su libro y cada día hábil antes del correo de las 7:00 a. m.
+on:
+  push:
+    paths: ['data/cumplimiento_entregas.json']
+  schedule:
+    - cron: '20 11 * * 1-5'   # 6:20 a. m. Panamá
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  recalcular:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Bajar los datos de SIGUELO
+        run: |
+          mkdir -p /tmp/SIGUELO
+          for f in citas_trazabilidad.json transitos_panel.json entradas_recepcion.json seguimiento_entregas.json; do
+            curl -fsSL "https://torrecontrolcss.org/SIGUELO/$f?t=$(date +%s)" -o /tmp/SIGUELO/$f
+          done
+      - name: Calcular antecedentes
+        run: python3 scripts/antecedentes.py /tmp/SIGUELO
+      - name: Publicar si cambió
+        run: |
+          if git diff --quiet data/antecedentes.json; then echo "Sin cambios"; exit 0; fi
+          git config user.name "Diego Bethancourth"
+          git config user.email "pedregaljuandiaz@gmail.com"
+          git add data/antecedentes.json
+          git commit -m "Actualizar data/antecedentes.json (verificación previa)"
+          git push

@@ -537,8 +537,9 @@ function incPrueba() {
 
 var INC_TABLERO = 'https://torrecontrolcss.org/seguire/incumplimientos.html';
 var INC_SISCOMP = 'https://torrecontrolcss.org/seguire/data/siscomp_cruce.json';
+var INC_ANTECED = 'https://torrecontrolcss.org/seguire/data/antecedentes.json';
 var INC_PLAZOS = { 1: 0, 2: 2, 3: 3, 4: 5, 5: 10, 6: null, 7: 3 };
-var INC_SEM = { r: ['Vencido', '#c83a3a', '#fbe3e3'], a: ['Por vencer', '#a87500', '#fff4d6'], v: ['Dentro del plazo', '#2f8a3e', '#e3f4e6'], g: ['Sin plazo acordado', '#5f6b78', '#eef1f4'] };
+var INC_SEM = { r: ['Vencido', '#c83a3a', '#fbe3e3'], a: ['Por vencer', '#a87500', '#fff4d6'], v: ['Dentro del plazo', '#2f8a3e', '#e3f4e6'], g: ['Sin plazo acordado', '#5f6b78', '#eef1f4'], w: ['Verificar antes del informe', '#5b3f8a', '#efe8f8'] };
 
 function incHabiles_(a, b) {
   if (!a || !b || b <= a) return 0;
@@ -558,6 +559,8 @@ function incExpedientes_() {
     var S = JSON.parse(UrlFetchApp.fetch(INC_SISCOMP + '?_=' + Date.now(), { muteHttpExceptions: true }).getContentText());
     (S.confirmados || []).forEach(function (r) { r.exp.forEach(function (id) { sc[id] = r.ped; }); });
   } catch (e) { sc = null; }
+  var an = {};
+  try { an = JSON.parse(UrlFetchApp.fetch(INC_ANTECED + '?_=' + Date.now(), { muteHttpExceptions: true }).getContentText()).exp || {}; } catch (e) { an = {}; }
   var out = [];
   D.rows.forEach(function (x) {
     var venc = String(x[ix.venc] || ''), saldo = Number(x[ix.saldo] || 0);
@@ -568,11 +571,13 @@ function incExpedientes_() {
     if (st.act > 7) return;
     var p = INC_PLAZOS[st.act], d = incHabiles_(st.ini, hoy);
     var se = p === null ? 'g' : (d < 0.8 * p ? 'v' : (d <= p ? 'a' : 'r'));
+    var ver = an[id] || null;
+    if (st.act === 2 && ver && ver.c !== 'PASA') se = 'w';
     out.push({ id: id, req: String(x[ix.req]), cod: String(x[ix.cod] || ''), desc: String(x[ix.desc] || ''), prov: String(x[ix.prov] || ''),
       venc: venc, val: saldo * Number(x[ix.precio] || 0), act: st.act, d: d, p: p, se: se,
-      sc: sc === null ? '' : (sc[id] ? 'Confirmado por SisCOMP' : '—') });
+      sc: sc === null ? '' : (sc[id] ? 'Confirmado por SisCOMP' : '—'), verM: (ver && ver.c !== 'PASA') ? ver.m : '' });
   });
-  var ord = { r: 0, a: 1, g: 2, v: 3 };
+  var ord = { r: 0, a: 1, w: 2, g: 3, v: 4 };
   out.sort(function (a, b) { return (ord[a.se] - ord[b.se]) || (b.val - a.val); });
   return { corte: D.corte, hoy: hoy, X: out, siscomp: sc !== null };
 }
@@ -601,7 +606,7 @@ function incHtml_(titulo, intro, L, conEtapa, pie, aviso) {
     var s = INC_SEM[o.se];
     return '<tr><td style="padding:6px;border-bottom:1px solid #e5e7eb"><a href="' + INC_TABLERO + '?v=fic&exp=' + encodeURIComponent(o.id) + '" style="color:#1e5a9e;font-family:monospace">' + o.id + '</a></td>' +
       '<td style="padding:6px;border-bottom:1px solid #e5e7eb">' + incEsc_(o.prov) + '</td>' +
-      '<td style="padding:6px;border-bottom:1px solid #e5e7eb">' + incEsc_(o.cod) + ' · ' + incEsc_(o.desc.slice(0, 60)) + '</td>' +
+      '<td style="padding:6px;border-bottom:1px solid #e5e7eb">' + incEsc_(o.cod) + ' · ' + incEsc_(o.desc.slice(0, 60)) + (o.verM ? '<div style="color:#5b3f8a;font-size:11px;margin-top:2px">' + incEsc_(o.verM) + '</div>' : '') + '</td>' +
       (conEtapa ? '<td style="padding:6px;border-bottom:1px solid #e5e7eb">' + o.act + ' · ' + INC_ETAPAS[o.act - 1][3] + '</td>' : '') +
       '<td style="padding:6px;border-bottom:1px solid #e5e7eb;text-align:right;white-space:nowrap">' + incFm_(o.val) + '</td>' +
       '<td style="padding:6px;border-bottom:1px solid #e5e7eb;text-align:right">' + o.d + (o.p ? ' de ' + o.p : '') + '</td>' +
@@ -614,7 +619,7 @@ function incHtml_(titulo, intro, L, conEtapa, pie, aviso) {
     '<div style="background:#0c447c;color:#fff;padding:14px 18px;border-radius:8px 8px 0 0"><div style="font-size:11px;opacity:.85">CAJA DE SEGURO SOCIAL · EXPEDIENTE DE INCUMPLIMIENTO DE ENTREGA</div><div style="font-size:18px;font-weight:700">' + titulo + '</div></div>' +
     '<div style="padding:14px 18px;border:1px solid #e5e7eb;border-top:0;border-radius:0 0 8px 8px">' +
     '<p style="margin:0 0 12px">' + intro + '</p>' +
-    '<table cellspacing="0" cellpadding="0"><tr>' + pill('r', n('r')) + pill('a', n('a')) + pill('v', n('v')) + (n('g') ? pill('g', n('g')) : '') + '</tr></table>' +
+    '<table cellspacing="0" cellpadding="0"><tr>' + pill('r', n('r')) + pill('a', n('a')) + (n('w') ? pill('w', n('w')) : '') + pill('v', n('v')) + (n('g') ? pill('g', n('g')) : '') + '</tr></table>' +
     (L.length ? '<p style="margin:14px 0 6px;font-weight:700">Qué hacer hoy' + (L.length > 25 ? ' (los 25 más urgentes de ' + L.length + ')' : '') + '</p>' +
       '<table cellspacing="0" cellpadding="0" style="border-collapse:collapse;width:100%;font-size:12px"><tr>' + th('Expediente') + th('Proveedor') + th('Renglón') + (conEtapa ? th('Espera la etapa') : '') + th('Saldo') + th('Días hábiles') + th('Semáforo') + (L[0].sc ? th('SisCOMP') : '') + '</tr>' + filas + '</table>' : '<p>No hay expedientes esperando esta etapa.</p>') +
     '<p style="margin:14px 0 0"><a href="' + INC_TABLERO + '?v=exp" style="background:#1e5a9e;color:#fff;padding:8px 14px;border-radius:6px;text-decoration:none">Abrir el tablero</a></p>' +
