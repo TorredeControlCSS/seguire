@@ -536,7 +536,7 @@ function incPrueba() {
 /* ==================================================================== */
 
 var INC_TABLERO = 'https://torrecontrolcss.org/seguire/incumplimientos.html';
-var INC_SISCOMP = 'https://torrecontrolcss.org/seguire/data/siscomp_contraste.json';
+var INC_SISCOMP = 'https://torrecontrolcss.org/seguire/data/siscomp_cruce.json';
 var INC_PLAZOS = { 1: 0, 2: 2, 3: 3, 4: 5, 5: 10, 6: null, 7: 3 };
 var INC_SEM = { r: ['Vencido', '#c83a3a', '#fbe3e3'], a: ['Por vencer', '#a87500', '#fff4d6'], v: ['Dentro del plazo', '#2f8a3e', '#e3f4e6'], g: ['Sin plazo acordado', '#5f6b78', '#eef1f4'] };
 
@@ -555,9 +555,8 @@ function incExpedientes_() {
   incLeerEventos_('').forEach(function (e) { if (e.estado !== 'ANULADO') (ev[e.exp] = ev[e.exp] || []).push(e); });
   var sc = {};
   try {
-    var S = JSON.parse(UrlFetchApp.fetch(INC_SISCOMP + '?_=' + Date.now(), { muteHttpExceptions: true }).getContentText()), si = {};
-    S.cols.forEach(function (k, i) { si[k] = i; });
-    S.rows.forEach(function (r) { if (r[si.cod]) sc[r[si.oc] + '|' + r[si.cod]] = r[si.ped]; });
+    var S = JSON.parse(UrlFetchApp.fetch(INC_SISCOMP + '?_=' + Date.now(), { muteHttpExceptions: true }).getContentText());
+    (S.confirmados || []).forEach(function (r) { r.exp.forEach(function (id) { sc[id] = r.ped; }); });
   } catch (e) { sc = null; }
   var out = [];
   D.rows.forEach(function (x) {
@@ -569,10 +568,9 @@ function incExpedientes_() {
     if (st.act > 7) return;
     var p = INC_PLAZOS[st.act], d = incHabiles_(st.ini, hoy);
     var se = p === null ? 'g' : (d < 0.8 * p ? 'v' : (d <= p ? 'a' : 'r'));
-    var key = x[ix.req] + '|' + x[ix.cod];
     out.push({ id: id, req: String(x[ix.req]), cod: String(x[ix.cod] || ''), desc: String(x[ix.desc] || ''), prov: String(x[ix.prov] || ''),
       venc: venc, val: saldo * Number(x[ix.precio] || 0), act: st.act, d: d, p: p, se: se,
-      sc: sc === null ? '' : (sc[key] ? 'Abierto en SisCOMP' : 'No figura en SisCOMP') });
+      sc: sc === null ? '' : (sc[id] ? 'Confirmado por SisCOMP' : '—') });
   });
   var ord = { r: 0, a: 1, g: 2, v: 3 };
   out.sort(function (a, b) { return (ord[a.se] - ord[b.se]) || (b.val - a.val); });

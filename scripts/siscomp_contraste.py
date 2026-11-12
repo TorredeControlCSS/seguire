@@ -23,8 +23,9 @@ def limpiar(x): return re.sub(r'\s+', ' ', re.sub(r'<br\s*/?>', ' ', str(x))).st
 def arreglar(t):
     t = str(t)
     if re.search('Ã|Â', t):
-        try: t = t.encode('latin1').decode('utf8')
-        except Exception: pass
+        for cod in ('cp1252', 'latin1'):
+            try: return t.encode(cod).decode('utf8')
+            except Exception: pass
     return t
 def norm(t):
     t = unicodedata.normalize('NFKD', arreglar(t)).encode('ascii', 'ignore').decode().upper()

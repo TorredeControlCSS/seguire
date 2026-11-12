@@ -175,7 +175,7 @@ svg text{fill:var(--tx2);font-family:'Segoe UI',Arial,sans-serif}
 
 <script>
 const FUENTE='data/cumplimiento_entregas.json';
-const SCJ='data/siscomp_contraste.json'; /* extracto SisCOMP separado por scripts/siscomp_contraste.py */
+const SCJ='data/siscomp_cruce.json'; /* cruce CON CERTEZA con SisCOMP: scripts/siscomp_cruce.py */
 /* Bitácora real: INCUMPLIMIENTOS_TRZ.gs (proyecto SIGUELO) la publica en Pages y la sirve por la API. */
 const API='https://script.google.com/macros/s/AKfycbwVw0ACNMhdN6d-JsI1lyP2iKHBVgWXI5nK3rA6blEhF3l8t2Wuwk2TpRmaanB186Dk/exec';
 const EVJ='https://torrecontrolcss.org/SIGUELO/incumplimiento_eventos.json';
@@ -223,16 +223,12 @@ function estado(o){const ev=EVS(o.id).filter(e=>!e.anulado).slice().sort((a,b)=>
  if(act>7)se='c';else if(E.p){se=d<0.8*E.p?'v':(d<=E.p?'a':'r');}
  return {act,E,d,se,ini,ev};}
 X.forEach(o=>Object.assign(o,{st:estado(o)}));
-// Contraste SisCOMP: el extracto solo trae entregas que SisCOMP tiene abiertas (sin entregas o parciales)
-const SC=SCD&&SCD.cols?SCD.rows.map(r=>Object.fromEntries(SCD.cols.map((c,i)=>[c,r[i]]))):[];const SCI={},SCO=new Set();
-SC.forEach(r=>{SCO.add(r.oc);if(r.cod)(SCI[r.oc+'|'+r.cod]=SCI[r.oc+'|'+r.cod]||[]).push(r);});
-const SCL={si:'Abierto también en SisCOMP',no:'No figura en SisCOMP',oc:'La orden está en SisCOMP, sin este renglón',x:'Sin extracto de SisCOMP'};
-X.forEach(o=>{const m=SCI[o.req+'|'+o.cod]||[];o.scR=m;o.sc=!SC.length?'x':m.length?'si':SCO.has(String(o.req))?'oc':'no';});
-const scB=s=>`<span class="ch ${s==='si'?'k-r':s==='no'?'k-a':s==='oc'?'k-a':'k-n'}">${SCL[s]}</span>`;
-// Abiertos en SisCOMP con entrega registrada en el libro (lista para Compras)
-const LB={};ALL.forEach(r=>{(LB[r.req+'|'+r.cod]=LB[r.req+'|'+r.cod]||[]).push(r)});
-const SCB=SC.filter(r=>r.bloque!=='historico'&&r.cod&&LB[r.oc+'|'+r.cod]).map(r=>{const L=LB[r.oc+'|'+r.cod],q=L.reduce((a,x)=>a+(x.qty||0),0),rc=L.reduce((a,x)=>a+(x.recib||0),0),sd=L.reduce((a,x)=>a+(x.saldo||0),0);
- return Object.assign({},r,{prov:L[0].prov,desc:L[0].desc,qty:q,recib:rc,saldoL:sd,ult:L.map(x=>x.ult).filter(Boolean).sort().pop()||''});}).filter(r=>r.saldoL===0&&r.recib>0);
+// Contraste SisCOMP: solo el cruce con certeza (scripts/siscomp_cruce.py)
+const SC=SCD&&SCD.confirmados?SCD:null;const SCI={};if(SC)SC.confirmados.forEach(r=>r.exp.forEach(id=>(SCI[id]=SCI[id]||[]).push(r)));
+const SCL={si:'Confirmado por SisCOMP',no:'Sin cruce confirmado',x:'Sin extracto de SisCOMP'};
+X.forEach(o=>{const m=SCI[o.id]||[];o.scR=m;o.sc=!SC?'x':m.length?'si':'no';});
+const scB=s=>`<span class="ch ${s==='si'?'k-r':'k-n'}">${SCL[s]}</span>`;
+const SCB=SC?SC.cerrar:[];
 const SEN={v:'Dentro del plazo',a:'Por vencer',r:'Vencido',g:'Sin plazo acordado',c:'Cerrado'};
 const semB=s=>`<span class="ch ${s==='v'?'k-g':s==='a'?'k-a':s==='r'?'k-r':'k-n'}"><i class="sem s${s}"></i>${SEN[s]}</span>`;
 document.getElementById('stamp').innerHTML='Fuente: libro de Incumplimientos de Seguimiento al <b>'+fd(DATA.corte)+'</b> · calculado al <b>'+fd(HOYS)+'</b>';
@@ -264,9 +260,9 @@ function tresp(){document.getElementById('tresp').innerHTML='<thead><tr><th>Etap
 const fInv=document.getElementById('fInv'),fEt=document.getElementById('fEt'),fSe=document.getElementById('fSe'),fCed=document.getElementById('fCed'),fQ=document.getElementById('fQ'),fSc=document.getElementById('fSc');
 const opts=(el,t,arr)=>{el.innerHTML=`<option value="">${t}</option>`+arr.map(([v,l])=>`<option value="${v}">${l}</option>`).join('');};
 opts(fInv,'Todos los inventarios',[...new Set(X.map(o=>o.inv))].sort().map(v=>[v,v]));opts(fEt,'Todas las etapas',ETAPAS.slice(1).map(E=>[E.n,'Espera etapa '+E.n+' · '+E.nm]));
-opts(fSe,'Todo el semáforo',[['v','Dentro del plazo'],['a','Por vencer'],['r','Vencido'],['g','Sin plazo acordado']]);opts(fCed,'Todos los CEDIS',[...new Set(X.map(o=>o.cedis||'Sin CEDIS'))].sort().map(v=>[v,v]));opts(fSc,'SisCOMP: todos',['si','no'].map(k=>[k,SCL[k]]));fSc.hidden=!SC.length;
+opts(fSe,'Todo el semáforo',[['v','Dentro del plazo'],['a','Por vencer'],['r','Vencido'],['g','Sin plazo acordado']]);opts(fCed,'Todos los CEDIS',[...new Set(X.map(o=>o.cedis||'Sin CEDIS'))].sort().map(v=>[v,v]));opts(fSc,'SisCOMP: todos',['si','no'].map(k=>[k,SCL[k]]));fSc.hidden=!SC;
 let pag=0,sortK='val',sortD=-1;const PP=50;
-function filt(){const q=fQ.value.trim().toUpperCase();return X.filter(o=>(!fInv.value||o.inv===fInv.value)&&(!fEt.value||o.st.act==fEt.value)&&(!fSe.value||o.st.se===fSe.value)&&(!fCed.value||(o.cedis||'Sin CEDIS')===fCed.value)&&(!fSc.value||o.sc===fSc.value||(fSc.value==='no'&&o.sc==='oc'))&&
+function filt(){const q=fQ.value.trim().toUpperCase();return X.filter(o=>(!fInv.value||o.inv===fInv.value)&&(!fEt.value||o.st.act==fEt.value)&&(!fSe.value||o.st.se===fSe.value)&&(!fCed.value||(o.cedis||'Sin CEDIS')===fCed.value)&&(!fSc.value||o.sc===fSc.value)&&
  (!q||[o.id,o.prov,o.cod,o.desc,o.req].join(' ').toUpperCase().includes(q)));}
 const CV=[['Expediente','id'],['Proveedor','prov'],['Renglón','desc'],['Inventario','inv'],['Venció','venc'],['Días hábiles vencida','dh'],['Saldo B/.','val'],['Espera la etapa','act'],['Le toca a','toca'],['Días en la etapa','d'],['Semáforo','se'],['SisCOMP','sc']];
 const gv=(o,k)=>k==='act'?o.st.act:k==='toca'?o.st.E.q:k==='d'?o.st.d:k==='se'?'rav g'.indexOf(o.st.se):o[k];
@@ -306,7 +302,7 @@ function abrirF(id){const q=String(id||'').trim().toUpperCase();const o=X.find(x
  F.innerHTML=`<div class="pn"><div class="ph"><h3 style="font-size:16px">${o.id}</h3><span>${semB(s.se)}</span></div>
  <div class="fk">${k('Proveedor',esc(o.prov))}${k('Renglón',esc(o.cod)+' · '+esc(o.desc))}${k('Orden de compra · nota',o.req+' · '+esc(o.nota))}${k('CEDIS · inventario',(o.cedis||'—')+' · '+esc(o.inv))}
  ${k('Venció',fd(o.venc)+' · '+o.dh+' días hábiles')}${k('Entregado',fmt(o.recib||0)+' de '+fmt(o.qty||0)+' u')}${k('Saldo vencido',fm(o.val),'r')}${k('Multa mínima, art. 232',fm(o.multa)+' + recargo diario','a')}
- ${k('SisCOMP · Compras',scB(o.sc)+(o.scR.length?'<br><small>Pedido SAFIRO '+esc(o.scR[0].ped)+(o.scR[0].fOC?' · OC emitida '+fd(o.scR[0].fOC)+' · requisición '+fd(o.scR[0].fReq)+' ('+(o.scR[0].adm==='actual'?'administración actual':'administración anterior')+')':'')+' · '+esc(o.scR.map(r=>r.est.toLowerCase()+' al '+fd(r.venc)).filter((v,i,a)=>a.indexOf(v)===i).slice(0,3).join(' · '))+'</small>':''))}${k('Contrato y fianza','del archivo de contratos')}${k('Prórroga solicitada','de Prórrogas y Multas')}${k('Publicación','de PanamáCompra')}</div>
+ ${k('SisCOMP · Compras',scB(o.sc)+(o.scR.length?'<br><small>Pedido SAFIRO '+esc(o.scR[0].ped)+(o.scR[0].fOC?' · OC emitida '+fd(o.scR[0].fOC)+' · requisición '+fd(o.scR[0].fReq)+' ('+(o.scR[0].adm==='Actual'?'administración actual':'administración anterior')+')':'')+' · '+esc(o.scR.map(r=>r.est.toLowerCase()+' con vencimiento '+fd(r.venc)).filter((v,i,a)=>a.indexOf(v)===i).slice(0,3).join(' · '))+'</small>':''))}${k('Contrato y fianza','del archivo de contratos')}${k('Prórroga solicitada','de Prórrogas y Multas')}${k('Publicación','de PanamáCompra')}</div>
  <div class="chev">${chev}</div>
  ${s.act<=7?`<div class="toca"><div><b>Le toca ahora:</b> ${esc(s.E.q)} registra «${esc(s.E.hito)}» y adjunta: ${esc(s.E.ev)}. Lleva ${s.d} días hábiles${s.E.p?' de un plazo de '+s.E.p:''}.</div><button class="bp" id="reg">Registrar etapa ${s.act} con PIN</button></div>`:'<div class="toca"><div><b>Expediente cerrado.</b></div></div>'}</div>
  <div class="pn"><div class="ph"><h3>Bitácora del expediente</h3><span class="nota">Nada se borra: un supervisor solo puede anular con motivo</span><button class="bx" id="xB">Excel</button></div>
@@ -383,15 +379,15 @@ const XE=[['Expediente',o=>o.id,24],['Proveedor',o=>o.prov,32],['Código',o=>o.c
 document.getElementById('xV').onclick=()=>excel('Expedientes_vista.xlsx','Expedientes de incumplimiento · vista filtrada',XE,filt());
 document.getElementById('xA').onclick=()=>excel('Expedientes_completo.xlsx','Expedientes de incumplimiento · todos',XE,X);
 document.getElementById('xP').onclick=()=>excel('Expedientes_por_proveedor.xlsx','Expedientes de incumplimiento por proveedor',[['Proveedor',p=>p.prov,38],['Expedientes',p=>p.n],['Saldo vencido B/.',p=>Math.round(p.sv)],['Multa mínima B/.',p=>Math.round(p.mu)],['Sin informe',p=>p.e2],['Etapa vencida',p=>p.rj],['Mayor atraso (días hábiles)',p=>p.max]],PR);
-function scPanel(){if(!SC.length)return;document.getElementById('pSc').hidden=false;const M=SCD._meta||{};
- document.getElementById('scStamp').textContent='Extracto '+(M.archivo||'')+' · '+fmt(M.filasSisCOMP||0)+' filas · procesado '+fd(String(M.generado||'').slice(0,10));
+function scPanel(){if(!SC)return;document.getElementById('pSc').hidden=false;const M=SC._meta||{};
+ document.getElementById('scStamp').textContent='Extractos SisCOMP+ de Compras por administración · '+fmt(M.filasSisCOMP||0)+' filas · cruzado el '+fd(String(M.generado||'').slice(0,10));
  const n=k=>X.filter(o=>o.sc===k),k=(c,l,v,s,f)=>`<button class="kc ${c}" data-sc="${f}"><span class="l">${l}</span><span class="v">${v}</span><span class="s">${s}</span></button>`;
- document.getElementById('scK').innerHTML=k('r','Confirmados por SisCOMP',fmt(n('si').length),'expedientes que Compras también tiene abiertos','si')+
-  k('a','No figuran en SisCOMP',fmt(n('no').length+n('oc').length),'el libro los ve vencidos; SisCOMP no los tiene abiertos · verificar','no')+
-  k('n','Abiertos en SisCOMP con entrega registrada',fmt(new Set(SCB.map(r=>r.oc+'|'+r.cod)).size),'renglones ('+fmt(new Set(SCB.map(r=>r.oc)).size)+' órdenes) que el libro da por entregados · Compras puede cerrarlos en SisCOMP','b');
- document.getElementById('scN').innerHTML='Se cruza por orden de compra (NUM_SAP) y código de Abasto. El código SAP-SAFIRO del extracto se traduce con la matriz de intercambios de MAESTRO_RENGLONES. Las cantidades no se infieren: el extracto trae importes, no unidades.';
- document.querySelectorAll('#scK .kc').forEach(b=>b.onclick=()=>{const f=b.dataset.sc;if(f==='b'){document.getElementById('xSc').click();return;}[fInv,fEt,fSe,fCed,fQ].forEach(e=>e.value='');fSc.value=f==='no'?'no':f;pag=0;go('exp');renderV();});}
-document.getElementById('xSc').onclick=()=>excel('SisCOMP_abiertos_con_entrega_registrada.xlsx','Órdenes abiertas en SisCOMP cuya entrega ya registra el libro de Seguimiento',[['OC (NUM_SAP)',r=>r.oc,13],['Pedido SAFIRO',r=>r.ped,13],['Código Abasto',r=>r.cod,12],['Renglón',r=>r.desc,40],['Proveedor',r=>r.prov,30],['Almacén SisCOMP',r=>r.alm,30],['Estado en SisCOMP',r=>r.est,16],['Vencimiento SisCOMP',r=>r.venc,12],['Solicitado según libro (u)',r=>r.qty],['Recibido según libro (u)',r=>r.recib],['Última recepción',r=>r.ult,12],['Administración (por fecha de requisición)',r=>r.adm==='actual'?'Actual (desde 31-10-2024)':r.adm==='anterior'?'Anterior':'',22],['Fecha de requisición',r=>r.fReq,12],['Fecha de la OC',r=>r.fOC,12],['Fila del extracto',r=>r.fila]],SCB);
+ document.getElementById('scK').innerHTML=k('r','Confirmados por SisCOMP',fmt(n('si').length),'expedientes que Compras también tiene abiertos: misma orden, código y CEDIS','si')+
+  k('g','Para cerrar en SisCOMP',fmt(SCB.length),'entregas que el libro registra completas y SisCOMP aún tiene abiertas · '+fm(SCB.reduce((a,r)=>a+r.saldo,0)),'b')+
+  k('n','El resto, en revisión con Compras',fmt((M.conteo||{}).INCIERTO||0),'filas de SisCOMP con datos por aclarar (informe de revisión del 12-nov); no se usan en el expediente','');
+ document.getElementById('scN').innerHTML='Solo se muestra lo que coincide con certeza: '+esc(M.regla||'')+' Las cantidades no se infieren.';
+ document.querySelectorAll('#scK .kc').forEach(b=>b.onclick=()=>{const f=b.dataset.sc;if(f==='b'){document.getElementById('xSc').click();return;}if(!f)return;[fInv,fEt,fSe,fCed,fQ].forEach(e=>e.value='');fSc.value=f;pag=0;go('exp');renderV();});}
+document.getElementById('xSc').onclick=()=>excel('SisCOMP_para_cerrar.xlsx','Entregas abiertas en SisCOMP que el libro de Seguimiento registra completas',[['OC (NUM_SAP)',r=>r.oc,13],['Pedido SAFIRO',r=>r.ped,13],['Código Abasto',r=>r.cod,12],['Producto',r=>r.prod,40],['Proveedor',r=>r.prov,30],['CEDIS',r=>r.cedis,8],['Estado en SisCOMP',r=>r.est,16],['Vencimiento SisCOMP',r=>r.venc,12],['Saldo SisCOMP B/.',r=>r.saldo],['Solicitado según libro (u)',r=>r.qty],['Recibido según libro (u)',r=>r.recib],['Última recepción',r=>r.ult,12],['Administración',r=>r.adm,12],['Fecha requisición',r=>r.fReq,12],['Fecha OC',r=>r.fOC,12]],SCB);
 kpis();scPanel();cadena();semaf();tresp();renderV();renderP();ley();
 const top=X.slice().sort((a,b)=>b.val-a.val)[0];abrirF((new URLSearchParams(location.search)).get('exp')||(top&&top.id));document.getElementById('qF').value='';
 const v0=(new URLSearchParams(location.search)).get('v');if(v0)go(v0);
