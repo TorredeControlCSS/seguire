@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Expediente de Incumplimiento · DINALOG</title>
+<link rel="icon" href="favicon.ico">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
+<style>
+/* Estilo SIGUELO / Tablero de Mando: cabecera azul institucional, tarjetas pastel, tablas ordenables */
+:root{--az:#0C447C;--az2:#1E5A9E;--bg:#ececec;--bd:#a8a8a8;--tx:#1c1c1c;--tx2:#3a3a3a;--tx3:#555;--wh:#ffffff;--pn:#ffffff;
+  --okt:#1d5a27;--okb:#e3f2e4;--amt:#7a4a00;--amb:#fdf0d8;--rjt:#9b1c1c;--rjb:#fbe3e3;--azb:#e3ecf6;--grb:#eeeeee;--yb:#fff2b3;
+  --zeb:#f4f7fb;--hov:#e8f0f9;--ln:#d9d9d9;--mono:Consolas,'Courier New',monospace}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#12181f;--bd:#3a4654;--tx:#e8edf2;--tx2:#c6cfd8;--tx3:#a9b4bf;--pn:#1b232c;--okt:#9fd8a8;--okb:#1f3524;--amt:#f2c879;--amb:#3a2f17;--rjt:#f3a6a0;--rjb:#3e2222;--azb:#1d2d40;--grb:#26303a;--zeb:#1f2933;--hov:#24384d;--ln:#2e3a46;--yb:#4a4020;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#12181f;--bd:#3a4654;--tx:#e8edf2;--tx2:#c6cfd8;--tx3:#a9b4bf;--pn:#1b232c;--okt:#9fd8a8;--okb:#1f3524;--amt:#f2c879;--amb:#3a2f17;--rjt:#f3a6a0;--rjb:#3e2222;--azb:#1d2d40;--grb:#26303a;--zeb:#1f2933;--hov:#24384d;--ln:#2e3a46;--yb:#4a4020;color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);font-family:'Segoe UI',Tahoma,Arial,sans-serif;color:var(--tx);font-size:14px}
+header{background:var(--az);color:#fff;padding:10px max(16px,env(safe-area-inset-right,0px)) 10px max(16px,env(safe-area-inset-left,0px));display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+header img{width:44px;height:44px}
+.ht{flex:1 1 320px;min-width:0}.ht h1{margin:0;font-size:20px}.ht div{font-size:12px}
+.hr{display:flex;flex-direction:column;align-items:flex-end;gap:6px}.stamp{font-size:12px}.stamp b{font-family:var(--mono)}
+.hb{min-height:30px;min-width:34px;padding:0 10px;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;background:transparent;color:#fff;border:1px solid rgba(255,255,255,.7);border-radius:15px;cursor:pointer;font-size:15px}
+nav{background:var(--az);padding:0 max(16px,env(safe-area-inset-right,0px)) 0 max(16px,env(safe-area-inset-left,0px));display:flex;gap:4px;overflow-x:auto}
+nav .tab{padding:9px 14px;font-family:inherit;font-size:14px;font-weight:600;color:#fff;background:var(--az2);border:1px solid var(--az2);cursor:pointer;white-space:nowrap;border-radius:6px 6px 0 0}
+nav .tab.on{background:var(--pn);color:var(--az);border-color:var(--bd);margin-bottom:-1px}
+:root[data-theme="dark"] nav .tab.on{color:var(--tx)}
+main{max-width:1640px;margin:0 auto;padding-block:10px 18px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:10px}
+.dummy{background:var(--yb);border-radius:8px;padding:8px 12px;font-size:13px;font-weight:600}
+.vh{background:var(--pn);border:1px solid var(--bd);border-radius:8px;padding:10px 14px;display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+.vh h2{margin:0;font-size:18px;color:var(--az2)}.vh p{margin:0;font-size:13px;color:var(--tx2);flex:1 1 300px}
+.kp{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:8px}
+.kc{border-radius:8px;padding:8px 12px;display:flex;flex-direction:column;gap:2px;min-width:0;background:var(--azb);border:1px solid transparent;cursor:pointer;text-align:left;font-family:inherit;color:var(--tx)}
+.kc:hover{border-color:var(--az2)}
+.kc .l{font-size:12px;font-weight:700;color:var(--tx2)}.kc .v{font-family:var(--mono);font-size:22px;font-weight:700}.kc .s{font-size:11px;color:var(--tx3);line-height:1.25}
+.kc.r{background:var(--rjb)}.kc.r .v{color:var(--rjt)}.kc.a{background:var(--amb)}.kc.a .v{color:var(--amt)}.kc.g{background:var(--okb)}.kc.g .v{color:var(--okt)}.kc.n{background:var(--grb)}
+.pn{background:var(--pn);border:1px solid var(--bd);border-radius:8px;padding:10px 12px;display:flex;flex-direction:column;gap:8px;min-width:0}
+.ph{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.ph h3{margin:0;font-size:13px;font-weight:700;color:var(--az2);flex-grow:1}
+.nota{font-size:11px;color:var(--tx3)}
+.two{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:10px}
+@media (max-width:900px){.two{grid-template-columns:1fr}}
+.chev{display:flex;gap:4px;flex-wrap:wrap}
+.chev button{flex:1 1 140px;padding:6px 22px;min-height:58px;display:flex;flex-direction:column;gap:1px;align-items:flex-start;border:none;cursor:pointer;font-family:inherit;text-align:left;clip-path:polygon(0 0,calc(100% - 16px) 0,100% 50%,calc(100% - 16px) 100%,0 100%,16px 50%)}
+.chev button:first-child{clip-path:polygon(0 0,calc(100% - 16px) 0,100% 50%,calc(100% - 16px) 100%,0 100%)}
+.chev b{font-size:12px}.chev span{font-size:11px}.chev em{font-style:normal;font-family:var(--mono);font-size:18px;font-weight:700}
+.c0{background:var(--rjb);color:var(--rjt)}.c1{background:var(--amb);color:var(--amt)}.c2{background:var(--azb);color:var(--az2)}.c3{background:var(--grb);color:var(--tx2)}.c4{background:var(--okb);color:var(--okt)}
+.fl{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.fl select,.fl input{min-height:30px;border:1px solid var(--bd);border-radius:6px;padding:0 8px;font-size:13px;font-family:inherit;background:var(--pn);color:var(--tx);max-width:100%}
+.fl .sp{flex:1}
+.bx{min-height:30px;padding:0 12px;border-radius:6px;font-weight:700;font-size:12px;cursor:pointer;font-family:inherit;border:1px solid var(--az2);background:var(--pn);color:var(--az2)}
+.bx.p{background:#2f7d3b;border-color:#2f7d3b;color:#fff}
+.tw{overflow:auto;max-height:560px;border:1px solid var(--ln);border-radius:6px}
+table.t{border-collapse:collapse;width:100%;font-size:12px}
+table.t thead th{position:sticky;top:0;z-index:2;background:var(--az);color:#fff;text-align:left;padding:7px 8px;font-weight:600;vertical-align:bottom;line-height:1.2;cursor:pointer;user-select:none}
+table.t th .ar{font-size:9px;opacity:.85;margin-left:3px}
+table.t td{border-bottom:1px solid var(--ln);padding:6px 8px;vertical-align:top}
+table.t td.n{font-family:var(--mono);text-align:right;white-space:nowrap}
+table.t tbody tr:nth-child(even) td{background:var(--zeb)}
+.ch{display:inline-block;padding:1px 8px;font-size:11px;font-weight:700;white-space:nowrap;border-radius:10px}
+.k-r{background:var(--rjb);color:var(--rjt)}.k-a{background:var(--amb);color:var(--amt)}.k-g{background:var(--okb);color:var(--okt)}.k-b{background:var(--azb);color:var(--az2)}.k-n{background:var(--grb);color:var(--tx2)}
+.pg{display:flex;gap:6px;align-items:center;justify-content:flex-end;font-size:12px;color:var(--tx3)}
+.pg button{min-height:28px;padding:0 10px;border-radius:6px;background:var(--pn);color:var(--az2);border:1px solid var(--az2);font-size:12px;font-weight:600;cursor:pointer;font-family:inherit}.pg button:disabled{opacity:.45;cursor:default}
+svg text{fill:var(--tx2);font-family:'Segoe UI',Arial,sans-serif}
+.lg{display:flex;gap:12px;flex-wrap:wrap;font-size:12px}.lg i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:4px;vertical-align:-1px}
+.sec{background:var(--pn);border:1px solid var(--bd);border-radius:8px;padding:12px 14px;display:flex;flex-direction:column;gap:8px}
+.sec h3{margin:0;font-size:15px;color:var(--az2)}.sec p{margin:0;line-height:1.45}
+.res{background:var(--amb);color:var(--tx);border-radius:6px;padding:8px 12px;font-size:13px;line-height:1.45}
+.mail{max-width:760px;border:1px solid var(--bd);border-radius:8px;overflow:hidden;background:#fff;color:#1c1c1c}
+.mail .mh{background:#0C447C;color:#fff;padding:12px 16px;display:flex;gap:12px;align-items:center}.mail .mh img{width:40px;height:40px}
+.mail .mb{padding:14px 16px;display:flex;flex-direction:column;gap:10px;font-size:13px;line-height:1.45}
+.mail table{border-collapse:collapse;width:100%;font-size:12px}.mail th{background:#1E5A9E;color:#fff;text-align:left;padding:5px 6px}.mail td{border-bottom:1px solid #ddd;padding:5px 6px}
+.mail .rib{background:#FFE066;font-weight:700;padding:8px 10px;border-radius:6px}
+.mail .tile{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}.mail .tile div{border-radius:6px;padding:6px 8px}.mail .tile b{display:block;font-family:Consolas,monospace;font-size:18px}
+.acts{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+.load{padding:30px;text-align:center;color:var(--tx3)}
+:focus-visible{outline:2px solid var(--az2);outline-offset:2px}
+
+
+.proto{background:var(--yb);border-radius:8px;padding:8px 12px;font-size:13px;line-height:1.4}
+.chev.big button{min-height:74px}.chev .sm{display:flex;gap:4px;margin-top:2px}.chev .sm i{font-style:normal;font-family:var(--mono);font-size:11px;padding:0 5px;border-radius:8px;background:rgba(255,255,255,.65)}
+.c5{background:var(--okb);color:var(--okt)}.cx{background:var(--grb);color:var(--tx3)}.cn5{background:var(--amb);color:var(--amt)}
+.fk{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:8px}.fk>div{background:var(--zeb);border-radius:8px;padding:8px 10px}.fk .l{font-size:11px;color:var(--tx3);text-transform:uppercase;letter-spacing:.3px}.fk .v{font-weight:700;font-size:14px;margin-top:2px}
+.fk>.r{background:var(--rjb)}.fk>.r .v{color:var(--rjt)}.fk>.a{background:var(--amb)}.fk>.a .v{color:var(--amt)}
+.toca{display:flex;gap:12px;align-items:center;flex-wrap:wrap}.toca div{flex:1 1 300px;background:var(--amb);border-radius:8px;padding:10px 12px;font-size:13px}
+.bp{min-height:34px;padding:0 16px;border-radius:6px;font-weight:700;font-size:13px;cursor:pointer;font-family:inherit;border:1px solid var(--az2);background:var(--az2);color:#fff}
+.bp:disabled{opacity:.5;cursor:default}
+.mdw{position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;z-index:50}.mdw[hidden]{display:none}
+.md{background:var(--pn);border-radius:10px;width:min(560px,94vw);padding:16px 18px;display:flex;flex-direction:column;gap:10px}
+.md h3{margin:0;color:var(--az2);font-size:16px}.md label{font-size:12px;font-weight:700;color:var(--tx2);display:flex;flex-direction:column;gap:4px}
+.md input,.md textarea,.md select{border:1px solid var(--bd);border-radius:6px;padding:6px 8px;font-family:inherit;font-size:13px;background:var(--pn);color:var(--tx)}
+.md .er{color:var(--rjt);font-size:12px;min-height:16px}
+.sem{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px;vertical-align:0}
+.sv{background:#2f8a3e}.sa{background:#d29a1c}.sr{background:#c83a3a}.sg{background:#9aa5b1}
+
+</style>
+</head>
+<body>
+<header>
+<img src="icons/icon-192.png" alt="Logo CSS">
+<div class="ht"><h1>Expediente de Incumplimiento de Entrega</h1><div>Caja de Seguro Social · Dirección Nacional de Logística · Dirección Nacional de Compras · Dirección Ejecutiva Nacional de Administración</div></div>
+<div class="hr"><div class="stamp" id="stamp">Cargando el libro de Seguimiento…</div><div class="acts"><a class="hb" href="cumplimiento.html" target="_blank" rel="noopener">Cumplimiento</a><a class="hb" href="https://torrecontrolcss.org/SIGUELO_DINALOG/" target="_blank" rel="noopener">SIGUELO</a><button class="hb" id="tema" title="Cambiar tema" aria-label="Cambiar tema">☀</button></div></div>
+</header>
+<nav id="nav">
+<button class="tab on" data-v="rec">Recorrido</button>
+<button class="tab" data-v="exp">Expedientes</button>
+<button class="tab" data-v="fic">Ficha y registro de hitos</button>
+<button class="tab" data-v="pro">Vista del proveedor</button>
+<button class="tab" data-v="ley">Base legal y cómo se calcula</button>
+</nav>
+<main>
+<div class="proto"><b>Prototipo.</b> El expediente se abre solo con el libro de Incumplimientos de Seguimiento. El registro de hitos funciona en modo demostración: lo que se registra se guarda solo en este navegador. Al validar los responsables y los plazos, cada registro se guardará en SIGUELO con el PIN de cada persona y su documento en Drive.</div>
+<div class="load" id="cargando">Cargando el libro de Incumplimientos…</div>
+
+<section id="v-rec" hidden>
+<div class="vh"><h2>Recorrido del expediente</h2><p>Cada nota de entrega vencida con saldo abre un expediente. Aquí se ve en qué etapa está cada uno y si va dentro de su plazo.</p></div>
+<div class="kp" id="kpis"></div>
+<div class="pn"><div class="ph"><h3>Las siete etapas: expedientes que esperan en cada una</h3><span class="nota">Plazos propuestos por DINALOG en días hábiles · clic en una etapa para ver sus expedientes</span></div><div class="chev big" id="cadena"></div>
+<div class="lg"><span><i class="sem sv"></i>Dentro del plazo: lleva menos del 80 % de los días de su etapa</span><span><i class="sem sa"></i>Por vencer: lleva entre el 80 % y el 100 %</span><span><i class="sem sr"></i>Vencido: pasó la fecha límite de su etapa</span><span><i class="sem sg"></i>Sin plazo acordado</span></div></div>
+<div class="two">
+<div class="pn"><div class="ph"><h3>Semáforo de cada etapa</h3><span class="nota">Número de expedientes</span></div><div id="semaf"></div></div>
+<div class="pn"><div class="ph"><h3>Responsable y plazo propuesto por etapa</h3></div><div class="tw" style="max-height:none"><table class="t" id="tresp"></table></div></div>
+</div>
+</section>
+
+<section id="v-exp" hidden>
+<div class="vh"><h2>Expedientes</h2><p>Un expediente por nota vencida con saldo. Haga clic en una fila para abrir su ficha.</p></div>
+<div class="pn">
+<div class="fl"><select id="fInv" aria-label="Inventario"></select><select id="fEt" aria-label="Etapa"></select><select id="fSe" aria-label="Semáforo"></select><select id="fCed" aria-label="CEDIS"></select>
+<input id="fQ" placeholder="Buscar proveedor, renglón, orden o expediente" style="flex:1 1 240px" aria-label="Buscar">
+<button class="bx" id="lim">Limpiar filtros</button><button class="bx p" id="xV">Excel de la vista</button><button class="bx" id="xA">Excel completo</button></div>
+<div class="nota" id="nV"></div><div class="tw"><table class="t" id="tV"></table></div><div class="pg" id="pgV"></div>
+</div>
+</section>
+
+<section id="v-fic" hidden>
+<div class="vh"><h2>Ficha y registro de hitos</h2><p>Todo el caso en una pantalla. Cada responsable registra su etapa con su PIN y adjunta el documento; el sistema no deja saltar etapas.</p></div>
+<div class="pn"><div class="fl"><input id="qF" list="lsF" placeholder="Expediente, orden, proveedor o renglón" style="flex:1 1 360px" aria-label="Expediente"><datalist id="lsF"></datalist><button class="bx" id="abrir">Abrir</button></div></div>
+<div id="ficha"></div>
+</section>
+
+<section id="v-pro" hidden>
+<div class="vh"><h2>Vista del proveedor</h2><p>Historial de cada proveedor: notas vencidas, saldo, multa mínima que permite la ley y en qué etapa están sus casos. La reincidencia cuenta para la sanción (Ley 419, art. 230).</p></div>
+<div class="pn"><div class="fl"><input id="pQ" placeholder="Buscar proveedor" style="flex:1 1 240px" aria-label="Buscar proveedor"><button class="bx p" id="xP">Excel</button></div><div class="tw"><table class="t" id="tP"></table></div></div>
+</section>
+
+<section id="v-ley" hidden>
+<div class="vh"><h2>Base legal y cómo se calcula</h2><p>Cada etapa responde a la Ley 419, Título VI, Capítulo VII «Contratación de Suministro».</p></div>
+<div class="sec"><h3>Base legal</h3><div class="tw" style="max-height:none"><table class="t" id="tLey"></table></div></div>
+<div class="sec"><h3>Cuándo se abre un expediente</h3><div id="k1"></div><p><b>v</b> = fecha de vencimiento de la nota · <b>hoy</b> = fecha del cálculo · <b>saldo</b> = unidades solicitadas − unidades recibidas, según el libro de Seguimiento.</p></div>
+<div class="sec"><h3>Días en la etapa y semáforo</h3><div id="k2"></div><div id="k3"></div><p><b>d</b> = días hábiles (lunes a viernes) desde el último hito registrado · <b>P</b> = plazo propuesto de la etapa. La etapa 6 no tiene plazo hasta que la Dirección Ejecutiva lo acuerde.</p></div>
+<div class="sec"><h3>Multa mínima por entrega tardía</h3><div id="k4"></div><p>El recargo por día calendario de atraso se completa con el contrato (Ley 419, art. 232). La multa por incumplimiento va del 5 % al 15 % del monto total del contrato (art. 231).</p></div>
+<div class="sec"><h3>Cómo se lee la etapa desde el libro de Seguimiento</h3><div class="tw" style="max-height:none"><table class="t" id="tMap"></table></div></div>
+<div class="sec"><h3>De dónde salen los datos</h3><p>Seguimiento carga su libro de Incumplimientos en la Ventanilla Única de SIGUELO; el tablero lo lee tal como lo guardó Excel. Las demás fuentes del expediente —entradas de mercancía, contratos, prórrogas y multas, y notificaciones en PanamáCompra— se integran por la misma Ventanilla a medida que cada área las entregue.</p></div>
+</section>
+</main>
+
+<div class="mdw" id="mdw" hidden><div class="md" role="dialog" aria-modal="true" aria-labelledby="mdT">
+<h3 id="mdT">Registrar etapa</h3><div id="mdS" class="nota"></div>
+<label>PIN<input id="mPin" type="password" inputmode="numeric" maxlength="6" autocomplete="off"></label>
+<label>Fecha del hito<input id="mFe" type="date"></label>
+<label>Documento firmado (PDF o imagen)<input id="mDoc" type="file" accept=".pdf,image/*"></label>
+<label>Observación<textarea id="mOb" rows="2"></textarea></label>
+<div class="er" id="mEr"></div>
+<div class="fl" style="justify-content:flex-end"><button class="bx" id="mNo">Cancelar</button><button class="bp" id="mSi">Registrar</button></div>
+<div class="nota">Demostración: PIN 0000 (supervisor). Al pasar a uso, cada persona tendrá su PIN y solo podrá registrar sus etapas.</div>
+</div></div>
+
+<script>
+const FUENTE='data/cumplimiento_entregas.json';
+const ETAPAS=[
+ {n:1,nm:'Nota vencida con saldo',q:'Sistema',d:'Logística',p:0,hito:'Se abre el expediente al cargar el libro',ev:'Libro de Incumplimientos'},
+ {n:2,nm:'Informe de incumplimiento',q:'Departamento de Seguimiento',d:'Dirección Nacional de Logística',p:2,hito:'Informe enviado a Compras y a la Dirección Ejecutiva',ev:'Informe firmado'},
+ {n:3,nm:'Notificación al proveedor y a la afianzadora',q:'Departamento de Prórrogas y Multas',d:'Dirección Nacional de Compras',p:3,hito:'Proveedor y afianzadora notificados',ev:'Notificación con acuse o publicación en PanamáCompra'},
+ {n:4,nm:'Descargos o prórroga',q:'Proveedor · los recibe Prórrogas y Multas',d:'Dirección Nacional de Compras',p:5,hito:'Descargos o prórroga recibidos, o plazo vencido sin respuesta',ev:'Escrito del proveedor'},
+ {n:5,nm:'Evaluación e instrucción de resolver',q:'Dirección de Abasto',d:'Dirección Nacional de Logística',p:10,hito:'Descargos evaluados e instrucción emitida',ev:'Nota de instrucción'},
+ {n:6,nm:'Resolución administrativa y multa',q:'Coordinación Legal · firma el representante legal o su delegado',d:'Dirección Ejecutiva Nacional de Administración',p:null,hito:'Resolución y multa firmadas',ev:'Resolución firmada'},
+ {n:7,nm:'Notificación y ejecución de la fianza',q:'Departamento de Prórrogas y Multas',d:'Dirección Nacional de Compras',p:3,hito:'Resolución notificada y fianza en ejecución',ev:'Notificación con acuse'}];
+const LEY=[['Art. 228','El incumplimiento de los plazos de entrega imputable al contratista da lugar a la resolución administrativa de la orden o contrato y a la ejecución de la fianza.','1, 2 y 7'],
+ ['Art. 229','Prórroga solo por caso fortuito o fuerza mayor debidamente comprobado, que la entidad evalúa; vencida la prórroga sin entrega, se ejecuta la fianza.','4 y 5'],
+ ['Art. 230','Impone la sanción el representante legal o el servidor delegado, en el mismo acto que resuelve, según la gravedad, la reincidencia y el daño causado.','6'],
+ ['Art. 231','Multa por incumplimiento del 5 % al 15 % del monto total del contrato; puede acompañarse de inhabilitación de un año.','6'],
+ ['Art. 232','Multa por entrega tardía: no menor del 10 % de la porción no entregada, más un recargo por día calendario de atraso.','6'],
+ ['Art. 233','Causales de resolución administrativa para medicamentos e insumos; se tramita según el art. 139 de la Ley 22 de 2006.','6'],
+ ['Art. 214, num. 22','Ante el incumplimiento, la entidad puede activar la entrega con los demás participantes, en el orden de precio de la resolución de adjudicación.','Rama de la etapa 2'],
+ ['Art. 214, num. 23','La diferencia de precio con otro proponente puede cobrarse por jurisdicción coactiva.','Rama de la etapa 7']];
+function app(DATA,LOGO){
+document.getElementById('cargando').hidden=true;document.getElementById('v-rec').hidden=false;
+const C=DATA.cols, ALL=DATA.rows.map(r=>Object.fromEntries(C.map((c,i)=>[c,r[i]])));
+const _h=new Date(), HOYS=_h.getFullYear()+'-'+String(_h.getMonth()+1).padStart(2,'0')+'-'+String(_h.getDate()).padStart(2,'0');
+const fd=s=>s?s.split('-').reverse().join('/'):'—';
+const fmt=n=>Math.round(n).toLocaleString('en-US'), fm=n=>'B/. '+(n>=1e6?(n/1e6).toFixed(2)+' M':fmt(n));
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const habiles=(a,b)=>{if(!a||!b||b<=a)return 0;let d=new Date(a+'T12:00:00'),e=new Date(b+'T12:00:00'),n=0;while(d<e){d.setDate(d.getDate()+1);const w=d.getDay();if(w>0&&w<6)n++;}return n;};
+const calD=(a,b)=>Math.max(0,Math.round((new Date(b+'T00:00:00')-new Date(a+'T00:00:00'))/864e5));
+let LS={};try{LS=JSON.parse(localStorage.getItem('exp_inc_demo')||'{}')}catch(e){}
+const guardar=()=>{try{localStorage.setItem('exp_inc_demo',JSON.stringify(LS))}catch(e){}};
+const X=ALL.filter(r=>r.venc&&r.venc<HOYS&&(r.saldo||0)>0).map(r=>{
+ const o=Object.assign({},r);o.id='EXP-'+r.req+'-'+String(r.nota).replace(/[^0-9A-Za-z.]/g,'');
+ o.val=(r.saldo||0)*(r.precio||0);o.multa=o.val*0.10;o.dh=habiles(r.venc,HOYS);o.dc=calD(r.venc,HOYS);
+ o.base=Math.min(5,r.et||0);o.ini=[r.venc,r.fAviso||r.venc,r.fNotP||r.fAviso||r.venc][Math.min(2,o.base)]||r.venc;return o;});
+function estado(o){const ev=(LS[o.id]||[]).filter(e=>!e.anulado);let act=o.base+2,ini=o.ini;
+ ev.forEach(e=>{if(e.etapa===act){act++;ini=e.fecha;}});act=Math.min(act,8);
+ const E=ETAPAS[act-1];const d=habiles(ini,HOYS);let se='g';
+ if(act>7)se='c';else if(E.p){se=d<0.8*E.p?'v':(d<=E.p?'a':'r');}
+ return {act,E,d,se,ini,ev};}
+X.forEach(o=>Object.assign(o,{st:estado(o)}));
+const SEN={v:'Dentro del plazo',a:'Por vencer',r:'Vencido',g:'Sin plazo acordado',c:'Cerrado'};
+const semB=s=>`<span class="ch ${s==='v'?'k-g':s==='a'?'k-a':s==='r'?'k-r':'k-n'}"><i class="sem s${s}"></i>${SEN[s]}</span>`;
+document.getElementById('stamp').innerHTML='Fuente: libro de Incumplimientos de Seguimiento al <b>'+fd(DATA.corte)+'</b> · calculado al <b>'+fd(HOYS)+'</b>';
+// tema
+const th=document.getElementById('tema');function setT(t){document.documentElement.setAttribute('data-theme',t);th.textContent=t==='dark'?'☾':'☀';try{localStorage.setItem('ce_tema',t)}catch(e){}}
+let t0='light';try{t0=localStorage.getItem('ce_tema')||'light'}catch(e){} setT(t0);th.onclick=()=>setT(document.documentElement.getAttribute('data-theme')==='dark'?'light':'dark');
+// navegación
+const go=v=>{document.querySelectorAll('nav .tab').forEach(b=>b.classList.toggle('on',b.dataset.v===v));document.querySelectorAll('main section').forEach(s=>s.hidden=s.id!=='v-'+v);};
+document.querySelectorAll('nav .tab').forEach(b=>b.onclick=()=>go(b.dataset.v));
+// KPIs
+function kpis(){const k=(c,l,v,s,f)=>`<button class="kc ${c}" data-f="${f||''}"><span class="l">${l}</span><span class="v">${v}</span><span class="s">${s}</span></button>`;
+ const sv=X.reduce((a,o)=>a+o.val,0),e2=X.filter(o=>o.st.act===2),rj=X.filter(o=>o.st.se==='r'),dn=X.filter(o=>o.st.act>=7);
+ document.getElementById('kpis').innerHTML=k('n','Expedientes abiertos',fmt(X.length),'notas vencidas con saldo','')+k('r','Saldo vencido',fm(sv),'unidades pendientes × precio','')+
+ k('r','Sin informe de incumplimiento',fmt(e2.length),fm(e2.reduce((a,o)=>a+o.val,0))+' · esperan la etapa 2','e2')+k('r','Etapa vencida',fmt(rj.length),'pasaron el plazo de su etapa','sr')+
+ k('a','Multa mínima posible',fm(X.reduce((a,o)=>a+o.multa,0)),'10 % de lo no entregado (art. 232), sin el recargo diario','')+k('g','Con decisión notificada',fmt(dn.length),'llegaron a la etapa 7','e7');
+ document.querySelectorAll('#kpis .kc').forEach(b=>b.onclick=()=>{const f=b.dataset.f;if(!f)return;fEt.value=f[0]==='e'?f.slice(1):'';fSe.value=f[0]==='s'?f.slice(1):'';pag=0;go('exp');renderV();});}
+function cadena(){document.getElementById('cadena').innerHTML=ETAPAS.map(E=>{const L=X.filter(o=>o.st.act===E.n),c=s=>L.filter(o=>o.st.se===s).length;
+ const cl=E.n===1?'cx':L.length===0?'c3':(c('r')?'c0':c('a')?'c1':'c2');
+ return `<button class="${cl}" data-e="${E.n}"><b>${E.n} · ${E.nm}</b><span>${E.q.split(' · ')[0]} · ${E.p===null?'plazo por definir':E.p===0?'día 0':E.p+' días hábiles'}</span><em>${E.n===1?fmt(X.length):fmt(L.length)}</em>${E.n>1&&L.length?`<span class="sm"><i>${c('v')} verde</i><i>${c('a')} ámbar</i><i>${c('r')} rojo</i></span>`:''}</button>`}).join('');
+ document.querySelectorAll('#cadena button').forEach(b=>b.onclick=()=>{if(b.dataset.e==='1')return;fEt.value=b.dataset.e;fSe.value='';pag=0;go('exp');renderV();});}
+function semaf(){const W=560,rows=ETAPAS.slice(1),mx=Math.max(1,...rows.map(E=>X.filter(o=>o.st.act===E.n).length));
+ const col={v:'#2f8a3e',a:'#d29a1c',r:'#c83a3a',g:'#9aa5b1'};let y=8,s='';
+ rows.forEach(E=>{const L=X.filter(o=>o.st.act===E.n);let x=210;s+=`<text x="0" y="${y+15}" font-size="12">${E.n} · ${E.nm.length>30?E.nm.slice(0,29)+'…':E.nm}</text>`;
+  ['v','a','r','g'].forEach(k=>{const n=L.filter(o=>o.st.se===k).length;if(!n)return;const w=n/mx*(W-260);s+=`<rect x="${x}" y="${y}" width="${Math.max(2,w)}" height="22" rx="3" fill="${col[k]}"/>`;if(w>22)s+=`<text x="${x+w/2}" y="${y+15}" font-size="11" text-anchor="middle" style="fill:#fff;font-weight:700">${n}</text>`;x+=w+2;});
+  s+=`<text x="${x+6}" y="${y+15}" font-size="12" font-weight="700">${L.length}</text>`;y+=32;});
+ document.getElementById('semaf').innerHTML=`<svg viewBox="0 0 ${W} ${y}" width="100%">${s}</svg>`;}
+function tresp(){document.getElementById('tresp').innerHTML='<thead><tr><th>Etapa</th><th>Quién registra</th><th>Dirección</th><th>Plazo</th></tr></thead><tbody>'+ETAPAS.map(E=>`<tr><td><b>${E.n}</b> · ${E.nm}</td><td>${E.q}</td><td>${E.d}</td><td class="n">${E.p===null?'por definir':E.p===0?'día 0':E.p+' d'}</td></tr>`).join('')+'</tbody>';}
+// Expedientes
+const fInv=document.getElementById('fInv'),fEt=document.getElementById('fEt'),fSe=document.getElementById('fSe'),fCed=document.getElementById('fCed'),fQ=document.getElementById('fQ');
+const opts=(el,t,arr)=>{el.innerHTML=`<option value="">${t}</option>`+arr.map(([v,l])=>`<option value="${v}">${l}</option>`).join('');};
+opts(fInv,'Todos los inventarios',[...new Set(X.map(o=>o.inv))].sort().map(v=>[v,v]));opts(fEt,'Todas las etapas',ETAPAS.slice(1).map(E=>[E.n,'Espera etapa '+E.n+' · '+E.nm]));
+opts(fSe,'Todo el semáforo',[['v','Dentro del plazo'],['a','Por vencer'],['r','Vencido'],['g','Sin plazo acordado']]);opts(fCed,'Todos los CEDIS',[...new Set(X.map(o=>o.cedis||'Sin CEDIS'))].sort().map(v=>[v,v]));
+let pag=0,sortK='val',sortD=-1;const PP=50;
+function filt(){const q=fQ.value.trim().toUpperCase();return X.filter(o=>(!fInv.value||o.inv===fInv.value)&&(!fEt.value||o.st.act==fEt.value)&&(!fSe.value||o.st.se===fSe.value)&&(!fCed.value||(o.cedis||'Sin CEDIS')===fCed.value)&&
+ (!q||[o.id,o.prov,o.cod,o.desc,o.req].join(' ').toUpperCase().includes(q)));}
+const CV=[['Expediente','id'],['Proveedor','prov'],['Renglón','desc'],['Inventario','inv'],['Venció','venc'],['Días hábiles vencida','dh'],['Saldo B/.','val'],['Espera la etapa','act'],['Le toca a','toca'],['Días en la etapa','d'],['Semáforo','se']];
+const gv=(o,k)=>k==='act'?o.st.act:k==='toca'?o.st.E.q:k==='d'?o.st.d:k==='se'?'rav g'.indexOf(o.st.se):o[k];
+function renderV(){const L=filt().sort((a,b)=>{const p=gv(a,sortK),q=gv(b,sortK);return (typeof p==='number'?p-q:String(p).localeCompare(String(q)))*sortD;});
+ const np=Math.max(1,Math.ceil(L.length/PP));pag=Math.min(pag,np-1);
+ document.getElementById('nV').textContent=fmt(L.length)+' expedientes · '+fm(L.reduce((a,o)=>a+o.val,0))+' de saldo vencido';
+ document.getElementById('tV').innerHTML='<thead><tr>'+CV.map(([h,k])=>`<th data-k="${k}">${h}<span class="ar">${sortK===k?(sortD>0?'▲':'▼'):'↕'}</span></th>`).join('')+'</tr></thead><tbody>'+
+ L.slice(pag*PP,pag*PP+PP).map(o=>`<tr data-id="${o.id}" style="cursor:pointer"><td style="font-family:var(--mono)">${o.id}</td><td>${esc(o.prov)}</td><td>${esc(o.cod)} · ${esc(o.desc)}</td><td>${esc(o.inv)}</td><td class="n">${fd(o.venc)}</td><td class="n">${o.dh}</td><td class="n">${fmt(o.val)}</td><td>${o.st.act>7?'Cerrado':o.st.act+' · '+o.st.E.nm}</td><td>${esc(o.st.E.q)}</td><td class="n">${o.st.d}${o.st.E.p?' de '+o.st.E.p:''}</td><td>${semB(o.st.se)}</td></tr>`).join('')+'</tbody>';
+ document.getElementById('pgV').innerHTML=`<button ${pag?'':'disabled'} id="pA">Anterior</button><span>Página ${pag+1} de ${np}</span><button ${pag<np-1?'':'disabled'} id="pS">Siguiente</button>`;
+ document.getElementById('pA').onclick=()=>{pag--;renderV()};document.getElementById('pS').onclick=()=>{pag++;renderV()};
+ document.querySelectorAll('#tV th').forEach(h=>h.onclick=()=>{const k=h.dataset.k;if(sortK===k)sortD*=-1;else{sortK=k;sortD=-1}renderV();});
+ document.querySelectorAll('#tV tbody tr').forEach(tr=>tr.onclick=()=>{abrirF(tr.dataset.id);go('fic');});}
+[fInv,fEt,fSe,fCed].forEach(e=>e.onchange=()=>{pag=0;renderV()});fQ.oninput=()=>{pag=0;renderV()};
+document.getElementById('lim').onclick=()=>{[fInv,fEt,fSe,fCed,fQ].forEach(e=>e.value='');pag=0;renderV();};
+// Ficha
+document.getElementById('lsF').innerHTML=X.slice().sort((a,b)=>b.val-a.val).map(o=>`<option value="${o.id}">${esc(o.prov)} · ${esc(o.desc).slice(0,60)}</option>`).join('');
+let CUR=null;
+function abrirF(id){const q=String(id||'').trim().toUpperCase();const o=X.find(x=>x.id.toUpperCase()===q)||X.find(x=>[x.id,x.req,x.prov,x.cod].join(' ').toUpperCase().includes(q));
+ const F=document.getElementById('ficha');if(!o){F.innerHTML='<div class="pn">No se encontró el expediente.</div>';return;}CUR=o;document.getElementById('qF').value=o.id;const s=o.st;
+ const k=(l,v,c)=>`<div class="${c||''}"><div class="l">${l}</div><div class="v">${v}</div></div>`;
+ const chev=ETAPAS.map(E=>{const done=E.n<s.act,now=E.n===s.act;const reg=E.n===1?{fecha:o.venc}:(s.ev.find(e=>e.etapa===E.n)||(E.n<o.base+2?{fecha:E.n===2?o.fAviso:E.n===3?o.fNotP:null,libro:1}:null));
+  const cl=done?'c5':now?(s.se==='r'?'c0':s.se==='a'?'c1':'c2'):'c3';
+  return `<button class="${cl}" tabindex="-1"><b>${E.n} · ${E.nm}</b><span>${done?(reg&&reg.fecha?fd(reg.fecha):'registrada en el libro'):now?'le toca · '+s.d+(E.p?' de '+E.p:'')+' días':E.q.split(' · ')[0]}</span></button>`}).join('');
+ const bit=[{etapa:1,fecha:o.venc,quien:'Sistema',doc:'Libro de Incumplimientos',obs:'Expediente abierto: nota vencida con saldo'}].concat(o.fAviso&&o.base>=1?[{etapa:2,fecha:o.fAviso,quien:'Libro de Seguimiento',doc:'Columna Q',obs:'Notificada a Compras'}]:[]).concat(o.fNotP&&o.base>=2?[{etapa:3,fecha:o.fNotP,quien:'Libro de Seguimiento',doc:'Columna S',obs:'Notificada al proveedor'}]:[]).concat(s.ev);
+ F.innerHTML=`<div class="pn"><div class="ph"><h3 style="font-size:16px">${o.id}</h3><span>${semB(s.se)}</span></div>
+ <div class="fk">${k('Proveedor',esc(o.prov))}${k('Renglón',esc(o.cod)+' · '+esc(o.desc))}${k('Orden de compra · nota',o.req+' · '+esc(o.nota))}${k('CEDIS · inventario',(o.cedis||'—')+' · '+esc(o.inv))}
+ ${k('Venció',fd(o.venc)+' · '+o.dh+' días hábiles')}${k('Entregado',fmt(o.recib||0)+' de '+fmt(o.qty||0)+' u')}${k('Saldo vencido',fm(o.val),'r')}${k('Multa mínima, art. 232',fm(o.multa)+' + recargo diario','a')}
+ ${k('Contrato y fianza','del archivo de contratos')}${k('Prórroga solicitada','de Prórrogas y Multas')}${k('Publicación','de PanamáCompra')}</div>
+ <div class="chev">${chev}</div>
+ ${s.act<=7?`<div class="toca"><div><b>Le toca ahora:</b> ${esc(s.E.q)} registra «${esc(s.E.hito)}» y adjunta: ${esc(s.E.ev)}. Lleva ${s.d} días hábiles${s.E.p?' de un plazo de '+s.E.p:''}.</div><button class="bp" id="reg">Registrar etapa ${s.act} con PIN</button></div>`:'<div class="toca"><div><b>Expediente cerrado.</b></div></div>'}</div>
+ <div class="pn"><div class="ph"><h3>Bitácora del expediente</h3><span class="nota">Nada se borra: un supervisor solo puede anular con motivo</span><button class="bx" id="xB">Excel</button></div>
+ <div class="tw" style="max-height:none"><table class="t"><thead><tr><th>Etapa</th><th>Fecha</th><th>Registró</th><th>Documento</th><th>Observación</th></tr></thead><tbody>${bit.map(e=>`<tr><td>${e.etapa} · ${ETAPAS[e.etapa-1].nm}</td><td class="n">${fd(e.fecha)}</td><td>${esc(e.quien)}</td><td>${esc(e.doc||'')}</td><td>${esc(e.obs||'')}</td></tr>`).join('')}</tbody></table></div></div>`;
+ const rb=document.getElementById('reg');if(rb)rb.onclick=()=>abrirM(o);
+ document.getElementById('xB').onclick=()=>excel('Bitacora_'+o.id+'.xlsx','Bitácora del expediente '+o.id+' · '+o.prov,[['Etapa',e=>e.etapa+' · '+ETAPAS[e.etapa-1].nm,34],['Fecha',e=>e.fecha,12],['Registró',e=>e.quien,24],['Documento',e=>e.doc,30],['Observación',e=>e.obs,40]],bit);}
+document.getElementById('abrir').onclick=()=>abrirF(document.getElementById('qF').value);document.getElementById('qF').onkeydown=e=>{if(e.key==='Enter')abrirF(e.target.value)};
+// Modal de registro
+const M=document.getElementById('mdw'),mEr=document.getElementById('mEr');
+function abrirM(o){const s=o.st;document.getElementById('mdT').textContent='Registrar etapa '+s.act+' · '+s.E.nm;document.getElementById('mdS').textContent=o.id+' · '+o.prov+' · registra: '+s.E.q;
+ ['mPin','mOb','mDoc'].forEach(i=>document.getElementById(i).value='');document.getElementById('mFe').value=HOYS;mEr.textContent='';M.hidden=false;document.getElementById('mPin').focus();}
+const cerrarM=()=>{M.hidden=true};document.getElementById('mNo').onclick=cerrarM;
+M.onkeydown=e=>{if(e.key==='Escape')cerrarM();if(e.key==='Enter'&&e.target.tagName!=='TEXTAREA')document.getElementById('mSi').click();};
+['mPin','mFe','mDoc'].forEach(i=>document.getElementById(i).oninput=()=>{mEr.textContent=''});
+document.getElementById('mSi').onclick=()=>{const o=CUR,s=o.st,pin=document.getElementById('mPin').value,fe=document.getElementById('mFe').value,doc=document.getElementById('mDoc').files[0];
+ if(pin!=='0000'){mEr.textContent='PIN no válido. En la demostración use 0000.';return;}
+ if(!fe){mEr.textContent='Indique la fecha del hito.';return;}if(fe>HOYS){mEr.textContent='La fecha no puede ser futura.';return;}if(fe<s.ini){mEr.textContent='La fecha no puede ser anterior al hito previo ('+fd(s.ini)+').';return;}
+ if(!doc){mEr.textContent='Adjunte el documento firmado.';return;}
+ (LS[o.id]=LS[o.id]||[]).push({etapa:s.act,fecha:fe,quien:'Supervisor de demostración',doc:doc.name,obs:document.getElementById('mOb').value,ts:new Date().toISOString()});guardar();
+ o.st=estado(o);cerrarM();abrirF(o.id);kpis();cadena();semaf();renderV();renderP();};
+// Proveedores
+let PR=[];function renderP(){const g={};X.forEach(o=>{const p=g[o.prov]=g[o.prov]||{prov:o.prov,n:0,sv:0,mu:0,rj:0,e2:0,max:0};p.n++;p.sv+=o.val;p.mu+=o.multa;if(o.st.se==='r')p.rj++;if(o.st.act===2)p.e2++;p.max=Math.max(p.max,o.dh);});
+ PR=Object.values(g).sort((a,b)=>b.sv-a.sv);const q=document.getElementById('pQ').value.trim().toUpperCase();
+ document.getElementById('tP').innerHTML='<thead><tr><th>Proveedor</th><th>Expedientes</th><th>Saldo vencido B/.</th><th>Multa mínima B/.</th><th>Sin informe</th><th>Etapa vencida</th><th>Mayor atraso (días hábiles)</th></tr></thead><tbody>'+
+ PR.filter(p=>!q||p.prov.toUpperCase().includes(q)).map(p=>`<tr data-p="${esc(p.prov)}" style="cursor:pointer"><td>${esc(p.prov)}</td><td class="n">${p.n}</td><td class="n">${fmt(p.sv)}</td><td class="n">${fmt(p.mu)}</td><td class="n">${p.e2}</td><td class="n">${p.rj}</td><td class="n">${p.max}</td></tr>`).join('')+'</tbody>';
+ document.querySelectorAll('#tP tbody tr').forEach(tr=>tr.onclick=()=>{fQ.value=tr.dataset.p;[fInv,fEt,fSe,fCed].forEach(e=>e.value='');pag=0;go('exp');renderV();});}
+document.getElementById('pQ').oninput=renderP;
+// Ley y cálculo
+function ley(){document.getElementById('tLey').innerHTML='<thead><tr><th>Artículo</th><th>Qué establece</th><th>Etapa</th></tr></thead><tbody>'+LEY.map(l=>`<tr><td><b>${l[0]}</b></td><td>${l[1]}</td><td>${l[2]}</td></tr>`).join('')+'</tbody>';
+ const K=(id,tx)=>{try{katex.render(tx,document.getElementById(id),{displayMode:true,throwOnError:false})}catch(e){document.getElementById(id).textContent=tx}};
+ K('k1','\\text{Expediente abierto}\\iff v<\\text{hoy}\\;\\wedge\\;\\text{saldo}>0');
+ K('k2','d=\\#\\{\\text{días de lunes a viernes entre el último hito y hoy}\\}');
+ K('k3','\\text{Semáforo}=\\begin{cases}\\text{verde} & d<0.8\\,P\\\\ \\text{ámbar} & 0.8\\,P\\le d\\le P\\\\ \\text{rojo} & d>P\\end{cases}');
+ K('k4','\\text{Multa mínima}=0.10\\times\\text{saldo}\\times\\text{precio}\\;+\\;\\text{recargo diario}\\times\\text{días calendario de atraso}');
+ document.getElementById('tMap').innerHTML='<thead><tr><th>Lo que registra el libro de Seguimiento</th><th>Etapa que espera el expediente</th><th>Desde qué fecha se cuentan los días</th></tr></thead><tbody>'+
+ [['Sin notificación a Compras','2 · Informe de incumplimiento','Vencimiento de la nota'],['Notificada a Compras (columna Q)','3 · Notificación al proveedor','Fecha del aviso a Compras'],['Notificada al proveedor (S)','4 · Descargos o prórroga','Fecha de notificación al proveedor'],['Con descargos (U)','5 · Evaluación e instrucción','Fecha de notificación al proveedor'],['Con decisión de Abastos (V)','6 · Resolución y multa','Fecha de notificación al proveedor'],['Decisión notificada (W)','7 · Notificación y ejecución de la fianza','Fecha de notificación al proveedor']].map(r=>`<tr><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td></tr>`).join('')+'</tbody>';}
+// Excel institucional
+async function excel(nombre,titulo,cols,rows){const wb=new ExcelJS.Workbook();const ws=wb.addWorksheet('Datos');
+ if(LOGO){const id=wb.addImage({base64:LOGO.split(',')[1],extension:'png'});ws.addImage(id,{tl:{col:0,row:0},ext:{width:48,height:48}});}
+ ws.getCell('B1').value='CAJA DE SEGURO SOCIAL · DIRECCIÓN NACIONAL DE LOGÍSTICA';ws.getCell('B1').font={bold:true,size:13,color:{argb:'FF0C447C'}};
+ ws.getCell('B2').value=titulo;ws.getCell('B2').font={bold:true,size:11};ws.getCell('B3').value='Fuente: libro de Incumplimientos, Departamento de Seguimiento, al '+fd(DATA.corte)+' · calculado al '+fd(HOYS)+' · prototipo';ws.getCell('B3').font={size:9,color:{argb:'FF555555'}};
+ const hr=ws.getRow(5);cols.forEach((c,i)=>{const cl=hr.getCell(i+1);cl.value=c[0];cl.font={bold:true,color:{argb:'FFFFFFFF'}};cl.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FF1E5A9E'}};cl.alignment={wrapText:true,vertical:'middle'};ws.getColumn(i+1).width=c[2]||14});hr.height=32;
+ rows.forEach((r,j)=>{const row=ws.getRow(6+j);cols.forEach((c,i)=>{row.getCell(i+1).value=c[1](r)})});
+ ws.autoFilter={from:{row:5,column:1},to:{row:5+rows.length,column:cols.length}};ws.views=[{state:'frozen',ySplit:5}];
+ const buf=await wb.xlsx.writeBuffer();const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([buf]));a.download=nombre;a.click();}
+const XE=[['Expediente',o=>o.id,24],['Proveedor',o=>o.prov,32],['Código',o=>o.cod,12],['Renglón',o=>o.desc,40],['Inventario',o=>o.inv,16],['CEDIS',o=>o.cedis,8],['Orden',o=>o.req,13],['Nota',o=>o.nota,9],['Venció',o=>o.venc,11],['Días hábiles vencida',o=>o.dh],['Saldo (u)',o=>o.saldo],['Saldo B/.',o=>Math.round(o.val)],['Multa mínima B/.',o=>Math.round(o.multa)],['Espera la etapa',o=>o.st.act>7?'Cerrado':o.st.act+' · '+o.st.E.nm,30],['Le toca a',o=>o.st.E.q,30],['Días en la etapa',o=>o.st.d],['Plazo (días)',o=>o.st.E.p],['Semáforo',o=>SEN[o.st.se],16]];
+document.getElementById('xV').onclick=()=>excel('Expedientes_vista.xlsx','Expedientes de incumplimiento · vista filtrada',XE,filt());
+document.getElementById('xA').onclick=()=>excel('Expedientes_completo.xlsx','Expedientes de incumplimiento · todos',XE,X);
+document.getElementById('xP').onclick=()=>excel('Expedientes_por_proveedor.xlsx','Expedientes de incumplimiento por proveedor',[['Proveedor',p=>p.prov,38],['Expedientes',p=>p.n],['Saldo vencido B/.',p=>Math.round(p.sv)],['Multa mínima B/.',p=>Math.round(p.mu)],['Sin informe',p=>p.e2],['Etapa vencida',p=>p.rj],['Mayor atraso (días hábiles)',p=>p.max]],PR);
+kpis();cadena();semaf();tresp();renderV();renderP();ley();
+const top=X.slice().sort((a,b)=>b.val-a.val)[0];abrirF((new URLSearchParams(location.search)).get('exp')||(top&&top.id));
+const v0=(new URLSearchParams(location.search)).get('v');if(v0)go(v0);
+}
+Promise.all([fetch(FUENTE+'?t='+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.json():Promise.reject(r.status)),
+  fetch('icons/icon-192.png').then(r=>r.blob()).then(b=>new Promise(ok=>{const f=new FileReader();f.onload=()=>ok(f.result);f.readAsDataURL(b)})).catch(()=>null)])
+ .then(([D,L])=>app(D,L))
+ .catch(e=>{console.error(e);document.getElementById('cargando').innerHTML='Todavía no hay un libro de Incumplimientos publicado. Se publica al cargarlo en la <a href="https://torrecontrolcss.org/SIGUELO_DINALOG/cargar_reportes.html">Ventanilla Única</a>.';});
+</script>
+</body>
+</html>
