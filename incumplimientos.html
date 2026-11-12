@@ -170,20 +170,20 @@ svg text{fill:var(--tx2);font-family:'Segoe UI',Arial,sans-serif}
 const FUENTE='data/cumplimiento_entregas.json';
 const ETAPAS=[
  {n:1,nm:'Nota vencida con saldo',q:'Sistema',d:'Logística',p:0,hito:'Se abre el expediente al cargar el libro',ev:'Libro de Incumplimientos'},
- {n:2,nm:'Informe de incumplimiento',q:'Departamento de Seguimiento',d:'Dirección Nacional de Logística',p:2,hito:'Informe enviado a Compras y a la Dirección Ejecutiva',ev:'Informe firmado'},
- {n:3,nm:'Notificación al proveedor y a la afianzadora',q:'Departamento de Prórrogas y Multas',d:'Dirección Nacional de Compras',p:3,hito:'Proveedor y afianzadora notificados',ev:'Notificación con acuse o publicación en PanamáCompra'},
- {n:4,nm:'Descargos o prórroga',q:'Proveedor · los recibe Prórrogas y Multas',d:'Dirección Nacional de Compras',p:5,hito:'Descargos o prórroga recibidos, o plazo vencido sin respuesta',ev:'Escrito del proveedor'},
- {n:5,nm:'Evaluación e instrucción de resolver',q:'Dirección de Abasto',d:'Dirección Nacional de Logística',p:10,hito:'Descargos evaluados e instrucción emitida',ev:'Nota de instrucción'},
- {n:6,nm:'Resolución administrativa y multa',q:'Coordinación Legal · firma el representante legal o su delegado',d:'Dirección Ejecutiva Nacional de Administración',p:null,hito:'Resolución y multa firmadas',ev:'Resolución firmada'},
- {n:7,nm:'Notificación y ejecución de la fianza',q:'Departamento de Prórrogas y Multas',d:'Dirección Nacional de Compras',p:3,hito:'Resolución notificada y fianza en ejecución',ev:'Notificación con acuse'}];
+ {n:2,nm:'Informe de incumplimiento',q:'Jefe del Departamento de Seguimiento',d:'Dirección Nacional de Logística',p:2,hito:'Informe enviado a Compras y a la Dirección Ejecutiva',ev:'Informe firmado'},
+ {n:3,nm:'Notificación al proveedor y a la afianzadora',q:'Jefe del Departamento de Prórrogas y Multas',d:'Dirección Nacional de Compras',p:3,hito:'Proveedor y afianzadora notificados',ev:'Notificación con acuse o publicación en PanamáCompra'},
+ {n:4,nm:'Descargos o prórroga',q:'Proveedor · los recibe el Jefe del Departamento de Prórrogas y Multas',d:'Dirección Nacional de Compras',p:5,hito:'Descargos o prórroga recibidos, o plazo vencido sin respuesta',ev:'Escrito del proveedor'},
+ {n:5,nm:'Evaluación e instrucción de resolver',q:'Director de Abasto',d:'Dirección Nacional de Logística',p:10,hito:'Descargos evaluados e instrucción emitida',ev:'Nota de instrucción'},
+ {n:6,nm:'Resolución administrativa y multa',q:'Coordinador Legal · firma el representante legal o su delegado',d:'Dirección Ejecutiva Nacional de Administración',p:null,hito:'Resolución y multa firmadas',ev:'Resolución firmada'},
+ {n:7,nm:'Notificación y ejecución de la fianza',q:'Jefe del Departamento de Prórrogas y Multas',d:'Dirección Nacional de Compras',p:3,hito:'Resolución notificada y fianza en ejecución',ev:'Notificación con acuse'}];
 const LEY=[['Art. 228','El incumplimiento de los plazos de entrega imputable al contratista da lugar a la resolución administrativa de la orden o contrato y a la ejecución de la fianza.','1, 2 y 7'],
  ['Art. 229','Prórroga solo por caso fortuito o fuerza mayor debidamente comprobado, que la entidad evalúa; vencida la prórroga sin entrega, se ejecuta la fianza.','4 y 5'],
  ['Art. 230','Impone la sanción el representante legal o el servidor delegado, en el mismo acto que resuelve, según la gravedad, la reincidencia y el daño causado.','6'],
  ['Art. 231','Multa por incumplimiento del 5 % al 15 % del monto total del contrato; puede acompañarse de inhabilitación de un año.','6'],
  ['Art. 232','Multa por entrega tardía: no menor del 10 % de la porción no entregada, más un recargo por día calendario de atraso.','6'],
  ['Art. 233','Causales de resolución administrativa para medicamentos e insumos; se tramita según el art. 139 de la Ley 22 de 2006.','6'],
- ['Art. 214, num. 22','Ante el incumplimiento, la entidad puede activar la entrega con los demás participantes, en el orden de precio de la resolución de adjudicación.','Rama de la etapa 2'],
- ['Art. 214, num. 23','La diferencia de precio con otro proponente puede cobrarse por jurisdicción coactiva.','Rama de la etapa 7']];
+ ['Art. 214, num. 22','Ante el incumplimiento, la entidad puede activar la entrega con los demás participantes, en el orden de precio de la resolución de adjudicación.','Opción en la etapa 2'],
+ ['Art. 214, num. 23','La diferencia de precio con otro proponente puede cobrarse por jurisdicción coactiva.','Opción en la etapa 7']];
 function app(DATA,LOGO){
 document.getElementById('cargando').hidden=true;document.getElementById('v-rec').hidden=false;
 const C=DATA.cols, ALL=DATA.rows.map(r=>Object.fromEntries(C.map((c,i)=>[c,r[i]])));
@@ -231,7 +231,7 @@ function semaf(){const W=560,rows=ETAPAS.slice(1),mx=Math.max(1,...rows.map(E=>X
   ['v','a','r','g'].forEach(k=>{const n=L.filter(o=>o.st.se===k).length;if(!n)return;const w=n/mx*(W-260);s+=`<rect x="${x}" y="${y}" width="${Math.max(2,w)}" height="22" rx="3" fill="${col[k]}"/>`;if(w>22)s+=`<text x="${x+w/2}" y="${y+15}" font-size="11" text-anchor="middle" style="fill:#fff;font-weight:700">${n}</text>`;x+=w+2;});
   s+=`<text x="${x+6}" y="${y+15}" font-size="12" font-weight="700">${L.length}</text>`;y+=32;});
  document.getElementById('semaf').innerHTML=`<svg viewBox="0 0 ${W} ${y}" width="100%">${s}</svg>`;}
-function tresp(){document.getElementById('tresp').innerHTML='<thead><tr><th>Etapa</th><th>Quién registra</th><th>Dirección</th><th>Plazo</th></tr></thead><tbody>'+ETAPAS.map(E=>`<tr><td><b>${E.n}</b> · ${E.nm}</td><td>${E.q}</td><td>${E.d}</td><td class="n">${E.p===null?'por definir':E.p===0?'día 0':E.p+' d'}</td></tr>`).join('')+'</tbody>';}
+function tresp(){document.getElementById('tresp').innerHTML='<thead><tr><th>Etapa</th><th>Cargo que registra (titular o suplente, con su PIN)</th><th>Dirección</th><th>Plazo</th></tr></thead><tbody>'+ETAPAS.map(E=>`<tr><td><b>${E.n}</b> · ${E.nm}</td><td>${E.q}</td><td>${E.d}</td><td class="n">${E.p===null?'por definir':E.p===0?'día 0':E.p+' d'}</td></tr>`).join('')+'</tbody>';}
 // Expedientes
 const fInv=document.getElementById('fInv'),fEt=document.getElementById('fEt'),fSe=document.getElementById('fSe'),fCed=document.getElementById('fCed'),fQ=document.getElementById('fQ');
 const opts=(el,t,arr)=>{el.innerHTML=`<option value="">${t}</option>`+arr.map(([v,l])=>`<option value="${v}">${l}</option>`).join('');};
