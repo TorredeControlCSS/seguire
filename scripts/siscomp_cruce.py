@@ -91,6 +91,7 @@ def _f(v): return v.strftime('%Y-%m-%d') if pd.notna(v) else ''
 out={'_meta':{'fuente':'SisCOMP+ (Dirección Nacional de Compras) cruzado con el libro de Incumplimientos de Seguimiento','archivos':[ACT.split('/')[-1],ANT.split('/')[-1]],
   'corteLibro':L.get('corte'),'generado':datetime.datetime.now().strftime('%Y-%m-%d %H:%M'),'filasSisCOMP':int(len(S)),
   'conteo':{k:int(v) for k,v in S.clase.value_counts().items()},
+  'totales':{'saldoSisCOMP':round(float(S.SALDO_PENDIENTE.sum()),2),'saldoCorregido':round(float(S.saldo_real.sum()),2),'filasInfladas':int(S.inflado.sum())},
   'regla':'Un solo renglón con código exacto e importe sin error, entregado en un CEDIS, con la misma OC, código y CEDIS en el libro y la fecha dentro de sus notas.'},
   'confirmados':[],'cerrar':[]}
 for _,x in S[S.clase=='CONFIRMADO'].iterrows():

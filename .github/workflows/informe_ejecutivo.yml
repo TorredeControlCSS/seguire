@@ -1,0 +1,35 @@
+name: Informe ejecutivo del Expediente de Incumplimiento
+# Rearma los PDF para la DENA y el Director General con los datos del tablero.
+# Corre cada día hábil a las 7:00 a. m. de Panamá (después de los antecedentes)
+# y cuando cambian los datos; el correo semanal (GAS, lunes 8:00) solo los baja.
+on:
+  push:
+    paths: ['data/cumplimiento_entregas.json', 'data/siscomp_cruce.json', 'scripts/informe_ejecutivo.py']
+  schedule:
+    - cron: '0 12 * * 1-5'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  informe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Preparar Chromium
+        run: |
+          pip install --quiet playwright
+          python3 -m playwright install --with-deps chromium
+      - name: Bajar los hitos registrados en SIGUELO
+        run: curl -fsSL "https://torrecontrolcss.org/SIGUELO/incumplimiento_eventos.json?t=$(date +%s)" -o /tmp/eventos.json
+      - name: Armar el informe
+        run: |
+          git pull --quiet --rebase || true
+          python3 scripts/informe_ejecutivo.py /tmp/eventos.json informes
+      - name: Publicar si cambió
+        run: |
+          if git diff --quiet -- informes/*.html informes/*.json; then git checkout -- informes; echo "Sin cambios"; exit 0; fi
+          git config user.name "Diego Bethancourth"
+          git config user.email "pedregaljuandiaz@gmail.com"
+          git add informes
+          git commit -m "Actualizar informe ejecutivo del expediente de incumplimiento"
+          git push

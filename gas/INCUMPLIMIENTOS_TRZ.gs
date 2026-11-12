@@ -770,3 +770,67 @@ function incCorreoInstalar() {
   if (!props.getProperty('INC_CORREO_MODO')) props.setProperty('INC_CORREO_MODO', 'PRUEBA');
   Logger.log('Disparador diario 7:00 (Panamá) creado. Modo: ' + props.getProperty('INC_CORREO_MODO') + '. Para enviar a los responsables: INC_CORREO_MODO = REAL.');
 }
+
+/* ==================================================================== */
+/*  INFORME EJECUTIVO SEMANAL · DENA (y versión para el Director General)*/
+/*  Los PDF los arma GitHub (scripts/informe_ejecutivo.py) con los mismos */
+/*  datos del tablero; aquí solo se bajan y se envían.                  */
+/*  Propiedades: INC_INFORME_MODO = PRUEBA (por defecto) | REAL | APAGADO*/
+/*               INC_INFORME_DEST = correo(s) de la DENA, separados por , */
+/*               INC_INFORME_CC   = copia opcional (Dirección de Logística)*/
+/*  Instalar: incInformeInstalar() · Probar: incInformePrueba()          */
+/* ==================================================================== */
+
+var INC_INFORME_URL = 'https://torrecontrolcss.org/seguire/informes/';
+
+function incInformeEjecutivo(forzar) {
+  forzar = forzar === 'PRUEBA' ? 'PRUEBA' : null;
+  var props = PropertiesService.getScriptProperties();
+  var modo = String(props.getProperty('INC_INFORME_MODO') || 'PRUEBA').toUpperCase();
+  if (modo === 'APAGADO' && !forzar) return 'apagado';
+  var prueba = forzar === 'PRUEBA' || modo !== 'REAL';
+  var t = '?_=' + Date.now(), bajar = function (f) {
+    var r = UrlFetchApp.fetch(INC_INFORME_URL + f + t, { muteHttpExceptions: true });
+    if (r.getResponseCode() !== 200) throw new Error('No se pudo bajar ' + f + ' (' + r.getResponseCode() + ')');
+    return r;
+  };
+  var R = JSON.parse(bajar('incumplimiento_ejecutivo.json').getContentText());
+  var fd = function (s) { return s ? s.split('-').reverse().join('/') : ''; };
+  var pdf1 = bajar('incumplimiento_ejecutivo.pdf').getBlob().setName('Informe_ejecutivo_incumplimiento_' + R.hoy + '.pdf');
+  var pdf2 = bajar('incumplimiento_ejecutivo_DG.pdf').getBlob().setName('Resumen_Director_General_incumplimiento_' + R.hoy + '.pdf');
+  var dest = String(props.getProperty('INC_INFORME_DEST') || '').trim(), cc = String(props.getProperty('INC_INFORME_CC') || '').trim();
+  var k = function (n, l, f, c) { return '<td style="padding:10px 14px;background:' + f + ';border-radius:8px"><div style="font-size:20px;font-weight:700;color:' + c + '">' + n + '</div><div style="font-size:11px;color:#374151">' + l + '</div></td><td width="8"></td>'; };
+  var html = '<div style="font-family:Arial,sans-serif;font-size:13px;color:#1f2937;max-width:760px">' + incCabecera_('Informe ejecutivo semanal', 18) +
+    '<div style="padding:14px 18px;border:1px solid #e5e7eb;border-top:0;border-radius:0 0 8px 8px">' +
+    '<p style="margin:0 0 12px">Buenos días. Le hacemos llegar el informe ejecutivo del expediente de incumplimiento de entrega al ' + fd(R.hoy) + ', con el libro de Seguimiento al ' + fd(R.corteLibro) + '.</p>' +
+    '<table cellspacing="0" cellpadding="0"><tr>' + k(R.expedientes, 'expedientes abiertos', '#eef4fb', '#0c447c') + k(incFm_(R.saldo), 'saldo no entregado', '#eef4fb', '#0c447c') +
+    k((R.semaforo.r || 0), 'vencidos en su etapa', '#fbe3e3', '#c83a3a') + k(R.verificacion.n, 'en verificación previa', '#efe8f8', '#5b3f8a') + '</tr></table>' +
+    '<p style="margin:14px 0 6px"><b>' + Math.round(R.top5pct) + ' % del saldo está en 5 proveedores.</b> ' + (R.etapas['2'] || 0) + ' expedientes esperan aún el informe de incumplimiento (etapa 2).</p>' +
+    '<p style="margin:6px 0">Se adjuntan dos documentos:</p><ul style="margin:0 0 10px;padding-left:20px">' +
+    '<li><b>Informe ejecutivo</b> (3 páginas): situación, proveedores y renglones con más saldo, y las decisiones que se necesitan.</li>' +
+    '<li><b>Resumen para el Director General</b> (1 página), para elevarlo si lo estima conveniente.</li></ul>' +
+    '<p style="margin:14px 0 0"><a href="' + INC_TABLERO + '" style="background:#1e5a9e;color:#fff;padding:8px 14px;border-radius:6px;text-decoration:none">Ver el tablero en línea</a></p>' +
+    '<p style="font-size:11px;color:#6b7280;margin-top:14px">Informe generado automáticamente cada semana por la Torre de Control · Dirección Nacional de Logística, con el libro de Seguimiento, el cruce cierto con SisCOMP+ y los registros de SIGUELO.</p></div></div>';
+  var asunto = 'Expediente de incumplimiento · informe ejecutivo · ' + R.expedientes + ' abiertos · ' + incFm_(R.saldo) + ' · ' + fd(R.hoy);
+  if (prueba) {
+    var yo = props.getProperty('INC_CORREO_PRUEBA') || Session.getEffectiveUser().getEmail();
+    var av = '<div style="background:#fff4d6;border:1px solid #f2dc7a;padding:8px 12px;border-radius:6px;margin-bottom:12px;font-family:Arial;font-size:12px"><b>PRUEBA.</b> En uso real este correo iría a: ' +
+      (dest ? incEsc_(dest) + (cc ? ' · copia: ' + incEsc_(cc) : '') : '<i>falta poner el correo de la DENA en la propiedad INC_INFORME_DEST</i>') + '.</div>';
+    incEnviar_({ to: yo, subject: '[PRUEBA · DENA] ' + asunto, htmlBody: av + html, attachments: [pdf1, pdf2], name: 'Torre de Control CSS' });
+    Logger.log('Informe ejecutivo (PRUEBA → ' + yo + ')'); return 'prueba';
+  }
+  if (!dest) { Logger.log('Falta INC_INFORME_DEST'); return 'sin destinatario'; }
+  var o = { to: dest, subject: asunto, htmlBody: html, attachments: [pdf1, pdf2], name: 'Torre de Control CSS' };
+  if (cc) o.cc = cc;
+  incEnviar_(o); Logger.log('Informe ejecutivo enviado a ' + dest); return 'enviado';
+}
+
+function incInformePrueba() { return incInformeEjecutivo('PRUEBA'); }
+
+function incInformeInstalar() {
+  ScriptApp.getProjectTriggers().forEach(function (t) { if (t.getHandlerFunction() === 'incInformeEjecutivo') ScriptApp.deleteTrigger(t); });
+  ScriptApp.newTrigger('incInformeEjecutivo').timeBased().onWeekDay(ScriptApp.WeekDay.MONDAY).atHour(8).inTimezone('America/Panama').create();
+  var props = PropertiesService.getScriptProperties();
+  if (!props.getProperty('INC_INFORME_MODO')) props.setProperty('INC_INFORME_MODO', 'PRUEBA');
+  Logger.log('Disparador semanal: lunes 8:00 (Panamá). Modo: ' + props.getProperty('INC_INFORME_MODO') + '. Para enviarlo a la DENA: INC_INFORME_DEST = su correo e INC_INFORME_MODO = REAL.');
+}

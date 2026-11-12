@@ -1,0 +1,32 @@
+{
+ "hoy": "2026-11-12",
+ "corteLibro": "2026-11-10",
+ "expedientes": 180,
+ "saldo": 8152664.68,
+ "proveedores": 49,
+ "semaforo": {
+  "r": 157,
+  "w": 16,
+  "g": 2,
+  "v": 5
+ },
+ "etapas": {
+  "2": 157,
+  "4": 20,
+  "5": 1,
+  "6": 2
+ },
+ "verificacion": {
+  "n": 16,
+  "saldo": 463609.63
+ },
+ "top5pct": 71.2,
+ "cumplimientoATiempo": 77.1,
+ "notasVencidas": 2844,
+ "hitosRegistrados": 0,
+ "siscomp": {
+  "cerrar": 85,
+  "confirmados": 64,
+  "revision": 2086
+ }
+}
