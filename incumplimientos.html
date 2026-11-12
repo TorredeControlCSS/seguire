@@ -99,13 +99,18 @@ svg text{fill:var(--tx2);font-family:'Segoe UI',Arial,sans-serif}
 .sv{background:#2f8a3e}.sa{background:#d29a1c}.sr{background:#c83a3a}.sg{background:#9aa5b1}
 
 .scp{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}@media(max-width:760px){.scp{grid-template-columns:1fr}}
+#vidOv{position:fixed;inset:0;background:rgba(8,20,40,.78);z-index:9000;display:none;align-items:center;justify-content:center;padding:24px}#vidOv.on{display:flex}
+#vidBox{background:#0c2850;border-radius:10px;padding:12px 12px 10px;width:min(1180px,96vw);box-shadow:0 12px 40px rgba(0,0,0,.45)}
+#vidBox .vh{display:flex;align-items:center;justify-content:space-between;color:#fff;font:600 14px 'Segoe UI',Arial,sans-serif;margin:0 2px 8px}
+#vidBox .vh button{background:rgba(255,255,255,.16);border:0;color:#fff;border-radius:6px;padding:6px 12px;font:600 12px 'Segoe UI',Arial,sans-serif;cursor:pointer}
+#vidBox video{width:100%;max-height:78vh;border-radius:6px;background:#000;display:block}#vidBox .vp{color:#a9c3e0;font:12px 'Segoe UI',Arial,sans-serif;margin:7px 2px 0}
 </style>
 </head>
 <body>
 <header>
 <img src="icons/icon-192.png" alt="Logo CSS">
 <div class="ht"><h1>Expediente de Incumplimiento de Entrega</h1><div>Caja de Seguro Social · Dirección Nacional de Logística · Dirección Nacional de Compras · Dirección Ejecutiva Nacional de Administración</div></div>
-<div class="hr"><div class="stamp" id="stamp">Cargando el libro de Seguimiento…</div><div class="acts"><a class="hb" href="cumplimiento.html" target="_blank" rel="noopener">Cumplimiento</a><a class="hb" href="https://torrecontrolcss.org/SIGUELO_DINALOG/" target="_blank" rel="noopener">SIGUELO</a><button class="hb" id="tema" title="Cambiar tema" aria-label="Cambiar tema">☀</button></div></div>
+<div class="hr"><div class="stamp" id="stamp">Cargando el libro de Seguimiento…</div><div class="acts"><button class="hb" id="btnVideo" title="Video: cómo funciona, paso a paso">▶ Video</button><a class="hb" href="cumplimiento.html" target="_blank" rel="noopener">Cumplimiento</a><a class="hb" href="https://torrecontrolcss.org/SIGUELO_DINALOG/" target="_blank" rel="noopener">SIGUELO</a><button class="hb" id="tema" title="Cambiar tema" aria-label="Cambiar tema">☀</button></div></div>
 </header>
 <nav id="nav">
 <button class="tab on" data-v="rec">Recorrido</button>
@@ -398,6 +403,18 @@ Promise.all([fetch(FUENTE+'?t='+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.js
   fetch('icons/icon-192.png').then(r=>r.blob()).then(b=>new Promise(ok=>{const f=new FileReader();f.onload=()=>ok(f.result);f.readAsDataURL(b)})).catch(()=>null)])
  .then(([D,E,S,L])=>app(D,L,E,S))
  .catch(e=>{console.error(e);document.getElementById('cargando').innerHTML='Todavía no hay un libro de Incumplimientos publicado. Se publica al cargarlo en la <a href="https://torrecontrolcss.org/SIGUELO_DINALOG/cargar_reportes.html">Ventanilla Única</a>.';});
+</script>
+<div id="vidOv" role="dialog" aria-label="Video: cómo funciona el Expediente de Incumplimiento"><div id="vidBox">
+<div class="vh"><span>Expediente de Incumplimiento de Entrega · cómo funciona, paso a paso · 3 min 40 s</span><button type="button" id="vidCerrar">Cerrar</button></div>
+<video id="vidPlayer" controls preload="none" playsinline poster="videos/expediente_incumplimiento.jpg"><source src="videos/expediente_incumplimiento.mp4" type="video/mp4"></video>
+<div class="vp">Recorrido, expedientes, ficha, registro de una etapa con PIN (de demostración), bitácora, vista del proveedor y correo diario.</div>
+</div></div>
+<script>
+(function(){var ov=document.getElementById('vidOv'),v=document.getElementById('vidPlayer');
+function abrir(){ov.classList.add('on');try{v.play()}catch(e){}}function cerrar(){ov.classList.remove('on');try{v.pause()}catch(e){}}
+document.getElementById('btnVideo').addEventListener('click',abrir);document.getElementById('vidCerrar').addEventListener('click',cerrar);
+ov.addEventListener('click',function(e){if(e.target===ov)cerrar()});document.addEventListener('keydown',function(e){if(e.key==='Escape'&&ov.classList.contains('on'))cerrar()});
+if(/[?&]video=1\b/.test(location.search))setTimeout(abrir,600);})();
 </script>
 </body>
 </html>
