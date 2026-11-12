@@ -94,7 +94,7 @@ svg text{fill:var(--tx2);font-family:'Segoe UI',Arial,sans-serif}
 .md{background:var(--pn);border-radius:10px;width:min(560px,94vw);padding:16px 18px;display:flex;flex-direction:column;gap:10px}
 .md h3{margin:0;color:var(--az2);font-size:16px}.md label{font-size:12px;font-weight:700;color:var(--tx2);display:flex;flex-direction:column;gap:4px}
 .md input,.md textarea,.md select{border:1px solid var(--bd);border-radius:6px;padding:6px 8px;font-family:inherit;font-size:13px;background:var(--pn);color:var(--tx)}
-.md .er{color:var(--rjt);font-size:12px;min-height:16px}
+.md label[hidden]{display:none}.md .er{color:var(--rjt);font-size:12px;min-height:16px}
 .sem{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px;vertical-align:0}
 .sv{background:#2f8a3e}.sa{background:#d29a1c}.sr{background:#c83a3a}.sg{background:#9aa5b1}
 
@@ -114,7 +114,7 @@ svg text{fill:var(--tx2);font-family:'Segoe UI',Arial,sans-serif}
 <button class="tab" data-v="ley">Base legal y cómo se calcula</button>
 </nav>
 <main>
-<div class="proto"><b>Prototipo.</b> El expediente se abre solo con el libro de Incumplimientos de Seguimiento. El registro de hitos funciona en modo demostración: lo que se registra se guarda solo en este navegador. Al validar los responsables y los plazos, cada registro se guardará en SIGUELO con el PIN de cada persona y su documento en Drive.</div>
+<div class="proto" id="proto"><b>Prototipo.</b> El expediente se abre solo con el libro de Incumplimientos de Seguimiento. El registro de hitos funciona en modo demostración: lo que se registra se guarda solo en este navegador. Al validar los responsables y los plazos, cada registro se guardará en SIGUELO con el PIN de cada persona y su documento en Drive.</div>
 <div class="load" id="cargando">Cargando el libro de Incumplimientos…</div>
 
 <section id="v-rec" hidden>
@@ -162,17 +162,21 @@ svg text{fill:var(--tx2);font-family:'Segoe UI',Arial,sans-serif}
 
 <div class="mdw" id="mdw" hidden><div class="md" role="dialog" aria-modal="true" aria-labelledby="mdT">
 <h3 id="mdT">Registrar etapa</h3><div id="mdS" class="nota"></div>
-<label>PIN<input id="mPin" type="password" inputmode="numeric" maxlength="6" autocomplete="off"></label>
-<label>Fecha del hito<input id="mFe" type="date"></label>
-<label>Documento firmado (PDF o imagen)<input id="mDoc" type="file" accept=".pdf,image/*"></label>
-<label>Observación<textarea id="mOb" rows="2"></textarea></label>
+<label id="lPin">PIN<input id="mPin" type="password" inputmode="numeric" maxlength="6" autocomplete="off"></label>
+<label id="lFe">Fecha del hito<input id="mFe" type="date"></label>
+<label id="lDoc">Documento firmado (PDF o imagen, hasta 8 MB)<input id="mDoc" type="file" accept=".pdf,image/*"></label>
+<label id="lOb">Observación<textarea id="mOb" rows="2"></textarea></label>
 <div class="er" id="mEr"></div>
 <div class="fl" style="justify-content:flex-end"><button class="bx" id="mNo">Cancelar</button><button class="bp" id="mSi">Registrar</button></div>
-<div class="nota">Demostración: PIN 0000 (supervisor). Al pasar a uso, cada persona tendrá su PIN y solo podrá registrar sus etapas.</div>
+<div class="nota" id="mNota">Demostración: PIN 0000 (supervisor). Al pasar a uso, cada persona tendrá su PIN y solo podrá registrar sus etapas.</div>
 </div></div>
 
 <script>
 const FUENTE='data/cumplimiento_entregas.json';
+/* Bitácora real: INCUMPLIMIENTOS_TRZ.gs (proyecto SIGUELO) la publica en Pages y la sirve por la API. */
+const API='https://script.google.com/macros/s/AKfycbwVw0ACNMhdN6d-JsI1lyP2iKHBVgWXI5nK3rA6blEhF3l8t2Wuwk2TpRmaanB186Dk/exec';
+const EVJ='https://torrecontrolcss.org/SIGUELO/incumplimiento_eventos.json';
+const post=(action,data)=>fetch(API,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({action,data})}).then(r=>r.json());
 const ETAPAS=[
  {n:1,nm:'Nota vencida con saldo',q:'Sistema',d:'Logística',p:0,hito:'Se abre el expediente al cargar el libro',ev:'Libro de Incumplimientos'},
  {n:2,nm:'Informe de incumplimiento',q:'Jefe del Departamento de Seguimiento',d:'Dirección Nacional de Logística',p:2,hito:'Informe enviado a Compras y a la Dirección Ejecutiva',ev:'Informe firmado'},
@@ -189,7 +193,7 @@ const LEY=[['Art. 228','El incumplimiento de los plazos de entrega imputable al 
  ['Art. 233','Causales de resolución administrativa para medicamentos e insumos; se tramita según el art. 139 de la Ley 22 de 2006.','6'],
  ['Art. 214, num. 22','Ante el incumplimiento, la entidad puede activar la entrega con los demás participantes, en el orden de precio de la resolución de adjudicación.','Opción en la etapa 2'],
  ['Art. 214, num. 23','La diferencia de precio con otro proponente puede cobrarse por jurisdicción coactiva.','Opción en la etapa 7']];
-function app(DATA,LOGO){
+function app(DATA,LOGO,EVD){
 document.getElementById('cargando').hidden=true;document.getElementById('v-rec').hidden=false;
 const C=DATA.cols, ALL=DATA.rows.map(r=>Object.fromEntries(C.map((c,i)=>[c,r[i]])));
 const _h=new Date(), HOYS=_h.getFullYear()+'-'+String(_h.getMonth()+1).padStart(2,'0')+'-'+String(_h.getDate()).padStart(2,'0');
@@ -199,12 +203,18 @@ const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&g
 const habiles=(a,b)=>{if(!a||!b||b<=a)return 0;let d=new Date(a+'T12:00:00'),e=new Date(b+'T12:00:00'),n=0;while(d<e){d.setDate(d.getDate()+1);const w=d.getDay();if(w>0&&w<6)n++;}return n;};
 const calD=(a,b)=>Math.max(0,Math.round((new Date(b+'T00:00:00')-new Date(a+'T00:00:00'))/864e5));
 let LS={};try{LS=JSON.parse(localStorage.getItem('exp_inc_demo')||'{}')}catch(e){}
+const REAL=!!(EVD&&Array.isArray(EVD.eventos));let SRV={};
+const cargarSrv=L=>{SRV={};(L||[]).forEach(e=>{(SRV[e.exp]=SRV[e.exp]||[]).push({id:e.id,etapa:Number(e.etapa),fecha:e.fecha,quien:e.quien+(e.cargo?' · '+e.cargo:''),doc:e.evid,url:e.evidUrl,obs:e.obs,anulado:e.estado==='ANULADO',anMot:e.anuladoMotivo,anPor:e.anuladoPor})});};
+if(REAL)cargarSrv(EVD.eventos);
+const EVS=id=>REAL?(SRV[id]||[]):(LS[id]||[]);
+if(REAL)document.getElementById('proto').innerHTML='<b>Piloto en uso.</b> Cada responsable registra su etapa con su PIN y adjunta el documento firmado; la bitácora queda en SIGUELO con el nombre de quien registró y el documento en Drive. Las etapas que todavía no tienen registro se leen del libro de Incumplimientos de Seguimiento.';
+let SES=null;const sesV=()=>SES&&SES.hasta>Date.now()?SES:null;
 const guardar=()=>{try{localStorage.setItem('exp_inc_demo',JSON.stringify(LS))}catch(e){}};
 const X=ALL.filter(r=>r.venc&&r.venc<HOYS&&(r.saldo||0)>0).map(r=>{
  const o=Object.assign({},r);o.id='EXP-'+r.req+'-'+String(r.nota).replace(/[^0-9A-Za-z.]/g,'');
  o.val=(r.saldo||0)*(r.precio||0);o.multa=o.val*0.10;o.dh=habiles(r.venc,HOYS);o.dc=calD(r.venc,HOYS);
  o.base=Math.min(5,r.et||0);o.ini=[r.venc,r.fAviso||r.venc,r.fNotP||r.fAviso||r.venc][Math.min(2,o.base)]||r.venc;return o;});
-function estado(o){const ev=(LS[o.id]||[]).filter(e=>!e.anulado);let act=o.base+2,ini=o.ini;
+function estado(o){const ev=EVS(o.id).filter(e=>!e.anulado).slice().sort((a,b)=>a.etapa-b.etapa);let act=o.base+2,ini=o.ini;
  ev.forEach(e=>{if(e.etapa===act){act++;ini=e.fecha;}});act=Math.min(act,8);
  const E=ETAPAS[act-1];const d=habiles(ini,HOYS);let se='g';
  if(act>7)se='c';else if(E.p){se=d<0.8*E.p?'v':(d<=E.p?'a':'r');}
@@ -279,7 +289,7 @@ function abrirF(id){const q=String(id||'').trim().toUpperCase();const o=X.find(x
  const chev=ETAPAS.map(E=>{const done=E.n<s.act,now=E.n===s.act;const reg=E.n===1?{fecha:o.venc}:(s.ev.find(e=>e.etapa===E.n)||(E.n<o.base+2?{fecha:E.n===2?o.fAviso:E.n===3?o.fNotP:null,libro:1}:null));
   const cl=done?'c5':now?(s.se==='r'?'c0':s.se==='a'?'c1':'c2'):'c3';
   return `<button class="${cl}" tabindex="-1"><b>${E.n} · ${E.nm}</b><span>${done?(reg&&reg.fecha?fd(reg.fecha):'registrada en el libro'):now?'le toca · '+s.d+(E.p?' de '+E.p:'')+' días':E.q.split(' · ')[0]}</span></button>`}).join('');
- const bit=[{etapa:1,fecha:o.venc,quien:'Sistema',doc:'Libro de Incumplimientos',obs:'Expediente abierto: nota vencida con saldo'}].concat(o.fAviso&&o.base>=1?[{etapa:2,fecha:o.fAviso,quien:'Libro de Seguimiento',doc:'Columna Q',obs:'Notificada a Compras'}]:[]).concat(o.fNotP&&o.base>=2?[{etapa:3,fecha:o.fNotP,quien:'Libro de Seguimiento',doc:'Columna S',obs:'Notificada al proveedor'}]:[]).concat(s.ev);
+ const bit=[{etapa:1,fecha:o.venc,quien:'Sistema',doc:'Libro de Incumplimientos',obs:'Expediente abierto: nota vencida con saldo'}].concat(o.fAviso&&o.base>=1?[{etapa:2,fecha:o.fAviso,quien:'Libro de Seguimiento',doc:'Columna Q',obs:'Notificada a Compras'}]:[]).concat(o.fNotP&&o.base>=2?[{etapa:3,fecha:o.fNotP,quien:'Libro de Seguimiento',doc:'Columna S',obs:'Notificada al proveedor'}]:[]).concat(EVS(o.id));
  F.innerHTML=`<div class="pn"><div class="ph"><h3 style="font-size:16px">${o.id}</h3><span>${semB(s.se)}</span></div>
  <div class="fk">${k('Proveedor',esc(o.prov))}${k('Renglón',esc(o.cod)+' · '+esc(o.desc))}${k('Orden de compra · nota',o.req+' · '+esc(o.nota))}${k('CEDIS · inventario',(o.cedis||'—')+' · '+esc(o.inv))}
  ${k('Venció',fd(o.venc)+' · '+o.dh+' días hábiles')}${k('Entregado',fmt(o.recib||0)+' de '+fmt(o.qty||0)+' u')}${k('Saldo vencido',fm(o.val),'r')}${k('Multa mínima, art. 232',fm(o.multa)+' + recargo diario','a')}
@@ -287,23 +297,48 @@ function abrirF(id){const q=String(id||'').trim().toUpperCase();const o=X.find(x
  <div class="chev">${chev}</div>
  ${s.act<=7?`<div class="toca"><div><b>Le toca ahora:</b> ${esc(s.E.q)} registra «${esc(s.E.hito)}» y adjunta: ${esc(s.E.ev)}. Lleva ${s.d} días hábiles${s.E.p?' de un plazo de '+s.E.p:''}.</div><button class="bp" id="reg">Registrar etapa ${s.act} con PIN</button></div>`:'<div class="toca"><div><b>Expediente cerrado.</b></div></div>'}</div>
  <div class="pn"><div class="ph"><h3>Bitácora del expediente</h3><span class="nota">Nada se borra: un supervisor solo puede anular con motivo</span><button class="bx" id="xB">Excel</button></div>
- <div class="tw" style="max-height:none"><table class="t"><thead><tr><th>Etapa</th><th>Fecha</th><th>Registró</th><th>Documento</th><th>Observación</th></tr></thead><tbody>${bit.map(e=>`<tr><td>${e.etapa} · ${ETAPAS[e.etapa-1].nm}</td><td class="n">${fd(e.fecha)}</td><td>${esc(e.quien)}</td><td>${esc(e.doc||'')}</td><td>${esc(e.obs||'')}</td></tr>`).join('')}</tbody></table></div></div>`;
+ <div class="tw" style="max-height:none"><table class="t"><thead><tr><th>Etapa</th><th>Fecha</th><th>Registró</th><th>Documento</th><th>Observación</th>${sesV()&&SES.rol==='SUPERVISOR'?'<th></th>':''}</tr></thead><tbody>${bit.map(e=>`<tr style="${e.anulado?'opacity:.55;text-decoration:line-through':''}"><td>${e.etapa} · ${ETAPAS[e.etapa-1].nm}</td><td class="n">${fd(e.fecha)}</td><td>${esc(e.quien)}</td><td>${e.url?`<a href="${esc(e.url)}" target="_blank" rel="noopener">${esc(e.doc||'Documento')}</a>`:esc(e.doc||'')}</td><td>${esc(e.obs||'')}${e.anulado?' · Anulado: '+esc(e.anMot||''):''}</td>${sesV()&&SES.rol==='SUPERVISOR'?`<td>${e.id&&!e.anulado?`<button class="bx" data-an="${esc(e.id)}">Anular</button>`:''}</td>`:''}</tr>`).join('')}</tbody></table></div></div>`;
  const rb=document.getElementById('reg');if(rb)rb.onclick=()=>abrirM(o);
+ F.querySelectorAll('[data-an]').forEach(b=>b.onclick=()=>abrirA(o,b.dataset.an));
  document.getElementById('xB').onclick=()=>excel('Bitacora_'+o.id+'.xlsx','Bitácora del expediente '+o.id+' · '+o.prov,[['Etapa',e=>e.etapa+' · '+ETAPAS[e.etapa-1].nm,34],['Fecha',e=>e.fecha,12],['Registró',e=>e.quien,24],['Documento',e=>e.doc,30],['Observación',e=>e.obs,40]],bit);}
 document.getElementById('abrir').onclick=()=>abrirF(document.getElementById('qF').value);
 // Modal de registro
 const M=document.getElementById('mdw'),mEr=document.getElementById('mEr');
-function abrirM(o){const s=o.st;document.getElementById('mdT').textContent='Registrar etapa '+s.act+' · '+s.E.nm;document.getElementById('mdS').textContent=o.id+' · '+o.prov+' · registra: '+s.E.q;
- ['mPin','mOb','mDoc'].forEach(i=>document.getElementById(i).value='');document.getElementById('mFe').value=HOYS;mEr.textContent='';M.hidden=false;document.getElementById('mPin').focus();}
+let MODO='reg',ANID=null;
+function abrirM(o){MODO='reg';const s=o.st;document.getElementById('mdT').textContent='Registrar etapa '+s.act+' · '+s.E.nm;
+ const se=sesV();document.getElementById('mdS').textContent=o.id+' · '+o.prov+' · registra: '+s.E.q+(se?' · usted entra como '+se.nombre+' ('+se.cargo+')':'');
+ document.getElementById('lPin').hidden=!!se;['lFe','lDoc'].forEach(i=>document.getElementById(i).hidden=false);document.getElementById('lOb').firstChild.textContent='Observación';
+ ['mPin','mOb','mDoc'].forEach(i=>document.getElementById(i).value='');document.getElementById('mFe').value=HOYS;mEr.textContent='';document.getElementById('mSi').textContent='Registrar';M.hidden=false;document.getElementById(se?'mFe':'mPin').focus();}
+function abrirA(o,id){MODO='anu';ANID=id;document.getElementById('mdT').textContent='Anular un registro';document.getElementById('mdS').textContent=o.id+' · el registro queda en la bitácora marcado como anulado';
+ document.getElementById('lPin').hidden=!!sesV();['lFe','lDoc'].forEach(i=>document.getElementById(i).hidden=true);document.getElementById('lOb').firstChild.textContent='Motivo de la anulación';
+ document.getElementById('mOb').value='';mEr.textContent='';document.getElementById('mSi').textContent='Anular';M.hidden=false;document.getElementById('mOb').focus();}
+const b64=f=>new Promise((ok,ko)=>{const r=new FileReader();r.onload=()=>ok(String(r.result).split(',')[1]);r.onerror=ko;r.readAsDataURL(f);});
+async function sesion(pin){if(sesV())return SES;const r=await post('incLogin',{pin});if(!r.success)throw new Error(r.error||'No se pudo validar el PIN.');SES=Object.assign(r,{pin,hasta:Date.now()+30*60*1000});return SES;}
+async function refrescar(){try{const r=await fetch(API+'?action=incEventos&_='+Date.now()).then(x=>x.json());if(r&&r.success){cargarSrv(r.eventos);X.forEach(o=>o.st=estado(o));kpis();cadena();semaf();renderV();renderP();if(CUR)abrirF(CUR.id);}}catch(e){}}
 const cerrarM=()=>{M.hidden=true};document.getElementById('mNo').onclick=cerrarM;
 M.onkeydown=e=>{if(e.key==='Escape')cerrarM();if(e.key==='Enter'&&e.target.tagName!=='TEXTAREA')document.getElementById('mSi').click();};
 ['mPin','mFe','mDoc'].forEach(i=>document.getElementById(i).oninput=()=>{mEr.textContent=''});
-document.getElementById('mSi').onclick=()=>{const o=CUR,s=o.st,pin=document.getElementById('mPin').value,fe=document.getElementById('mFe').value,doc=document.getElementById('mDoc').files[0];
- if(pin!=='0000'){mEr.textContent='PIN no válido. En la demostración use 0000.';return;}
- if(!fe){mEr.textContent='Indique la fecha del hito.';return;}if(fe>HOYS){mEr.textContent='La fecha no puede ser futura.';return;}if(fe<s.ini){mEr.textContent='La fecha no puede ser anterior al hito previo ('+fd(s.ini)+').';return;}
- if(!doc){mEr.textContent='Adjunte el documento firmado.';return;}
- (LS[o.id]=LS[o.id]||[]).push({etapa:s.act,fecha:fe,quien:'Supervisor de demostración',doc:doc.name,obs:document.getElementById('mOb').value,ts:new Date().toISOString()});guardar();
- o.st=estado(o);cerrarM();abrirF(o.id);kpis();cadena();semaf();renderV();renderP();};
+document.getElementById('mSi').onclick=async()=>{const o=CUR,s=o.st,btn=document.getElementById('mSi'),pin=document.getElementById('mPin').value.trim(),fe=document.getElementById('mFe').value,doc=document.getElementById('mDoc').files[0],ob=document.getElementById('mOb').value.trim();
+ if(!REAL){if(MODO!=='reg')return;if(pin!=='0000'){mEr.textContent='PIN no válido. En la demostración use 0000.';return;}
+  if(!fe){mEr.textContent='Indique la fecha del hito.';return;}if(fe>HOYS){mEr.textContent='La fecha no puede ser futura.';return;}if(fe<s.ini){mEr.textContent='La fecha no puede ser anterior al hito previo ('+fd(s.ini)+').';return;}
+  if(!doc){mEr.textContent='Adjunte el documento firmado.';return;}
+  (LS[o.id]=LS[o.id]||[]).push({etapa:s.act,fecha:fe,quien:'Supervisor de demostración',doc:doc.name,obs:ob,ts:new Date().toISOString()});guardar();
+  o.st=estado(o);cerrarM();abrirF(o.id);kpis();cadena();semaf();renderV();renderP();return;}
+ if(!sesV()&&!/^\d{4,6}$/.test(pin)){mEr.textContent='Escriba su PIN.';return;}
+ if(MODO==='reg'){if(!fe){mEr.textContent='Indique la fecha del hito.';return;}if(fe>HOYS){mEr.textContent='La fecha no puede ser futura.';return;}if(fe<s.ini){mEr.textContent='La fecha no puede ser anterior al hito previo ('+fd(s.ini)+').';return;}
+  if(!doc){mEr.textContent='Adjunte el documento firmado.';return;}if(doc.size>8*1024*1024){mEr.textContent='El documento supera 8 MB.';return;}}
+ else if(!ob){mEr.textContent='Indique el motivo de la anulación.';return;}
+ btn.disabled=true;const t0=btn.textContent;btn.textContent='Enviando…';
+ try{const se=await sesion(pin);
+  if(MODO==='reg'){if(se.etapas.indexOf(s.act)<0)throw new Error('La etapa '+s.act+' la registra el '+s.E.q+'; usted entra como '+se.cargo+'.');
+   const r=await post('incRegistrar',{pin:se.pin,exp:o.id,etapa:s.act,fecha:fe,obs:ob,idCliente:o.id+'-'+s.act+'-'+Date.now(),evidencia:{base64:await b64(doc),mime:doc.type||'application/pdf',nombre:doc.name}});
+   if(!r.success)throw new Error(r.error);(SRV[o.id]=SRV[o.id]||[]).push({id:r.id,etapa:s.act,fecha:fe,quien:se.nombre+' · '+se.cargo,doc:doc.name,url:r.evidUrl,obs:ob});}
+  else{if(se.rol!=='SUPERVISOR')throw new Error('Solo un supervisor puede anular.');const r=await post('incAnular',{pin:se.pin,id:ANID,motivo:ob});if(!r.success)throw new Error(r.error);
+   (SRV[o.id]||[]).forEach(e=>{if(e.id===ANID){e.anulado=true;e.anMot=ob;}});}
+  X.forEach(x=>{if(x.id===o.id)x.st=estado(x)});cerrarM();abrirF(o.id);kpis();cadena();semaf();renderV();renderP();setTimeout(refrescar,4000);
+ }catch(e){mEr.textContent=String(e.message||e);if(/PIN/.test(String(e.message)))SES=null;}
+ finally{btn.disabled=false;btn.textContent=t0;}};
+if(REAL){document.getElementById('mNota').textContent='Entre una vez con su PIN: la sesión dura 30 minutos en esta pantalla. Cada cargo registra solo sus etapas.';refrescar();}
 // Proveedores
 let PR=[];function renderP(){const g={};X.forEach(o=>{const p=g[o.prov]=g[o.prov]||{prov:o.prov,n:0,sv:0,mu:0,rj:0,e2:0,max:0};p.n++;p.sv+=o.val;p.mu+=o.multa;if(o.st.se==='r')p.rj++;if(o.st.act===2)p.e2++;p.max=Math.max(p.max,o.dh);});
  PR=Object.values(g).sort((a,b)=>b.sv-a.sv);const q=document.getElementById('pQ').value.trim().toUpperCase();
@@ -340,8 +375,9 @@ const top=X.slice().sort((a,b)=>b.val-a.val)[0];abrirF((new URLSearchParams(loca
 const v0=(new URLSearchParams(location.search)).get('v');if(v0)go(v0);
 }
 Promise.all([fetch(FUENTE+'?t='+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.json():Promise.reject(r.status)),
+  fetch(EVJ+'?t='+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.json():null).catch(()=>null),
   fetch('icons/icon-192.png').then(r=>r.blob()).then(b=>new Promise(ok=>{const f=new FileReader();f.onload=()=>ok(f.result);f.readAsDataURL(b)})).catch(()=>null)])
- .then(([D,L])=>app(D,L))
+ .then(([D,E,L])=>app(D,L,E))
  .catch(e=>{console.error(e);document.getElementById('cargando').innerHTML='Todavía no hay un libro de Incumplimientos publicado. Se publica al cargarlo en la <a href="https://torrecontrolcss.org/SIGUELO_DINALOG/cargar_reportes.html">Ventanilla Única</a>.';});
 </script>
 </body>
