@@ -349,6 +349,7 @@ function incRegistrar_(d) {
     sh.getRange(sh.getLastRow(), INC_COLS_EVENTOS.indexOf('FECHA_HITO') + 1).setNumberFormat('@').setValue(fecha);
     SpreadsheetApp.flush();
     try { incPublicar_(false); } catch (eP) { Logger.log('incPublicar_: ' + eP); }
+    try { incAvisoEtapa_(exp, nota, etapa, fecha, u); } catch (eA) { Logger.log('incAvisoEtapa_: ' + eA); }
     return { success: true, id: idEv, evidUrl: archivo.getUrl(), mensaje: 'Etapa ' + etapa + ' registrada.' };
   } finally {
     lock.releaseLock();
@@ -531,6 +532,9 @@ function incPrueba() {
 /*  cuando la Directora valide las personas y estén en INC_USUARIOS con  */
 /*  su CORREO (las filas con NOTA = PRUEBA nunca reciben correo).        */
 /*                                                                      */
+/*  Además: aviso INMEDIATO al cargo que sigue cuando alguien registra   */
+/*  su etapa (incAvisoEtapa_), y escalamiento al director de la         */
+/*  dirección el primer día en que un expediente pasa su plazo.          */
 /*  Instalación: ejecutar incCorreoInstalar() una vez (crea el disparador*/
 /*  diario). Vista previa: incCorreoVistaPrevia().                      */
 /* ==================================================================== */
@@ -585,15 +589,15 @@ function incExpedientes_() {
 /* Destinatarios por cargo (y supervisores) desde INC_USUARIOS. */
 function incDestinatarios_() {
   var v = incHoja_(INC_HOJA_USUARIOS, INC_COLS_USUARIOS).getDataRange().getValues(), c = incIdx_(v[0]);
-  var porCargo = {}, resumen = [];
+  var porCargo = {}, resumen = [], porDir = {};
   for (var i = 1; i < v.length; i++) {
     var r = v[i], correo = String(r[c.CORREO] || '').trim();
     if (String(r[c.ACTIVO] || 'SI').toUpperCase() === 'NO' || String(r[c.NOTA] || '').toUpperCase() === 'PRUEBA' || !/@/.test(correo)) continue;
     var rol = String(r[c.ROL] || 'OPERADOR').toUpperCase(), cargo = incNorm_(r[c.CARGO]);
-    if (rol === 'SUPERVISOR' || rol === 'CONSULTA') resumen.push(correo);
+    if (rol === 'SUPERVISOR' || rol === 'CONSULTA') { resumen.push(correo); var dr = incNorm_(r[c.DIRECCION]); (porDir[dr] = porDir[dr] || []).push(correo); }
     else (porCargo[cargo] = porCargo[cargo] || []).push(correo);
   }
-  return { porCargo: porCargo, resumen: resumen };
+  return { porCargo: porCargo, resumen: resumen, porDir: porDir };
 }
 
 function incFm_(n) { return 'B/. ' + (n >= 1e6 ? (n / 1e6).toFixed(2) + ' M' : Math.round(n).toLocaleString('en-US')); }
@@ -674,8 +678,66 @@ function incCorreoDiario(forzar) {
   var introR = 'Buenos días. Hay <b>' + E.X.length + '</b> expedientes abiertos por <b>' + incFm_(sv) + '</b> de saldo vencido.' +
     '<table cellspacing="0" style="margin:10px 0;font-size:12px;border-collapse:collapse"><tr style="background:#eef1f4"><th style="padding:4px 8px;text-align:left">Etapa</th><th style="padding:4px 8px;text-align:left">Le toca a</th><th style="padding:4px 8px">Expedientes</th><th style="padding:4px 8px">Vencidos</th></tr>' + porEt + '</table>';
   mandar(dest.resumen, 'Expedientes de incumplimiento · resumen · ' + E.X.length + ' abiertos · ' + fd(E.hoy), incHtml_('Resumen de las tres direcciones', introR, E.X, true, pie), 'Resumen para directores');
-  Logger.log('Correo diario (' + (prueba ? 'PRUEBA → ' + destPrueba : 'REAL') + '): ' + enviados + ' correos · ' + E.X.length + ' expedientes.');
+  // 3) Escalamiento: expedientes que hoy pasaron el plazo de su etapa, al director de la dirección que debe actuar
+  var hoyRojo = E.X.filter(function (o) { return o.se === 'r' && o.p && o.d === o.p + 1; }), porD = {};
+  hoyRojo.forEach(function (o) { var dr = INC_ETAPAS[o.act - 1][2]; (porD[dr] = porD[dr] || []).push(o); });
+  Object.keys(porD).forEach(function (dr) {
+    var L = porD[dr];
+    var intro = 'Buenos días. <b>' + L.length + '</b> expediente' + (L.length > 1 ? 's' : '') + ' de la ' + incEsc_(dr) + ' <b style="color:#c83a3a">pasó hoy el plazo de su etapa</b> sin registro. El responsable ya lo tenía en su correo diario; se avisa a la dirección para que dé seguimiento.';
+    mandar(dest.porDir[incNorm_(dr)] || [], 'Plazo vencido hoy · ' + L.length + ' expediente' + (L.length > 1 ? 's' : '') + ' · ' + dr + ' · ' + fd(E.hoy),
+      incHtml_('Escalamiento · ' + dr, intro, L, true, pie), 'Escalamiento · ' + dr);
+  });
+  Logger.log('Correo diario (' + (prueba ? 'PRUEBA → ' + destPrueba : 'REAL') + '): ' + enviados + ' correos · ' + E.X.length + ' expedientes · ' + hoyRojo.length + ' escalados.');
   return enviados;
+}
+
+/* Aviso inmediato: al registrar una etapa, el cargo que sigue recibe el expediente en ese momento. */
+function incSumarHabiles_(f, n) {
+  var d = new Date(f + 'T12:00:00');
+  while (n > 0) { d.setDate(d.getDate() + 1); var w = d.getDay(); if (w > 0 && w < 6) n--; }
+  return incFmt_(d);
+}
+
+function incAvisoEtapa_(exp, nota, etapa, fecha, u) {
+  var props = PropertiesService.getScriptProperties();
+  var modo = String(props.getProperty('INC_CORREO_MODO') || 'PRUEBA').toUpperCase();
+  if (modo === 'APAGADO') return 'apagado';
+  var prueba = modo !== 'REAL', destPrueba = props.getProperty('INC_CORREO_PRUEBA') || Session.getEffectiveUser().getEmail();
+  var dest = incDestinatarios_(), fd = function (s) { return s ? s.split('-').reverse().join('/') : ''; };
+  var sig = etapa + 1, para, asunto, cargoTxt, cuerpo;
+  var link = INC_TABLERO + '?v=fic&exp=' + encodeURIComponent(exp);
+  var dato = '<table cellspacing="0" style="font-size:13px;border-collapse:collapse;margin:8px 0">' +
+    [['Proveedor', nota.prov], ['Orden de compra · nota', nota.req + ' · ' + nota.nota], ['Renglón', nota.cod], ['Venció la nota', fd(nota.venc)],
+     ['Etapa registrada', etapa + ' · ' + INC_ETAPAS[etapa - 1][3]], ['Registró', u.nombre + ' · ' + u.cargo + ', el ' + fd(fecha) + ', con su documento']]
+      .map(function (r) { return '<tr><td style="padding:3px 12px 3px 0;color:#6b7280">' + r[0] + '</td><td style="padding:3px 0"><b>' + incEsc_(r[1]) + '</b></td></tr>'; }).join('') + '</table>';
+  if (sig > 7) {
+    para = dest.resumen; cargoTxt = 'Cierre del expediente';
+    asunto = 'Expediente cerrado · ' + exp + ' · ' + nota.prov;
+    cuerpo = '<p>El expediente <b>' + exp + '</b> completó sus siete etapas: la resolución se notificó y la fianza está en ejecución.</p>' + dato;
+  } else {
+    var e = INC_ETAPAS[sig - 1], plazo = INC_PLAZOS[sig], hasta = plazo ? incSumarHabiles_(fecha, plazo) : '';
+    para = dest.porCargo[incNorm_(e[1])] || []; cargoTxt = e[1];
+    asunto = 'Le toca: ' + exp + ' · etapa ' + sig + ' · ' + e[3] + (hasta ? ' · plazo ' + fd(hasta) : '');
+    cuerpo = '<p style="font-size:15px">El expediente <b>' + exp + '</b> pasó a su etapa: <b>' + sig + ' · ' + incEsc_(e[3]) + '</b>.</p>' +
+      '<p>' + (plazo ? 'Su plazo: <b>' + plazo + ' días hábiles, hasta el ' + fd(hasta) + '</b>.' : 'Esta etapa todavía no tiene plazo acordado.') + ' Al registrar, adjunte el documento firmado.</p>' + dato;
+  }
+  var html = '<div style="font-family:Arial,sans-serif;font-size:13px;color:#1f2937;max-width:720px">' +
+    '<div style="background:#0c447c;color:#fff;padding:12px 16px;border-radius:8px 8px 0 0"><div style="font-size:11px;opacity:.85">CAJA DE SEGURO SOCIAL · EXPEDIENTE DE INCUMPLIMIENTO DE ENTREGA</div><div style="font-size:17px;font-weight:700">' + incEsc_(cargoTxt) + '</div></div>' +
+    '<div style="padding:12px 16px;border:1px solid #e5e7eb;border-top:0;border-radius:0 0 8px 8px">' + cuerpo +
+    '<p style="margin:14px 0 0"><a href="' + link + '" style="background:#1e5a9e;color:#fff;padding:8px 14px;border-radius:6px;text-decoration:none">Abrir la ficha</a></p>' +
+    '<p style="font-size:11px;color:#6b7280;margin-top:14px">Aviso automático de la Torre de Control · DINALOG. Ley 419, arts. 228 a 233.</p></div></div>';
+  var cc = sig > 7 ? [] : dest.resumen;
+  if (prueba) {
+    var av = '<div style="background:#fff4d6;border:1px solid #f2dc7a;padding:8px 12px;border-radius:6px;margin-bottom:12px;font-family:Arial;font-size:12px"><b>PRUEBA.</b> En uso real iría a: ' +
+      (para.length ? incEsc_(para.join(', ')) : '<i>nadie todavía — falta cargar en INC_USUARIOS al titular o suplente de «' + incEsc_(cargoTxt) + '»</i>') + (cc.length ? ' · con copia a ' + incEsc_(cc.join(', ')) : '') + '.</div>';
+    incEnviar_({ to: destPrueba, subject: '[PRUEBA · ' + cargoTxt + '] ' + asunto, htmlBody: av + html, name: 'Torre de Control CSS' });
+    return 'prueba';
+  }
+  if (!para.length && !cc.length) return 'sin destinatarios';
+  var o = { to: (para.length ? para : cc).join(','), subject: asunto, htmlBody: html, name: 'Torre de Control CSS' };
+  if (para.length && cc.length) o.cc = cc.join(',');
+  incEnviar_(o);
+  return 'enviado';
 }
 
 function incCorreoVistaPrevia() { return incCorreoDiario('PRUEBA'); }
