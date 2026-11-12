@@ -834,3 +834,98 @@ function incInformeInstalar() {
   if (!props.getProperty('INC_INFORME_MODO')) props.setProperty('INC_INFORME_MODO', 'PRUEBA');
   Logger.log('Disparador semanal: lunes 8:00 (Panamá). Modo: ' + props.getProperty('INC_INFORME_MODO') + '. Para enviarlo a la DENA: INC_INFORME_DEST = su correo e INC_INFORME_MODO = REAL.');
 }
+
+/* ==================================================================== */
+/*  CARGA INICIAL (empate) · una sola vez, antes de la fecha de arranque */
+/*  1) Cada jefe devuelve el Excel de empate (scripts/empate_excel.py).  */
+/*  2) En el libro del expediente se crea una pestaña CARGA_<cargo> por  */
+/*     hoja recibida y se pega desde la fila de códigos (EXPEDIENTE,     */
+/*     E2_HECHO, E2_FECHA, E2_DOC, E2_PDF...) hacia abajo.               */
+/*  3) incCargaInicialSimular(): revisa todo y escribe CARGA_REPORTE,    */
+/*     sin registrar nada.                                               */
+/*  4) incCargaInicialAplicar(): registra los hitos válidos como         */
+/*     «Carga inicial», sin correos de aviso; se puede repetir sin       */
+/*     duplicar.                                                         */
+/* ==================================================================== */
+
+function incCargaInicialSimular() { return incCargaInicial_(false); }
+function incCargaInicialAplicar() { return incCargaInicial_(true); }
+
+function incCargaInicial_(aplicar) {
+  var ss = incLibro_(), hojas = ss.getSheets().filter(function (h) { return /^CARGA_/i.test(h.getName()) && h.getName() !== 'CARGA_REPORTE'; });
+  if (!hojas.length) { Logger.log('No hay pestañas CARGA_<cargo> en ' + ss.getUrl()); return 'sin hojas'; }
+  var D = JSON.parse(UrlFetchApp.fetch(INC_LIBRO_FUENTE + '?_=' + Date.now()).getContentText()), ix = {}, libro = {};
+  D.cols.forEach(function (k, i) { ix[k] = i; });
+  D.rows.forEach(function (x) {
+    var id = 'EXP-' + x[ix.req] + '-' + String(x[ix.nota]).replace(/[^0-9A-Za-z.]/g, '');
+    libro[id] = { req: String(x[ix.req]), nota: String(x[ix.nota]), cod: String(x[ix.cod] || ''), prov: String(x[ix.prov] || ''),
+      venc: String(x[ix.venc] || ''), et: Math.min(5, Number(x[ix.et] || 0)), fAviso: String(x[ix.fAviso] || ''), fNotP: String(x[ix.fNotP] || '') };
+  });
+  var hoy = incFmt_(new Date());
+  var aFecha = function (v) {
+    if (v instanceof Date) return incFmt_(v);
+    var m = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(String(v || '').trim());
+    if (m) return m[3] + '-' + ('0' + m[2]).slice(-2) + '-' + ('0' + m[1]).slice(-2);
+    m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(v || '')); return m ? m[0] : '';
+  };
+  // Declaraciones: { exp: { etapa: {fecha, doc, pdf, hoja, fila} } }
+  var dec = {}, rep = [];
+  hojas.forEach(function (h) {
+    var v = h.getDataRange().getValues(), f0 = -1;
+    for (var i = 0; i < Math.min(10, v.length); i++) if (String(v[i][0]).trim() === 'EXPEDIENTE') { f0 = i; break; }
+    if (f0 < 0) { rep.push([h.getName(), '', '', '', 'ERROR', 'No encontré la fila de códigos (EXPEDIENTE, E2_HECHO…).']); return; }
+    var c = {}; v[f0].forEach(function (k, j) { c[String(k).trim()] = j; });
+    for (var r = f0 + 1; r < v.length; r++) {
+      var exp = String(v[r][0] || '').trim(); if (!exp) continue;
+      for (var e = 2; e <= 7; e++) {
+        if (c['E' + e + '_HECHO'] == null) continue;
+        var he = String(v[r][c['E' + e + '_HECHO']] || '').trim().toUpperCase();
+        if (he !== 'SÍ' && he !== 'SI') continue;
+        (dec[exp] = dec[exp] || {})[e] = { fecha: aFecha(v[r][c['E' + e + '_FECHA']]), doc: String(v[r][c['E' + e + '_DOC']] || '').trim(),
+          pdf: String(v[r][c['E' + e + '_PDF']] || '').trim(), hoja: h.getName(), fila: r + 1 };
+      }
+    }
+  });
+  var lock = LockService.getScriptLock();
+  if (aplicar && !lock.tryLock(30000)) return 'ocupado';
+  var sh = incHoja_(INC_HOJA_EVENTOS, INC_COLS_EVENTOS), todos = incLeerEventos_(''), porExp = {}, nuevos = 0;
+  todos.forEach(function (x) { (porExp[x.exp] = porExp[x.exp] || []).push(x); });
+  try {
+    Object.keys(dec).sort().forEach(function (exp) {
+      var nota = libro[exp], et = Object.keys(dec[exp]).map(Number).sort();
+      if (!nota) { et.forEach(function (e) { var d = dec[exp][e]; rep.push([d.hoja, d.fila, exp, e, 'ERROR', 'El expediente no está en el libro de Seguimiento publicado.']); }); return; }
+      var ev = (porExp[exp] || []).slice();
+      et.forEach(function (e) {
+        var d = dec[exp][e], st = incEstado_(nota, ev), idc = 'CARGA-' + exp + '-E' + e;
+        var r = function (est, msg) { rep.push([d.hoja, d.fila, exp, e, est, msg]); };
+        if (ev.some(function (x) { return x.idCliente === idc && x.estado !== 'ANULADO'; })) return r('YA CARGADO', 'Este hito ya se había cargado.');
+        if (e < st.act) return r('YA CONSTA', 'La etapa ya constaba; no se registra de nuevo.');
+        if (e > st.act) return r('ERROR', 'Falta declarar antes la etapa ' + st.act + ' (' + INC_ETAPAS[st.act - 1][3] + ').');
+        if (!d.fecha) return r('ERROR', 'Falta la fecha o no es válida (dd/mm/aaaa).');
+        if (d.fecha > hoy) return r('ERROR', 'La fecha es futura.');
+        if (st.ini && d.fecha < st.ini) return r('ERROR', 'La fecha es anterior al hito previo (' + st.ini + ').');
+        if (!d.doc) return r('ERROR', 'Falta el número del documento.');
+        if (!d.pdf) return r('ERROR', 'Falta el PDF firmado (enlace o nombre del archivo).');
+        ev.push({ exp: exp, etapa: e, fecha: d.fecha, estado: 'VIGENTE', idCliente: idc });
+        if (aplicar) {
+          var fila = { TS_SERVIDOR: new Date(), ID_EVENTO: 'INC-CI-' + Utilities.formatDate(new Date(), 'America/Panama', 'yyyyMMddHHmmss') + '-' + (nuevos + 1),
+            ID_CLIENTE: idc, EXPEDIENTE: exp, OC: nota.req, NOTA: nota.nota, RENGLON: nota.cod, PROVEEDOR: nota.prov, ETAPA: e, FECHA_HITO: d.fecha,
+            USUARIO: 'Carga inicial · ' + INC_ETAPAS[e - 1][1], CARGO: INC_ETAPAS[e - 1][1], DIRECCION: INC_ETAPAS[e - 1][2],
+            OBSERVACION: 'CARGA INICIAL (empate) · documento ' + d.doc + ' · declarado en ' + d.hoja + ', fila ' + d.fila,
+            EVIDENCIA_URL: /^https?:\/\//.test(d.pdf) ? d.pdf : '', EVIDENCIA_NOMBRE: /^https?:\/\//.test(d.pdf) ? d.doc : d.pdf, ESTADO: 'VIGENTE' };
+          sh.appendRow(INC_COLS_EVENTOS.map(function (k) { var x = fila[k]; return x == null ? '' : x; }));
+          sh.getRange(sh.getLastRow(), INC_COLS_EVENTOS.indexOf('FECHA_HITO') + 1).setNumberFormat('@').setValue(d.fecha);
+          nuevos++;
+        }
+        r(aplicar ? 'REGISTRADO' : 'VÁLIDO', 'Etapa ' + e + ' · ' + d.fecha + ' · ' + d.doc);
+      });
+    });
+    if (aplicar && nuevos) { SpreadsheetApp.flush(); try { incPublicar_(true); } catch (eP) { Logger.log('incPublicar_: ' + eP); } }
+  } finally { if (aplicar) lock.releaseLock(); }
+  var hr = ss.getSheetByName('CARGA_REPORTE') || ss.insertSheet('CARGA_REPORTE');
+  hr.clear(); hr.getRange(1, 1, 1, 6).setValues([['HOJA', 'FILA', 'EXPEDIENTE', 'ETAPA', 'RESULTADO', 'DETALLE']]).setFontWeight('bold');
+  if (rep.length) hr.getRange(2, 1, rep.length, 6).setValues(rep);
+  var cuenta = {}; rep.forEach(function (x) { cuenta[x[4]] = (cuenta[x[4]] || 0) + 1; });
+  Logger.log((aplicar ? 'CARGA APLICADA' : 'SIMULACIÓN') + ': ' + JSON.stringify(cuenta) + (aplicar ? ' · ' + nuevos + ' hitos nuevos' : '') + '. Detalle en CARGA_REPORTE.');
+  return cuenta;
+}

@@ -298,18 +298,19 @@ def doc(pags, dest):
 PIE = ('<div style="font-size:7pt;color:#6b7280;width:100%;padding:0 15mm;display:flex;justify-content:space-between;font-family:Arial">'
        '<span>DINALOG · Torre de Control · Expediente de Incumplimiento</span><span>Página <span class="pageNumber"></span> de <span class="totalPages"></span></span></div>')
 
-from playwright.sync_api import sync_playwright
-with sync_playwright() as pw:
-    b = pw.chromium.launch()
-    pg = b.new_page()
-    for nombre, pags, dest in [('incumplimiento_ejecutivo.pdf', [p1, p2, p3], 'Directora Ejecutiva Nacional de Administración (DENA)'),
-                               ('incumplimiento_ejecutivo_DG.pdf', [pDG], 'Director General · por conducto de la DENA')]:
-        h = doc(pags, dest)
-        open(os.path.join(OUT, nombre.replace('.pdf', '.html')), 'w', encoding='utf-8').write(h)
-        pg.set_content(h, wait_until='load')
-        pg.pdf(path=os.path.join(OUT, nombre), format='A4', print_background=True, display_header_footer=True,
-               header_template='<span></span>', footer_template=PIE, margin=dict(top='14mm', bottom='16mm', left='15mm', right='15mm'))
-    b.close()
+if not os.environ.get('SOLO_DATOS'):
+    from playwright.sync_api import sync_playwright
+    with sync_playwright() as pw:
+        b = pw.chromium.launch()
+        pg = b.new_page()
+        for nombre, pags, dest in [('incumplimiento_ejecutivo.pdf', [p1, p2, p3], 'Directora Ejecutiva Nacional de Administración (DENA)'),
+                                   ('incumplimiento_ejecutivo_DG.pdf', [pDG], 'Director General · por conducto de la DENA')]:
+            h = doc(pags, dest)
+            open(os.path.join(OUT, nombre.replace('.pdf', '.html')), 'w', encoding='utf-8').write(h)
+            pg.set_content(h, wait_until='load')
+            pg.pdf(path=os.path.join(OUT, nombre), format='A4', print_background=True, display_header_footer=True,
+                   header_template='<span></span>', footer_template=PIE, margin=dict(top='14mm', bottom='16mm', left='15mm', right='15mm'))
+        b.close()
 
-json.dump(R, open(os.path.join(OUT, 'incumplimiento_ejecutivo.json'), 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
-print(json.dumps(R, ensure_ascii=False))
+    json.dump(R, open(os.path.join(OUT, 'incumplimiento_ejecutivo.json'), 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
+    print(json.dumps(R, ensure_ascii=False))
