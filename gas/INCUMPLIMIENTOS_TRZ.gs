@@ -514,3 +514,173 @@ function incPrueba() {
   if (r2.success) Logger.log('anular: ' + JSON.stringify(incAnular_({ pin: '710099', id: r2.id, motivo: 'PRUEBA de instalación' })));
   Logger.log('publicar: ' + JSON.stringify(incPublicar_(true)));
 }
+
+/* ==================================================================== */
+/*  CORREO DIARIO DE SEGUIMIENTO (lunes a viernes, 7:00 a. m. Panamá)    */
+/* -------------------------------------------------------------------- */
+/*  Cada cargo recibe solo los expedientes que esperan SU etapa, con     */
+/*  rojo y ámbar primero y el enlace directo a la ficha para registrar.  */
+/*  Los SUPERVISOR y CONSULTA reciben el resumen de las tres direcciones.*/
+/*                                                                      */
+/*  Propiedades del script:                                             */
+/*    INC_CORREO_MODO    PRUEBA (por defecto) | REAL | APAGADO          */
+/*    INC_CORREO_PRUEBA  correo que recibe todo en PRUEBA (si falta, la  */
+/*                       cuenta que corre el script)                     */
+/*  En PRUEBA cada correo llega a INC_CORREO_PRUEBA con el cargo en el   */
+/*  asunto y la lista de quiénes lo recibirían en REAL. Pasa a REAL      */
+/*  cuando la Directora valide las personas y estén en INC_USUARIOS con  */
+/*  su CORREO (las filas con NOTA = PRUEBA nunca reciben correo).        */
+/*                                                                      */
+/*  Instalación: ejecutar incCorreoInstalar() una vez (crea el disparador*/
+/*  diario). Vista previa: incCorreoVistaPrevia().                      */
+/* ==================================================================== */
+
+var INC_TABLERO = 'https://torrecontrolcss.org/seguire/incumplimientos.html';
+var INC_SISCOMP = 'https://torrecontrolcss.org/seguire/data/siscomp_contraste.json';
+var INC_PLAZOS = { 1: 0, 2: 2, 3: 3, 4: 5, 5: 10, 6: null, 7: 3 };
+var INC_SEM = { r: ['Vencido', '#c83a3a', '#fbe3e3'], a: ['Por vencer', '#a87500', '#fff4d6'], v: ['Dentro del plazo', '#2f8a3e', '#e3f4e6'], g: ['Sin plazo acordado', '#5f6b78', '#eef1f4'] };
+
+function incHabiles_(a, b) {
+  if (!a || !b || b <= a) return 0;
+  var d = new Date(a + 'T12:00:00'), e = new Date(b + 'T12:00:00'), n = 0;
+  while (d < e) { d.setDate(d.getDate() + 1); var w = d.getDay(); if (w > 0 && w < 6) n++; }
+  return n;
+}
+
+/* Expedientes abiertos con su etapa y semáforo: mismo cálculo que el tablero. */
+function incExpedientes_() {
+  var D = JSON.parse(UrlFetchApp.fetch(INC_LIBRO_FUENTE + '?_=' + Date.now()).getContentText()), ix = {};
+  D.cols.forEach(function (k, i) { ix[k] = i; });
+  var hoy = incFmt_(new Date()), ev = {};
+  incLeerEventos_('').forEach(function (e) { if (e.estado !== 'ANULADO') (ev[e.exp] = ev[e.exp] || []).push(e); });
+  var sc = {};
+  try {
+    var S = JSON.parse(UrlFetchApp.fetch(INC_SISCOMP + '?_=' + Date.now(), { muteHttpExceptions: true }).getContentText()), si = {};
+    S.cols.forEach(function (k, i) { si[k] = i; });
+    S.rows.forEach(function (r) { if (r[si.cod]) sc[r[si.oc] + '|' + r[si.cod]] = r[si.ped]; });
+  } catch (e) { sc = null; }
+  var out = [];
+  D.rows.forEach(function (x) {
+    var venc = String(x[ix.venc] || ''), saldo = Number(x[ix.saldo] || 0);
+    if (!venc || venc >= hoy || saldo <= 0) return;
+    var id = 'EXP-' + x[ix.req] + '-' + String(x[ix.nota]).replace(/[^0-9A-Za-z.]/g, '');
+    var nota = { venc: venc, et: Math.min(5, Number(x[ix.et] || 0)), fAviso: String(x[ix.fAviso] || ''), fNotP: String(x[ix.fNotP] || '') };
+    var st = incEstado_(nota, ev[id] || []);
+    if (st.act > 7) return;
+    var p = INC_PLAZOS[st.act], d = incHabiles_(st.ini, hoy);
+    var se = p === null ? 'g' : (d < 0.8 * p ? 'v' : (d <= p ? 'a' : 'r'));
+    var key = x[ix.req] + '|' + x[ix.cod];
+    out.push({ id: id, req: String(x[ix.req]), cod: String(x[ix.cod] || ''), desc: String(x[ix.desc] || ''), prov: String(x[ix.prov] || ''),
+      venc: venc, val: saldo * Number(x[ix.precio] || 0), act: st.act, d: d, p: p, se: se,
+      sc: sc === null ? '' : (sc[key] ? 'Abierto en SisCOMP' : 'No figura en SisCOMP') });
+  });
+  var ord = { r: 0, a: 1, g: 2, v: 3 };
+  out.sort(function (a, b) { return (ord[a.se] - ord[b.se]) || (b.val - a.val); });
+  return { corte: D.corte, hoy: hoy, X: out, siscomp: sc !== null };
+}
+
+/* Destinatarios por cargo (y supervisores) desde INC_USUARIOS. */
+function incDestinatarios_() {
+  var v = incHoja_(INC_HOJA_USUARIOS, INC_COLS_USUARIOS).getDataRange().getValues(), c = incIdx_(v[0]);
+  var porCargo = {}, resumen = [];
+  for (var i = 1; i < v.length; i++) {
+    var r = v[i], correo = String(r[c.CORREO] || '').trim();
+    if (String(r[c.ACTIVO] || 'SI').toUpperCase() === 'NO' || String(r[c.NOTA] || '').toUpperCase() === 'PRUEBA' || !/@/.test(correo)) continue;
+    var rol = String(r[c.ROL] || 'OPERADOR').toUpperCase(), cargo = incNorm_(r[c.CARGO]);
+    if (rol === 'SUPERVISOR' || rol === 'CONSULTA') resumen.push(correo);
+    else (porCargo[cargo] = porCargo[cargo] || []).push(correo);
+  }
+  return { porCargo: porCargo, resumen: resumen };
+}
+
+function incFm_(n) { return 'B/. ' + (n >= 1e6 ? (n / 1e6).toFixed(2) + ' M' : Math.round(n).toLocaleString('en-US')); }
+function incEsc_(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+
+function incHtml_(titulo, intro, L, conEtapa, pie, aviso) {
+  var n = function (s) { return L.filter(function (o) { return o.se === s; }).length; };
+  var pill = function (s, v) { return '<td style="padding:10px 14px;background:' + INC_SEM[s][2] + ';border-radius:8px"><div style="font-size:11px;color:' + INC_SEM[s][1] + '">' + INC_SEM[s][0] + '</div><div style="font-size:22px;font-weight:700;color:' + INC_SEM[s][1] + '">' + v + '</div></td><td width="8"></td>'; };
+  var filas = L.slice(0, 25).map(function (o) {
+    var s = INC_SEM[o.se];
+    return '<tr><td style="padding:6px;border-bottom:1px solid #e5e7eb"><a href="' + INC_TABLERO + '?v=fic&exp=' + encodeURIComponent(o.id) + '" style="color:#1e5a9e;font-family:monospace">' + o.id + '</a></td>' +
+      '<td style="padding:6px;border-bottom:1px solid #e5e7eb">' + incEsc_(o.prov) + '</td>' +
+      '<td style="padding:6px;border-bottom:1px solid #e5e7eb">' + incEsc_(o.cod) + ' · ' + incEsc_(o.desc.slice(0, 60)) + '</td>' +
+      (conEtapa ? '<td style="padding:6px;border-bottom:1px solid #e5e7eb">' + o.act + ' · ' + INC_ETAPAS[o.act - 1][3] + '</td>' : '') +
+      '<td style="padding:6px;border-bottom:1px solid #e5e7eb;text-align:right;white-space:nowrap">' + incFm_(o.val) + '</td>' +
+      '<td style="padding:6px;border-bottom:1px solid #e5e7eb;text-align:right">' + o.d + (o.p ? ' de ' + o.p : '') + '</td>' +
+      '<td style="padding:6px;border-bottom:1px solid #e5e7eb"><span style="background:' + s[2] + ';color:' + s[1] + ';padding:2px 8px;border-radius:10px;font-size:11px;white-space:nowrap">' + s[0] + '</span></td>' +
+      (o.sc ? '<td style="padding:6px;border-bottom:1px solid #e5e7eb;font-size:11px;color:#555">' + o.sc + '</td>' : '') + '</tr>';
+  }).join('');
+  var th = function (t) { return '<th style="padding:6px;text-align:left;background:#1e5a9e;color:#fff;font-weight:600">' + t + '</th>'; };
+  return '<div style="font-family:Arial,sans-serif;font-size:13px;color:#1f2937;max-width:900px">' +
+    (aviso ? '<div style="background:#fff4d6;border:1px solid #f2dc7a;padding:8px 12px;border-radius:6px;margin-bottom:12px;font-size:12px">' + aviso + '</div>' : '') +
+    '<div style="background:#0c447c;color:#fff;padding:14px 18px;border-radius:8px 8px 0 0"><div style="font-size:11px;opacity:.85">CAJA DE SEGURO SOCIAL · EXPEDIENTE DE INCUMPLIMIENTO DE ENTREGA</div><div style="font-size:18px;font-weight:700">' + titulo + '</div></div>' +
+    '<div style="padding:14px 18px;border:1px solid #e5e7eb;border-top:0;border-radius:0 0 8px 8px">' +
+    '<p style="margin:0 0 12px">' + intro + '</p>' +
+    '<table cellspacing="0" cellpadding="0"><tr>' + pill('r', n('r')) + pill('a', n('a')) + pill('v', n('v')) + (n('g') ? pill('g', n('g')) : '') + '</tr></table>' +
+    (L.length ? '<p style="margin:14px 0 6px;font-weight:700">Qué hacer hoy' + (L.length > 25 ? ' (los 25 más urgentes de ' + L.length + ')' : '') + '</p>' +
+      '<table cellspacing="0" cellpadding="0" style="border-collapse:collapse;width:100%;font-size:12px"><tr>' + th('Expediente') + th('Proveedor') + th('Renglón') + (conEtapa ? th('Espera la etapa') : '') + th('Saldo') + th('Días hábiles') + th('Semáforo') + (L[0].sc ? th('SisCOMP') : '') + '</tr>' + filas + '</table>' : '<p>No hay expedientes esperando esta etapa.</p>') +
+    '<p style="margin:14px 0 0"><a href="' + INC_TABLERO + '?v=exp" style="background:#1e5a9e;color:#fff;padding:8px 14px;border-radius:6px;text-decoration:none">Abrir el tablero</a></p>' +
+    '<p style="font-size:11px;color:#6b7280;margin-top:14px">' + pie + '</p></div></div>';
+}
+
+function incEnviar_(o) {
+  if (typeof correoEnviar_ === 'function') correoEnviar_(o); else MailApp.sendEmail(o);
+}
+
+function incCorreoDiario(forzar) {
+  forzar = (forzar === 'PRUEBA') ? 'PRUEBA' : null; // el disparador pasa un objeto de evento
+  var props = PropertiesService.getScriptProperties();
+  var modo = String(props.getProperty('INC_CORREO_MODO') || 'PRUEBA').toUpperCase();
+  if (modo === 'APAGADO' && !forzar) return 'apagado';
+  var w = Number(Utilities.formatDate(new Date(), 'America/Panama', 'u'));
+  if (w > 5 && !forzar) return 'fin de semana';
+  var prueba = forzar === 'PRUEBA' || modo !== 'REAL';
+  var destPrueba = props.getProperty('INC_CORREO_PRUEBA') || Session.getEffectiveUser().getEmail();
+  var E = incExpedientes_(), dest = incDestinatarios_(), enviados = 0;
+  var fd = function (s) { return s ? s.split('-').reverse().join('/') : ''; };
+  var pie = 'Fuente: libro de Incumplimientos de Seguimiento al ' + fd(E.corte) + (E.siscomp ? ' y extracto de SisCOMP de la Dirección Nacional de Compras' : '') +
+    '. Días hábiles de lunes a viernes desde el último hito; plazos propuestos por DINALOG. Cada responsable registra su etapa en la ficha con su PIN y adjunta el documento firmado (Ley 419, arts. 228 a 233). Correo automático de la Torre de Control · DINALOG.';
+  var mandar = function (para, asunto, html, cargoTxt) {
+    if (prueba) {
+      var av = '<b>PRUEBA.</b> En uso real este correo iría a: ' + (para.length ? incEsc_(para.join(', ')) : (cargoTxt === 'Resumen para directores' ? '<i>nadie todavía — falta cargar en INC_USUARIOS a los directores (ROL SUPERVISOR o CONSULTA) con su correo</i>' : '<i>nadie todavía — falta cargar en INC_USUARIOS a la persona titular o suplente de «' + incEsc_(cargoTxt) + '» con su correo</i>')) + '.';
+      incEnviar_({ to: destPrueba, subject: '[PRUEBA · ' + cargoTxt + '] ' + asunto, htmlBody: html.replace('<div style="font-family:Arial', '<div style="background:#fff4d6;border:1px solid #f2dc7a;padding:8px 12px;border-radius:6px;margin-bottom:12px;font-family:Arial;font-size:12px">' + av + '</div><div style="font-family:Arial'), name: 'Torre de Control CSS' });
+      enviados++; return;
+    }
+    if (!para.length) return;
+    incEnviar_({ to: para.join(','), subject: asunto, htmlBody: html, name: 'Torre de Control CSS' }); enviados++;
+  };
+  // 1) Un correo por cargo con las etapas que le tocan
+  var cargos = {};
+  INC_ETAPAS.forEach(function (e) { if (e[0] > 1) (cargos[e[1]] = cargos[e[1]] || []).push(e[0]); });
+  Object.keys(cargos).forEach(function (cargo) {
+    var L = E.X.filter(function (o) { return cargos[cargo].indexOf(o.act) >= 0; });
+    if (!L.length && !prueba) return;
+    var rojos = L.filter(function (o) { return o.se === 'r'; }).length;
+    var et = cargos[cargo].map(function (n) { return n + ' · ' + INC_ETAPAS[n - 1][3]; }).join('; ');
+    var intro = 'Buenos días. Estos expedientes esperan su registro en: <b>' + incEsc_(et) + '</b>. ' +
+      (rojos ? '<b style="color:#c83a3a">' + rojos + ' ya pasaron el plazo de la etapa.</b> ' : '') + 'Al registrar el hito con su PIN, el expediente pasa a la siguiente dirección y deja de aparecer aquí.';
+    mandar(dest.porCargo[incNorm_(cargo)] || [], 'Expedientes de incumplimiento · ' + L.length + ' por registrar' + (rojos ? ' · ' + rojos + ' vencidos' : '') + ' · ' + fd(E.hoy),
+      incHtml_(cargo, intro, L, cargos[cargo].length > 1, pie), cargo);
+  });
+  // 2) Resumen para supervisores y consulta (las tres direcciones)
+  var porEt = INC_ETAPAS.slice(1).map(function (e) {
+    var L = E.X.filter(function (o) { return o.act === e[0]; }), r = L.filter(function (o) { return o.se === 'r'; }).length;
+    return '<tr><td style="padding:4px 8px">' + e[0] + ' · ' + e[3] + '</td><td style="padding:4px 8px">' + incEsc_(e[1]) + '</td><td style="padding:4px 8px;text-align:right">' + L.length + '</td><td style="padding:4px 8px;text-align:right;color:#c83a3a">' + r + '</td></tr>';
+  }).join('');
+  var sv = E.X.reduce(function (a, o) { return a + o.val; }, 0);
+  var introR = 'Buenos días. Hay <b>' + E.X.length + '</b> expedientes abiertos por <b>' + incFm_(sv) + '</b> de saldo vencido.' +
+    '<table cellspacing="0" style="margin:10px 0;font-size:12px;border-collapse:collapse"><tr style="background:#eef1f4"><th style="padding:4px 8px;text-align:left">Etapa</th><th style="padding:4px 8px;text-align:left">Le toca a</th><th style="padding:4px 8px">Expedientes</th><th style="padding:4px 8px">Vencidos</th></tr>' + porEt + '</table>';
+  mandar(dest.resumen, 'Expedientes de incumplimiento · resumen · ' + E.X.length + ' abiertos · ' + fd(E.hoy), incHtml_('Resumen de las tres direcciones', introR, E.X, true, pie), 'Resumen para directores');
+  Logger.log('Correo diario (' + (prueba ? 'PRUEBA → ' + destPrueba : 'REAL') + '): ' + enviados + ' correos · ' + E.X.length + ' expedientes.');
+  return enviados;
+}
+
+function incCorreoVistaPrevia() { return incCorreoDiario('PRUEBA'); }
+
+function incCorreoInstalar() {
+  ScriptApp.getProjectTriggers().forEach(function (t) { if (t.getHandlerFunction() === 'incCorreoDiario') ScriptApp.deleteTrigger(t); });
+  ScriptApp.newTrigger('incCorreoDiario').timeBased().everyDays(1).atHour(7).inTimezone('America/Panama').create();
+  var props = PropertiesService.getScriptProperties();
+  if (!props.getProperty('INC_CORREO_MODO')) props.setProperty('INC_CORREO_MODO', 'PRUEBA');
+  Logger.log('Disparador diario 7:00 (Panamá) creado. Modo: ' + props.getProperty('INC_CORREO_MODO') + '. Para enviar a los responsables: INC_CORREO_MODO = REAL.');
+}
