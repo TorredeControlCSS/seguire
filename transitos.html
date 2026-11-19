@@ -300,6 +300,35 @@
   :root[data-theme="dark"] .hd-soy select{background:#fff;color:#0C447C;}
   :root[data-theme="dark"] .vistas button{color:#9fb0c2;}
   :root[data-theme="dark"] .vistas button.on{color:#8fc1f0;border-bottom-color:#8fc1f0;}
+  /* Entregas directas en Unidades Ejecutoras (19-nov-2026) */
+  .k-DUE{background:#dff1ef;color:#17655d}
+  .mt-ue{display:inline-block;margin-top:2px;border-radius:10px;padding:1px 7px;font-size:10.5px;font-weight:600;background:#dff1ef;color:#17655d;white-space:nowrap;}
+  .ue-dest{margin-top:10px;border:1px solid var(--linea);border-radius:6px;background:#fff;overflow:hidden;}
+  .ue-dest .hd{padding:7px 10px;font-size:12px;font-weight:700;color:var(--azul);background:#f4f8fc;border-bottom:1px solid var(--linea);}
+  .ue-dest table{width:100%;border-collapse:collapse;}
+  .ue-dest th{background:#eef3f8;color:#44546a;font-size:10.5px;text-transform:uppercase;text-align:left;padding:5px 8px;position:static;cursor:default;}
+  .ue-dest td{padding:5px 8px;font-size:12px;border-bottom:1px solid #eef2f6;background:#fff !important;}
+  .ue-dest td.nm,.ue-dest th.nm{text-align:right;font-family:Consolas,monospace;}
+  .ue-dest tr.tot td{font-weight:700;border-top:2px solid var(--linea);}
+  .ue-dest tr.pre td{color:#5b6775;font-style:italic;}
+  .modal-bx.ancho{max-width:760px;}
+  .ue-bd{max-height:68vh;overflow-y:auto;}
+  .ue-cab{display:grid;grid-template-columns:repeat(4,1fr);gap:6px 12px;background:#f4f8fc;border-radius:6px;padding:8px 10px;margin-bottom:10px;font-size:12px;}
+  .ue-cab span{display:block;font-size:10.5px;color:#5b6775;text-transform:uppercase;}
+  .ue-pre{border:1px solid #cfe6e3;background:#f3faf9;border-radius:6px;padding:8px 10px;margin-bottom:10px;font-size:12px;}
+  .ue-pre>b,.ue-cab b{font-family:inherit;}
+  .ue-pre .it{display:flex;gap:10px;align-items:center;padding:3px 0;border-bottom:1px dashed #d5e8e5;}
+  .ue-pre .it:last-child{border-bottom:none;}
+  .ue-pre .it .tx{flex:1;}
+  .ue-fila{display:grid;grid-template-columns:minmax(200px,1fr) 140px 100px 120px 22px;gap:6px;align-items:start;margin-bottom:6px;}
+  .ue-fila input{width:100%;box-sizing:border-box;margin:0;padding:6px 8px;font-size:12.5px;}
+  .ue-fila .x{border:0;background:none;color:#9b1c2c;font-size:16px;cursor:pointer;padding:4px 0;line-height:1;}
+  .ue-enc{display:grid;grid-template-columns:minmax(200px,1fr) 140px 100px 120px 22px;gap:6px;font-size:10.5px;color:#5b6775;text-transform:uppercase;margin-bottom:3px;}
+  .ue-tot{margin:8px 0;padding:7px 10px;border-radius:6px;background:#eef3f8;font-size:12px;}
+  .ue-tot.mal{background:#f6d5d1;color:#9b1c2c;}
+  .ue-lnk{border:0;background:none;color:var(--azul);font:600 12px 'Segoe UI',Arial,sans-serif;cursor:pointer;padding:2px 0;text-decoration:underline;}
+  .ue-err{color:#9b1c2c;font-size:12px;margin-top:6px;min-height:16px;}
+  @media (max-width:700px){ .ue-fila,.ue-enc{grid-template-columns:1fr 1fr;} .ue-cab{grid-template-columns:1fr 1fr;} }
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
 </head>
@@ -613,6 +642,12 @@ const API_SIGUELO = 'https://script.google.com/macros/s/AKfycbwVw0ACNMhdN6d-JsI1
    (TRANSITOS_EVIDENCIA.gs) y la publica aquí. Solo lectura; si no carga, el panel sigue igual. */
 const URL_EVIDENCIA = 'https://torrecontrolcss.org/SIGUELO/transitos_evidencia.json';
 var EVID = {};
+/* Entregas directas en Unidades Ejecutoras (19-nov-2026): saldos que el proveedor entregó
+   directo en una UE y que por eso no aparecen en los informes de entrada de los CEDIS.
+   Las registra el planificador (con respaldo) o llegan solas del libro de Seguimiento
+   cuando la sub-nota está recibida completa. SÍGUELO las publica aquí (TRANSITOS_ENTREGAS_UE). */
+const URL_ENTREGAS_UE = 'https://torrecontrolcss.org/SIGUELO/transitos_entregas_ue.json';
+var EUE = { lin:{}, pre:{}, ues:[] };
 
 let TRANSITOS = [];
 let _extraido = null;
@@ -1208,7 +1243,7 @@ function cargarTransitos(){
     $('tarjetas').innerHTML='<div style="text-align:center;color:#999;padding:20px;">Cargando…</div>';
     fetch(URL_PANEL_JSON+'?t='+Date.now()).then(function(r){ return r.ok?r.json():null; }).then(function(j){
       if(!j||!j.transitos||_gasOk) return;
-      pintarTransitos(j.transitos); cargarEvidencia();
+      pintarTransitos(j.transitos); cargarEvidencia(); cargarEntregasUE();
       marcaDatos('Datos publicados '+String(j.generado||'').replace('T',' ').slice(0,16)+' · confirmando con el registro en vivo…','esp');
     }).catch(function(){});
   }
@@ -1218,7 +1253,7 @@ function cargarTransitos(){
     try{ delete window[cb]; }catch(e){}
     var lista=(resp&&resp.transitos)?resp.transitos:[];
     var aplicar=function(){ if(ocupado()){ setTimeout(aplicar,2000); return; }
-      _gasOk=true; pintarTransitos(lista); cargarEvidencia();
+      _gasOk=true; pintarTransitos(lista); cargarEvidencia(); cargarEntregasUE();
       marcaDatos('Al día con el registro · '+new Date().toLocaleTimeString('es-PA',{hour:'2-digit',minute:'2-digit'}),'ok'); };
     aplicar();
   };
@@ -1230,6 +1265,29 @@ function cargarTransitos(){
 }
 
 /* ---------- Evidencia de recepción ---------- */
+function cargarEntregasUE(){
+  fetch(URL_ENTREGAS_UE+'?t='+Date.now()).then(function(r){ return r.json(); }).then(function(j){
+    var m=(j&&j._meta)||{}, c=m.columnas||[], ix={}; c.forEach(function(k,i){ ix[k]=i; });
+    var lin={}; ((j&&j.rows)||[]).forEach(function(r){ var id=String(r[ix.idTransito]);
+      (lin[id]=lin[id]||[]).push({ ue:String(r[ix.ue]||''), fecha:String(r[ix.fecha]||''), cant:Number(r[ix.cantidad])||0, informe:String(r[ix.informe]||''),
+        fuente:String(r[ix.fuente]||''), nota:String(r[ix.notaSeguimiento]||''), respaldo:String(r[ix.respaldo]||''), por:String(r[ix.registro]||''), reg:String(r[ix.registrado]||'') }); });
+    var pc=m.columnasPrecarga||[], px={}; pc.forEach(function(k,i){ px[k]=i; });
+    var pre={}; Object.keys((j&&j.precarga)||{}).forEach(function(id){ pre[id]=j.precarga[id].map(function(r){
+      return { ue:String(r[px.ue]||''), sol:Number(r[px.solicitado])||0, rec:Number(r[px.recibido])||0, nota:String(r[px.nota]||''), fecha:String(r[px.ultimaEntrada]||'') }; }); });
+    EUE={ lin:lin, pre:pre, ues:((j&&j.ues)||[]).slice() };
+    renderMis();
+  }).catch(function(){ /* sin el archivo, el panel funciona como siempre */ });
+}
+function ueLin(t){ return EUE.lin[String(t.id)]||[]; }
+function ueTotal(t){ return ueLin(t).reduce(function(s,x){ return s+x.cant; },0); }
+function uePre(t){ return EUE.pre[String(t.id)]||[]; }
+/* Sub-notas del libro de Seguimiento que todavía no están registradas como entrega */
+function uePrePend(t){ var L=ueLin(t);
+  return uePre(t).filter(function(p){ return !L.some(function(x){ return x.fuente==='SEGUIMIENTO' && (x.nota===p.nota || (String(x.ue)===String(p.ue) && x.cant===p.rec && x.fecha===p.fecha)); }); }); }
+function ueDestino(t){ return ueLin(t).length>0 || uePre(t).length>0; }
+function ueNombre(s){ s=String(s||''); return s; }
+function ueResumen(t){ var L=ueLin(t), u={}; L.forEach(function(x){ u[x.ue]=1; }); var k=Object.keys(u);
+  return k.length?(k.length+' UE · '+fmtNum(ueTotal(t))+' u'):''; }
 function cargarEvidencia(){
   fetch(URL_EVIDENCIA+'?t='+Date.now()).then(function(r){ return r.json(); }).then(function(j){
     EVID={}; EVMETA=(j&&j._meta)||{}; ((j&&j.rows)||[]).forEach(function(r){ EVID[String(r.id)]=r; });
@@ -2257,6 +2315,7 @@ const M_CATS=[
   ['SOC','Documentos sin OC','Falta el Nº de OC SAP (1001…). Al <b>anotarlo aquí</b>, el sistema coteja la entrega solo contra el Kardex SAP-SAFIRO.'],
   ['FEC','Fechas por verificar','Al leer el PDF no se pudo confirmar el día o el mes de una fecha. Se sugiere <b>cotejarla con el documento</b>.'],
   ['CED','Sin CEDIS','El documento no indica el CEDIS de entrega. Mientras no lo tenga, <b>no aparece como tránsito</b> en los tableros.'],
+  ['DUE','Destino Unidad Ejecutora','Entregas que el proveedor hizo <b>directo en una Unidad Ejecutora</b>, que no salen en los informes de los CEDIS. Las del libro de Seguimiento con recibido completo se confirman solas; las demás, <b>regístrelas con su respaldo</b> y el saldo deja de figurar pendiente.'],
   ['ALL','Todo lo mío','Todos sus tránsitos con saldo pendiente.']];
 function toast(msg, tipo){ var b=$('toastBox'); if(!b){ return; } var d=document.createElement('div'); d.className='toast'+(tipo?' '+tipo:''); d.textContent=String(msg||''); b.appendChild(d); setTimeout(function(){ d.remove(); }, tipo==='err'?7000:4500); }
 function normDoc(v){ return String(v||'').replace(/\s+/g,' ').trim().toUpperCase(); }
@@ -2297,7 +2356,7 @@ function syncPlanificadorCarga(){
   } else { sel.style.display=''; nota.style.display='none'; }
 }
 function misBase(){ return TRANSITOS.filter(function(t){ return !_yo || trEsDe(_yo,t.planificador); }); }
-function misCats(t){ var c=trCats(t); return trCerrado(t)?c:c.concat(['ALL']); }
+function misCats(t){ var c=trCats(t); if(ueDestino(t)) c=c.concat(['DUE']); return trCerrado(t)?c:c.concat(['ALL']); }
 function misCuentas(L){
   var n={}; M_CATS.forEach(function(c){ n[c[0]]=0; }); var docs={};
   L.forEach(function(t){ misCats(t).forEach(function(k){ if(k==='SOC') docs[normDoc(t.n_documento)]=1; else n[k]++; }); });
@@ -2314,6 +2373,7 @@ function misSituacion(t){
   if(s==='CONFIRMADO_POR_PLANIFICADOR'){
     var cp=e.confirmadoPor||{}, qn=cp.tipo==='AUTOMATICO'?'automática · '+(cp.fuente==='RECEPCION'?'Recepción CEDIS Panamá':'Kardex SAP-SAFIRO')
       :cp.tipo==='BARRIDO'?'por la Torre de Control':cp.tipo==='REGISTRO_MANUAL'?'registrada por '+esc(cp.por||'el planificador'):cp.tipo==='PLANIFICADOR'?'por '+esc(cp.por||'el planificador'):'';
+    if(ueTotal(t)>0 && (!qn || cp.tipo==='AUTOMATICO')) qn=(ueTotal(t)>=Number(t.cantidad)?'entrega directa en Unidades Ejecutoras':fmtNum(ueTotal(t))+' u en Unidades Ejecutoras');
     return '<b style="color:#1f6b36">Recepción confirmada</b><br><span class="sm">'+(Number(t.cant_entregada)>0?fmtNum(t.cant_entregada)+' u':'')+(qn?(Number(t.cant_entregada)>0?' · ':'')+qn:'')+(cp.fecha?' · '+esc(fFecha(cp.fecha)):'')+(e.evidencia&&e.evidencia.cedisDeducido?'<br>CEDIS tomado del almacén del Kardex':'')+'</span>';
   }
   if(s==='_NO_CORRESPONDE') return '<span class="sm">Marcada «no corresponde»: se revisa con las entradas siguientes</span>';
@@ -2332,6 +2392,8 @@ function misSituacion(t){
 function misAccion(t, cat){
   if(trCerrado(t)) return '<span class="sm" style="color:#1f6b36">Cerrado: no requiere acciones</span>';
   var id=esc(t.id), est=String(t.estado_transito||'').toUpperCase(), cs=misCats(t);
+  var ueB=ueSePuede(t)?'<button class="btn btn-sec" data-a="ue" data-id="'+id+'">Entrega en Unidad Ejecutora</button>':'';
+  if(cat==='DUE') return ueB?('<button class="btn" data-a="ue" data-id="'+id+'">Registrar entrega en UE</button>'+(uePrePend(t).filter(function(p){ return p.rec>0; }).length?'<div class="sm">Seguimiento reporta '+uePrePend(t).filter(function(p){ return p.rec>0; }).length+' entrega(s) recibida(s) por registrar</div>':'')):'<span class="sm">Las entregas se registran en la Solicitud de Entrega</span>';
   var k=cat==='ALL'?(['REC','SOC','FEC','CED','VEN','PRO'].find(function(x){ return cs.indexOf(x)>=0; })||''):cat;
   if(k==='REC') return '<button class="btn ok" data-a="conf" data-id="'+id+'">Confirmar</button><button class="btn btn-sec" data-a="nocorr" data-id="'+id+'">No corresponde</button>';
   if(k==='SOC'){ var e=EVID[String(t.id)]||{}, sug=e.ocSugerida||'';
@@ -2340,7 +2402,7 @@ function misAccion(t, cat){
   if(k==='FEC') return '<button class="btn" data-a="editar" data-id="'+id+'">Verificar fecha</button>';
   if(k==='CED') return '<button class="btn" data-a="editar" data-id="'+id+'">Indicar CEDIS</button>';
   if(k==='VEN'||k==='PRO'){
-    var man=(k==='VEN'&&misSinFuente(t))?'<button class="btn btn-sec" data-a="manual" data-id="'+id+'">Registrar recepción</button>':'';
+    var man=((k==='VEN'&&misSinFuente(t))?'<button class="btn btn-sec" data-a="manual" data-id="'+id+'">Registrar recepción</button>':'')+(k==='VEN'?ueB:'');
     if(est!=='NOTIFICADA'&&est!=='AGENDADA') return '<button class="btn" data-a="notif" data-id="'+id+'">Notificar al proveedor</button>'+man;
     if(est==='NOTIFICADA') return '<span class="sm">Notificado '+esc(fFecha(t.notificado_en))+'</span><br><button class="btn btn-sec" data-a="cita" data-id="'+id+'">Cita tomada</button>'+man;
     if(est==='AGENDADA'){
@@ -2351,9 +2413,9 @@ function misAccion(t, cat){
   }
   return '<span class="sm">Clic en la fila para ver acciones</span>';
 }
-const M_COLS=[['doc','Documento · OC'],['cod','Renglón'],['prov','Proveedor'],['ced','CEDIS'],['sal','Saldo'],['f','Entrega'],['sit','Situación'],['acc','Siguiente paso']];
+const M_COLS=[['doc','Documento · OC'],['cod','Renglón'],['prov','Proveedor'],['ced','Destino'],['sal','Saldo'],['f','Entrega'],['sit','Situación'],['acc','Siguiente paso']];
 const M_ACC={ REC:'Siguiente paso: confirme la recepción', VEN:'Siguiente paso: contacte al proveedor', PRO:'Siguiente paso: confirme la cita',
-  SOC:'Siguiente paso: escriba el Nº de OC SAP y presione Guardar', FEC:'Siguiente paso: verifique la fecha con el PDF', CED:'Siguiente paso: indique el CEDIS', ALL:'Siguiente paso' };
+  SOC:'Siguiente paso: escriba el Nº de OC SAP y presione Guardar', FEC:'Siguiente paso: verifique la fecha con el PDF', CED:'Siguiente paso: indique el CEDIS', DUE:'Siguiente paso: registre la entrega en la UE', ALL:'Siguiente paso' };
 const M_KEY={ doc:function(t){ return normDoc(t.n_documento); }, cod:function(t){ return String(t.cod_abasto||''); }, prov:function(t){ return String(t.proveedor||'').toUpperCase(); },
   ced:function(t){ return String(t.cedi||''); }, sal:function(t){ return t._sal!=null?t._sal:trSaldo(t); }, f:function(t){ return trFecha(t)||'9999'; }, sit:function(t){ return situacionEv(t)||''; } };
 function misLista(){
@@ -2377,7 +2439,7 @@ function renderMis(){
   $('mtAviso').style.display=_yo?'none':'block';
   $('mtAviso').innerHTML='Elija su nombre arriba, en <b>Planificador</b>, para ver solo sus tránsitos. Mientras tanto se muestran los de todos los planificadores.';
   $('mtChips').innerHTML=M_CATS.map(function(c){ return '<button type="button" class="mt-chip k-'+c[0]+(_misCat===c[0]?' on':'')+'" data-k="'+c[0]+'"'+((n[c[0]]||c[0]==='ALL')?'':' disabled')+'><b>'+n[c[0]]+'</b>'+c[1]+'</button>'; }).join('');
-  $('mtGuia').innerHTML=(M_CATS.find(function(c){ return c[0]===_misCat; })||M_CATS[6])[2];
+  $('mtGuia').innerHTML=(M_CATS.find(function(c){ return c[0]===_misCat; })||M_CATS.filter(function(c){ return c[0]==='ALL'; })[0])[2];
   var L=misLista();
   if(!TRANSITOS.length){ $('mtTablaBox').innerHTML='<div class="mt-vacio">Cargando…</div>'; return; }
   if(!L.length){ $('mtTablaBox').innerHTML='<div class="mt-vacio">No hay tránsitos en esta lista'+(_yo?' para '+esc(_yo):'')+'.</div>'; $('mtPie').textContent=''; return; }
@@ -2389,7 +2451,7 @@ function renderMis(){
     h+='<tr class="f'+(ab?' abierta':'')+'" data-id="'+id+'"><td><div style="font-family:Consolas,monospace;font-size:11.5px">'+esc(t.n_documento)+'</div>'+oc+'</td>'+
       '<td><span class="cod">'+esc(t.cod_abasto)+'</span> '+esc(String(t.descripcion||'').slice(0,60))+'</td>'+
       '<td class="sm" style="color:inherit">'+esc(String(t.proveedor||'').slice(0,34))+'</td>'+
-      '<td>'+(t._ced?esc(t._ced.filter(function(x,i,a){ return a.indexOf(x)===i; }).join(', ')):esc(t.cedi||'—'))+'</td>'+
+      '<td>'+(t._ced?esc(t._ced.filter(function(x,i,a){ return a.indexOf(x)===i; }).join(', ')):esc(t.cedi||'—'))+(!t._ced&&ueResumen(t)?'<br><span class="mt-ue" title="Entregado directo en Unidades Ejecutoras">+ '+esc(ueResumen(t))+'</span>':(!t._ced&&uePre(t).length?'<br><span class="mt-ue" title="El libro de Seguimiento reporta destino a Unidades Ejecutoras">destino UE</span>':''))+'</td>'+
       '<td class="nm">'+fmtNum(Math.round(t._sal!=null?t._sal:trSaldo(t)))+'</td>'+
       '<td>'+misEntrega(t)+'</td>'+
       '<td class="mt-sit">'+(t._ced?'<span class="sm">'+t._n+' fila'+(t._n>1?'s':'')+' de este documento se cotejan al anotar la OC</span>':misSituacion(t))+'</td>'+
@@ -2405,7 +2467,8 @@ function renderMis(){
         (est==='NOTIFICADA'?'<button class="btn btn-sec" data-a="revnotif" data-id="'+id+'">Revertir notificación</button>':'')+
         (est!=='AGENDADA'?'<button class="btn btn-sec" data-a="cita" data-id="'+id+'">Cita tomada</button>':'<span class="sm">Con cita en firme: ya no se puede editar ni eliminar</span><button class="btn btn-sec" data-a="revcita" data-id="'+id+'">Revertir cita tomada</button>')+
         (misSinFuente(t)?'<button class="btn btn-sec" data-a="manual" data-id="'+id+'">Registrar recepción</button>':'')+
-        '<span class="sep"></span>'+(est!=='AGENDADA'?'<button class="mt-lnk" data-a="elim" data-id="'+id+'">'+(est==='NOTIFICADA'?'Anular documento (avisa al proveedor)':'Eliminar documento')+'</button>':'')))+'</div></td></tr>';
+        (ueSePuede(t)?'<button class="btn btn-sec" data-a="ue" data-id="'+id+'">Registrar entrega en Unidad Ejecutora</button>':'')+
+        '<span class="sep"></span>'+(est!=='AGENDADA'?'<button class="mt-lnk" data-a="elim" data-id="'+id+'">'+(est==='NOTIFICADA'?'Anular documento (avisa al proveedor)':'Eliminar documento')+'</button>':'')))+'</div>'+ueDestinoHtml(t)+'</td></tr>';
     }
   });
   $('mtTablaBox').innerHTML=h+'</tbody></table>';
@@ -2447,6 +2510,122 @@ function registrarRecepcionManual(t){
       }).catch(function(err){ toast('Error de red: '+err,'err'); });
   });
 }
+/* ====== Entregas directas en Unidades Ejecutoras ====== */
+function ueSePuede(t){ return !trCerrado(t) && String(t.tipo||'').toUpperCase()!=='ORDEN_COMPRA' && trSaldo(t)>0; }
+function ueFF(iso){ iso=String(iso||''); return /^\d{4}-\d{2}-\d{2}/.test(iso)?iso.slice(8,10)+'/'+iso.slice(5,7)+'/'+iso.slice(2,4):'—'; }
+function ueDestinoHtml(t){
+  var L=ueLin(t), P=uePrePend(t); if(!L.length && !P.length) return '';
+  var cant=Number(t.cantidad)||0, ent=Number(t.cant_entregada)||0, enUE=ueTotal(t), enCed=Math.max(0,ent-enUE), ced=String(t.cedi||'');
+  var h='<div class="ue-dest"><div class="hd">Entregas por destino</div><table><thead><tr><th>Destino</th><th>Fecha</th><th class="nm">Cantidad</th><th>Nº informe</th><th>Fuente</th><th>Respaldo</th></tr></thead><tbody>';
+  h+='<tr><td>'+(ced?'CEDIS '+esc(ced.charAt(0)+ced.slice(1).toLowerCase()):'CEDIS (no indicado)')+'</td><td>—</td><td class="nm">'+fmtNum(enCed)+'</td><td>—</td><td class="sm">informes de entrada / Kardex</td><td>—</td></tr>';
+  L.forEach(function(x){
+    h+='<tr><td>'+esc(ueNombre(x.ue))+'</td><td>'+ueFF(x.fecha)+'</td><td class="nm">'+fmtNum(x.cant)+'</td><td>'+esc(x.informe||'—')+'</td><td class="sm">'+
+      (x.fuente==='SEGUIMIENTO'?'Seguimiento · sub-nota '+esc(x.nota):'Planificador · '+esc(String(x.por||'').slice(0,30)))+'</td><td>'+
+      (x.respaldo?'<a href="'+esc(x.respaldo)+'" target="_blank" rel="noopener">Ver</a>':'<span class="sm">'+(x.fuente==='SEGUIMIENTO'?'libro de Seguimiento':'adjunto · el enlace aparece en unos minutos')+'</span>')+'</td></tr>'; });
+  P.forEach(function(p){
+    h+='<tr class="pre"><td>'+esc(p.ue)+'</td><td>'+ueFF(p.fecha)+'</td><td class="nm">'+fmtNum(p.rec)+' de '+fmtNum(p.sol)+'</td><td>—</td><td class="sm">Seguimiento · sub-nota '+esc(p.nota)+(p.rec>=p.sol&&p.sol>0?' (recibida completa: pendiente de registrar)':p.rec>0?' (recibida en parte)':' (sin recibir)')+'</td><td>—</td></tr>'; });
+  h+='<tr class="tot"><td>Total entregado</td><td></td><td class="nm">'+fmtNum(ent)+' de '+fmtNum(cant)+'</td><td colspan="3" class="sm">saldo '+fmtNum(Math.max(0,cant-ent))+'</td></tr>';
+  return h+'</tbody></table></div>';
+}
+/* Ventana propia: no se cierra hasta que el registro sea válido (con modalConfirm se perdían los datos al fallar) */
+function ueModal(){
+  var ov=$('modalUE'); if(ov) return ov;
+  ov=document.createElement('div'); ov.className='modal-ov'; ov.id='modalUE';
+  ov.innerHTML='<div class="modal-bx ancho"><div class="modal-hd">Registrar entrega en Unidad Ejecutora</div><div class="modal-bd ue-bd" id="ueBd"></div>'+
+    '<div class="modal-ft"><button type="button" class="btn btn-sec" id="ueNo">Cancelar</button><button type="button" class="btn ok" id="ueSi">Registrar entrega</button></div></div>';
+  document.body.appendChild(ov); return ov;
+}
+function ueCombo(inp, caja){
+  var items=[], act=-1;
+  function pintar(){ var q=String(inp.value||'').toUpperCase().normalize('NFD').replace(/[̀-ͯ]/g,'').trim();
+    var L=EUE.ues.filter(function(n){ return !q || n.toUpperCase().normalize('NFD').replace(/[̀-ͯ]/g,'').indexOf(q)>=0; }).slice(0,40);
+    caja.innerHTML=L.length?L.map(function(n){ return '<div class="combo-item" data-val="'+esc(n)+'">'+esc(n)+'</div>'; }).join(''):
+      '<div class="combo-vacio">'+(q?'No está en el catálogo: se registra tal como la escribe':'Escriba el nombre de la Unidad Ejecutora')+'</div>';
+    items=[].slice.call(caja.querySelectorAll('.combo-item')); act=-1; caja.style.display='block'; }
+  function elegir(it){ inp.value=it.dataset.val; caja.style.display='none'; inp.dispatchEvent(new Event('change',{bubbles:true})); }
+  inp.addEventListener('focus',pintar); inp.addEventListener('input',pintar);
+  inp.addEventListener('keydown',function(e){
+    if(caja.style.display!=='block') return;
+    if(e.key==='ArrowDown'||e.key==='ArrowUp'){ e.preventDefault(); act=Math.max(0,Math.min(items.length-1,act+(e.key==='ArrowDown'?1:-1)));
+      items.forEach(function(x,i){ x.classList.toggle('activo',i===act); }); if(items[act]) items[act].scrollIntoView({block:'nearest'}); }
+    else if(e.key==='Enter'){ if(items[act]){ e.preventDefault(); elegir(items[act]); } }
+    else if(e.key==='Escape'){ caja.style.display='none'; } });
+  caja.addEventListener('mousedown',function(e){ var it=e.target.closest('.combo-item'); if(it){ e.preventDefault(); elegir(it); } });
+  inp.addEventListener('blur',function(){ setTimeout(function(){ caja.style.display='none'; },120); });
+}
+function registrarEntregaUE(t){
+  var ov=ueModal(), bd=$('ueBd'), cant=Number(t.cantidad)||0, ent=Number(t.cant_entregada)||0, sal=Math.round(trSaldo(t)), hoy=hoyISO(), ced=String(t.cedi||'');
+  var P=uePrePend(t).filter(function(p){ return p.rec>0; });
+  bd.innerHTML='<div class="ue-cab"><div><span>Renglón</span><b>'+esc(t.cod_abasto||'')+'</b> '+esc(String(t.descripcion||'').slice(0,40))+'</div>'+
+      '<div><span>Documento · OC</span>'+esc(t.n_documento||'')+'<br>'+esc(t.n_orden_compra||'sin OC')+'</div>'+
+      '<div><span>Cantidad · entregado</span>'+fmtNum(cant)+' · '+fmtNum(ent)+'</div><div><span>Saldo pendiente</span><b>'+fmtNum(sal)+'</b> u</div></div>'+
+    (P.length?'<div class="ue-pre"><b>El libro de Seguimiento reporta entregas a Unidades Ejecutoras</b> para esta solicitud. Use la que corresponda para llenar la línea:'+
+      P.map(function(p,i){ return '<div class="it"><div class="tx">'+esc(p.ue)+' · sub-nota '+esc(p.nota)+' · recibido '+fmtNum(p.rec)+' de '+fmtNum(p.sol)+(p.fecha?' · '+ueFF(p.fecha):'')+'</div><button type="button" class="ue-lnk" data-pre="'+i+'">Usar</button></div>'; }).join('')+'</div>':'')+
+    '<div class="ue-enc"><div>Unidad Ejecutora</div><div>Fecha de recepción</div><div>Cantidad</div><div>Nº de informe</div><div></div></div><div id="ueFilas"></div>'+
+    '<button type="button" class="ue-lnk" id="ueMas">Agregar otra Unidad Ejecutora</button>'+
+    '<div class="ue-tot" id="ueTot"></div>'+
+    '<label for="ueResp" style="margin:6px 0 2px;display:block">Respaldo de la entrega <span class="sm">(obligatorio: gestión de cobro, informe de recepción de la UE o nota del proveedor · PDF o imagen, máx. 8 MB)</span></label>'+
+    '<input id="ueResp" type="file" accept="application/pdf,image/*" style="width:100%;box-sizing:border-box;margin:0">'+
+    '<label for="ueObs" style="margin:8px 0 2px;display:block">Observación <span class="sm">(opcional)</span></label>'+
+    '<textarea id="ueObs" rows="2" maxlength="500" style="width:100%;box-sizing:border-box;margin:0"></textarea>'+
+    '<div class="sm" style="margin-top:6px">El saldo de esta solicitud baja en la cantidad registrada y la entrega queda a nombre de <b>'+esc(_yo||t.planificador||'el planificador')+'</b>, con la fecha de hoy, en la bitácora de confirmaciones. '+(ced?'El CEDIS '+esc(ced.charAt(0)+ced.slice(1).toLowerCase())+' no la verá en sus entradas.':'')+'</div>'+
+    '<div class="ue-err" id="ueErr"></div>';
+  var filas=$('ueFilas');
+  function fila(v){ v=v||{}; var d=document.createElement('div'); d.className='ue-fila';
+    d.innerHTML='<div class="combo-wrap" style="position:relative"><input class="u-ue" placeholder="Buscar Unidad Ejecutora" autocomplete="off" value="'+esc(v.ue||'')+'"><div class="combo-lista" style="display:none"></div></div>'+
+      '<input class="u-f" type="date" max="'+hoy+'" value="'+esc(v.fecha||'')+'"><input class="u-q" type="number" min="1" step="1" value="'+(v.cant||'')+'"><input class="u-i" maxlength="40" placeholder="opcional" value="'+esc(v.informe||'')+'">'+
+      '<button type="button" class="x" title="Quitar línea">&times;</button>';
+    filas.appendChild(d); ueCombo(d.querySelector('.u-ue'), d.querySelector('.combo-lista'));
+    d.querySelector('.x').onclick=function(){ d.remove(); if(!filas.children.length) fila(); tot(); };
+    d.addEventListener('input',tot); d.addEventListener('change',tot); return d; }
+  function leer(){ return [].slice.call(filas.children).map(function(d){ return { ue:d.querySelector('.u-ue').value.trim(), fecha:d.querySelector('.u-f').value, cant:Math.round(Number(d.querySelector('.u-q').value)||0), informe:d.querySelector('.u-i').value.trim() }; })
+    .filter(function(x){ return x.ue||x.cant||x.informe; }); }
+  function tot(){ var q=leer().reduce(function(s,x){ return s+x.cant; },0), b=$('ueTot'), mal=q>sal;
+    b.className='ue-tot'+(mal?' mal':'');
+    b.innerHTML='Ya entregado <b>'+fmtNum(ent)+'</b> (CEDIS '+fmtNum(Math.max(0,ent-ueTotal(t)))+(ueTotal(t)?' · UE '+fmtNum(ueTotal(t)):'')+') + esta entrega <b>'+fmtNum(q)+'</b> = <b>'+fmtNum(ent+q)+'</b> de '+fmtNum(cant)+
+      (mal?' · pasa el saldo pendiente ('+fmtNum(sal)+')':' · saldo quedaría en '+fmtNum(Math.max(0,sal-q))); }
+  fila(); tot();
+  $('ueMas').onclick=function(){ fila().querySelector('.u-ue').focus(); };
+  [].slice.call(bd.querySelectorAll('[data-pre]')).forEach(function(b){ b.onclick=function(){ var p=P[Number(b.dataset.pre)];
+    var vac=[].slice.call(filas.children).filter(function(d){ return !d.querySelector('.u-ue').value && !d.querySelector('.u-q').value; })[0];
+    if(vac) vac.remove(); fila({ ue:p.ue, fecha:p.fecha, cant:Math.min(p.rec,sal) }); b.disabled=true; b.textContent='Agregada'; tot(); }; });
+  function cerrar(){ ov.classList.remove('activo'); $('ueSi').onclick=null; $('ueNo').onclick=null; ov.onclick=null; }
+  function err(m){ $('ueErr').textContent=m; }
+  $('ueNo').onclick=cerrar; ov.onclick=function(e){ if(e.target===ov) cerrar(); };
+  $('ueSi').disabled=false; $('ueSi').textContent='Registrar entrega';
+  $('ueSi').onclick=function(){
+    var L=leer(); err('');
+    if(!L.length) return err('Agregue al menos una Unidad Ejecutora con su cantidad.');
+    for(var i=0;i<L.length;i++){ if(!L[i].ue) return err('Falta la Unidad Ejecutora en la línea '+(i+1)+'.');
+      if(!/^\d{4}-\d{2}-\d{2}$/.test(L[i].fecha)) return err('Falta la fecha de recepción en la línea '+(i+1)+'.');
+      if(L[i].fecha>hoy) return err('La fecha de la línea '+(i+1)+' es futura.');
+      if(!(L[i].cant>0)) return err('Falta la cantidad en la línea '+(i+1)+'.'); }
+    var q=L.reduce(function(s,x){ return s+x.cant; },0);
+    if(q>sal) return err('La suma ('+fmtNum(q)+') pasa el saldo pendiente ('+fmtNum(sal)+').');
+    var fi=$('ueResp').files[0]; if(!fi) return err('Adjunte el respaldo de la entrega.');
+    if(fi.size>8*1024*1024) return err('El respaldo pesa más de 8 MB. Redúzcalo o envíe solo las páginas que soportan la entrega.');
+    var btn=$('ueSi'); btn.disabled=true; btn.textContent='Registrando…';
+    var rd=new FileReader();
+    rd.onerror=function(){ btn.disabled=false; btn.textContent='Registrar entrega'; err('No se pudo leer el archivo.'); };
+    rd.onload=function(){ var b64=String(rd.result||'').split(',')[1]||'';
+      postSiguelo('registrarEntregaUE',{ id:t.id, lineas:L, obs:$('ueObs').value.trim(), por:_yo||t.planificador||'', respaldo:{ base64:b64, mime:fi.type||'application/pdf', nombre:fi.name } })
+        .then(function(j){
+          if(j&&j.success){
+            t.cant_entregada=j.cant_entregada; t.saldo=j.saldo;
+            var e=EVID[String(t.id)]=EVID[String(t.id)]||{}; if(Number(j.saldo)<=0) e._local='CONFIRMADO_POR_PLANIFICADOR';
+            var A=EUE.lin[String(t.id)]=EUE.lin[String(t.id)]||[];
+            L.forEach(function(x){ A.push({ ue:x.ue, fecha:x.fecha, cant:x.cant, informe:x.informe, fuente:'PLANIFICADOR', nota:'', respaldo:'', por:_yo||t.planificador||'', reg:hoy }); });
+            cerrar(); toast('Entrega registrada: '+fmtNum(q)+' u en '+L.length+' Unidad'+(L.length>1?'es':'')+' Ejecutora'+(L.length>1?'s':'')+'. Saldo: '+fmtNum(j.saldo)+'.','ok');
+            renderTarjetas(); renderKPIs(); renderMis(); setTimeout(cargarEntregasUE, 90000);
+          } else { var m=(j&&j.error)||'error'; if(/Action not found|no reconocida|desconocida/i.test(m)) m='esta función aún no está activa en el servidor; avise a la Torre de Control';
+            btn.disabled=false; btn.textContent='Registrar entrega'; err('No se pudo registrar: '+m); }
+        }).catch(function(x){ btn.disabled=false; btn.textContent='Registrar entrega'; err('Error de red: '+x); });
+    };
+    rd.readAsDataURL(fi);
+  };
+  ov.classList.add('activo');
+  setTimeout(function(){ var i=filas.querySelector('.u-ue'); if(i && !P.length) i.focus(); },50);
+}
 function misGuardarOC(t, btn){
   var inp=$('oc_'+t.id), v=String(inp&&inp.value||'').replace(/\s+/g,'');
   if(!/^10\d{8}(-?\d{2}-?\d{2})?$/.test(v)){ toast('El Nº de OC SAP empieza con 10 y tiene 10 dígitos (ej. 1001104510 o 1001104510-08-12).','err'); if(inp) inp.focus(); return; }
@@ -2472,6 +2651,7 @@ function misClick(ev){
     if(a==='conf') responderEvidencia(t.id,'CONFIRMADO');
     else if(a==='nocorr') responderEvidencia(t.id,'NO_CORRESPONDE');
     else if(a==='manual') registrarRecepcionManual(t);
+    else if(a==='ue') registrarEntregaUE(t);
     else if(a==='oc') misGuardarOC(t,b);
     else if(a==='editar') editarTransito(t.id);
     else if(a==='notif') notificarProveedor(d,b);
@@ -2486,7 +2666,7 @@ function misClick(ev){
 /* Excel institucional (logo, CAJA DE SEGURO SOCIAL, encabezado azul, filtros) */
 function misExcel(todo){
   if(typeof ExcelJS==='undefined'){ toast('No se pudo cargar el generador de Excel. Recargue la página.','err'); return; }
-  var cat=todo?'ALL':_misCat, nom=(M_CATS.find(function(c){ return c[0]===cat; })||M_CATS[6])[1];
+  var cat=todo?'ALL':_misCat, nom=(M_CATS.find(function(c){ return c[0]===cat; })||M_CATS.filter(function(c){ return c[0]==='ALL'; })[0])[1];
   var gu=_misCat; _misCat=cat; var L=misLista(); _misCat=gu;
   var wb=new ExcelJS.Workbook(), ws=wb.addWorksheet('Mis tránsitos',{views:[{state:'frozen',ySplit:5}]});
   var cols=[['Documento',30],['Nº OC SAP',20],['Tipo',18],['Código',12],['Descripción',46],['Proveedor',32],['CEDIS',14],['Cantidad',12],['Entregado',12],['Saldo',12],['Entrega',12],['Días',8],['Estado',13],['Situación',44]];
@@ -2498,7 +2678,7 @@ function misExcel(todo){
   var hr=ws.getRow(5); cols.forEach(function(c,i){ var cell=hr.getCell(i+1); cell.value=c[0]; cell.font={bold:true,color:{argb:'FFFFFFFF'}}; cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FF1E5A9E'}}; cell.alignment={vertical:'middle',wrapText:true}; });
   var r=6;
   L.forEach(function(t){ var f=trFecha(t), d=diasPara(f), tmp=document.createElement('div'); tmp.innerHTML=t._ced?(t._n+' filas sin OC'):misSituacion(t);
-    var row=ws.getRow(r++); row.values=[t.n_documento, t.n_orden_compra||'', t.tipo, t.cod_abasto, t.descripcion, t.proveedor, t._ced?t._ced.join(', '):t.cedi, Number(t.cantidad)||0, Number(t.cant_entregada)||0, Math.round(t._sal!=null?t._sal:trSaldo(t)), f, d, t.estado_transito, tmp.textContent];
+    var row=ws.getRow(r++); row.values=[t.n_documento, t.n_orden_compra||'', t.tipo, t.cod_abasto, t.descripcion, t.proveedor, t._ced?t._ced.join(', '):(String(t.cedi||'')+(ueLin(t).length?' · UE: '+ueLin(t).map(function(x){ return x.ue+' '+x.cant; }).join(', '):'')), Number(t.cantidad)||0, Number(t.cant_entregada)||0, Math.round(t._sal!=null?t._sal:trSaldo(t)), f, d, t.estado_transito, tmp.textContent];
     if(d!=null){ var c=row.getCell(12); c.fill={type:'pattern',pattern:'solid',fgColor:{argb:d<0?'FFF6D5D1':d<=7?'FFFBE8C8':'FFD6EFDC'}}; }
     [8,9,10].forEach(function(i){ row.getCell(i).numFmt='#,##0'; }); });
   ws.autoFilter={from:{row:5,column:1},to:{row:Math.max(5,r-1),column:cols.length}};
