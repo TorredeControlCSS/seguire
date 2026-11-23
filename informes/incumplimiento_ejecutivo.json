@@ -1,29 +1,29 @@
 {
- "hoy": "2026-11-20",
+ "hoy": "2026-11-23",
  "corteLibro": "2026-11-10",
- "expedientes": 211,
- "saldo": 9736093.52,
- "proveedores": 52,
+ "expedientes": 257,
+ "saldo": 11508478.72,
+ "proveedores": 56,
  "semaforo": {
-  "r": 161,
-  "w": 39,
+  "r": 166,
+  "w": 60,
   "g": 2,
-  "v": 4,
-  "a": 5
+  "a": 4,
+  "v": 25
  },
  "etapas": {
-  "2": 188,
+  "2": 234,
   "4": 20,
   "5": 1,
   "6": 2
  },
  "verificacion": {
-  "n": 39,
-  "saldo": 851082.47
+  "n": 60,
+  "saldo": 2299798.27
  },
- "top5pct": 66.5,
- "cumplimientoATiempo": 76.3,
- "notasVencidas": 2876,
+ "top5pct": 66.4,
+ "cumplimientoATiempo": 75.1,
+ "notasVencidas": 2922,
  "hitosRegistrados": 0,
  "siscomp": {
   "cerrar": 85,
