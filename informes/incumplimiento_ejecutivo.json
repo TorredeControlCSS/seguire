@@ -1,15 +1,14 @@
 {
- "hoy": "2026-11-23",
+ "hoy": "2026-11-24",
  "corteLibro": "2026-11-10",
  "expedientes": 257,
  "saldo": 11508478.72,
  "proveedores": 56,
  "semaforo": {
-  "r": 166,
-  "w": 60,
+  "r": 170,
+  "w": 58,
   "g": 2,
-  "a": 4,
-  "v": 25
+  "a": 27
  },
  "etapas": {
   "2": 234,
@@ -18,8 +17,8 @@
   "6": 2
  },
  "verificacion": {
-  "n": 60,
-  "saldo": 2299798.27
+  "n": 58,
+  "saldo": 1802158.27
  },
  "top5pct": 66.4,
  "cumplimientoATiempo": 75.1,
