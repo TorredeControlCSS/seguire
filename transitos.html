@@ -302,6 +302,7 @@
   :root[data-theme="dark"] .vistas button.on{color:#8fc1f0;border-bottom-color:#8fc1f0;}
   /* Entregas directas en Unidades Ejecutoras (19-nov-2026) */
   .k-DUE{background:#dff1ef;color:#17655d}
+  .k-ASI,.bc-ASI{background:#fdf1d8;color:#7a5a12}
   .mt-ue{display:inline-block;margin-top:2px;border-radius:10px;padding:1px 7px;font-size:10.5px;font-weight:600;background:#dff1ef;color:#17655d;white-space:nowrap;}
   .ue-dest{margin-top:10px;border:1px solid var(--linea);border-radius:6px;background:#fff;overflow:hidden;}
   .ue-dest .hd{padding:7px 10px;font-size:12px;font-weight:700;color:var(--azul);background:#f4f8fc;border-bottom:1px solid var(--linea);}
@@ -1298,8 +1299,9 @@ function cargarEvidencia(){
 var EVMETA={};
 /* Fuentes revisadas de una fila, con su fecha de corte: «el Kardex SAP-SAFIRO (al 08/10) ni en la recepción de CEDIS Panamá (al 05/10)» */
 function fFecha(iso){ iso=String(iso||''); return /^\d{4}-\d{2}-\d{2}/.test(iso)?iso.slice(8,10)+'/'+iso.slice(5,7):''; }
+function fteNom(f){ return f==='KARDEX'?'Kardex SAP-SAFIRO':f==='CITAS'?'panel de confirmación de citas':'Recepción CEDIS Panamá'; }
 function evFuente(k){ var F=(EVMETA.fuentes||{})[k]||{}, c=fFecha(F.corte||(k==='RECEPCION'?EVMETA.corteEntradas:''));
-  return (k==='KARDEX'?'el Kardex SAP-SAFIRO':'la recepción de CEDIS Panamá')+(c?' (al '+c+')':''); }
+  return (k==='KARDEX'?'el Kardex SAP-SAFIRO':k==='CITAS'?'el panel de confirmación de citas':'la recepción de CEDIS Panamá')+(c&&k!=='CITAS'?' (al '+c+')':''); }
 function evRevisado(e){ var r=(e.revisado&&e.revisado.length)?e.revisado:['RECEPCION']; return r.map(evFuente).join(' ni en '); }
 function situacionEv(t){
   var e=EVID[String(t.id)]; if(!e) return '';
@@ -1315,12 +1317,16 @@ function evidenciaHtml(g){
     if(sit==='RECIBIDO_SIN_CONFIRMAR' || sit==='RECIBIDO_PARCIAL_SIN_CONFIRMAR'){
       var ev=e.evidencia||{}, par=sit==='RECIBIDO_PARCIAL_SIN_CONFIRMAR';
       var fechas=ev.primeraEntrada===ev.ultimaEntrada?('el '+esc(ev.primeraEntrada)):('entre el '+esc(ev.primeraEntrada)+' y el '+esc(ev.ultimaEntrada));
-      var fte=ev.fuente==='KARDEX'?'el Kardex SAP-SAFIRO':'la recepción de CEDIS Panamá';
+      var fte=ev.fuente==='KARDEX'?'el Kardex SAP-SAFIRO':ev.fuente==='CITAS'?'el panel de confirmación de citas':'la recepción de CEDIS Panamá';
       var fuera=(ev.fueraPadron&&ev.fueraPadron.length)?' · registrada por '+esc(ev.fueraPadron.join(', '))+', fuera del personal de CEDIS Panamá':'';
       return '<div class="ev ev-ok"><div class="ev-txt"><b>'+ced+'</b> · '+(par?'Recibida en parte':'Recibida')+' según '+fte+' '+fechas+': <b>'+fmtNum(ev.recibido)+'</b> de '+fmtNum(f.cantidad)+' und'+
         '<span class="ev-conf">· confianza '+esc(ev.confianza||'')+fuera+'</span></div>'+
         '<div class="ev-btn"><button class="btn mini" onclick="responderEvidencia(\''+id+'\',\'CONFIRMADO\')">✓ Confirmar recepción</button>'+
         '<button class="btn btn-sec mini" onclick="responderEvidencia(\''+id+'\',\'NO_CORRESPONDE\')">No corresponde</button></div></div>';
+    }
+    if(sit==='ASISTIO_SIN_REGISTRO'){   /* 26-nov-2026 */
+      var ct=e.cita||{};
+      return '<div class="ev ev-atr"><div class="ev-txt"><b>'+ced+'</b> · El proveedor asistió a su cita '+esc((ct.fechas||[]).map(fFecha).join(', '))+' ('+fmtNum(ct.unidades||0)+' und citadas). Falta que <b>Recepción registre lo recibido</b> en el panel de confirmación: no requiere acción del planificador.</div></div>';
     }
     if(sit==='VENCIDO_SIN_ENTRADA'){
       return '<div class="ev ev-atr"><div class="ev-txt"><b>'+ced+'</b> · Venció el '+esc(e.vencEntrega||'—')+' y no aparece entrada en '+evRevisado(e)+': se sugiere validar con el proveedor.'+
@@ -1620,7 +1626,7 @@ function toggleDet(id){
 /* ====== BANDEJA «MIS PENDIENTES» (11-oct-2026) ======
    Misma regla que el recordatorio por correo (AVISO_PLANIFICADORES.gs en SÍGUELO). */
 var _yo='', _bandeja='';
-const B_CATS=[['REC','Confirmar recepción'],['VEN','Vencidos sin entrada'],['PRO','Vencen en 7 días'],['SOC','Sin OC registrada'],['FEC','Fechas por verificar'],['CED','Sin CEDIS']];
+const B_CATS=[['REC','Confirmar recepción'],['VEN','Vencidos sin entrada'],['PRO','Vencen en 7 días'],['SOC','Sin OC registrada'],['FEC','Fechas por verificar'],['CED','Sin CEDIS'],['ASI','Asistió, falta registro de Recepción']];
 /* Solicitud de entrega sin Nº de OC SAP (1001…): sin él no se coteja con el Kardex SAP-SAFIRO. */
 function trSinOc(t){ return String(t.tipo||'').toUpperCase()!=='ORDEN_COMPRA' && !/10\d{8}/.test(String(t.n_orden_compra||'')); }
 function trSaldo(t){ var s=t.saldo; if(s!==''&&s!=null&&!isNaN(Number(s))) return Number(s); return Math.max(0,(Number(t.cantidad)||0)-(Number(t.cant_entregada)||0)); }
@@ -1633,6 +1639,7 @@ function trCats(t){
   /* OC madre cubierta por sus Solicitudes de Entrega: solo pide acción si tiene una entrega directa por confirmar */
   if(ev0.cubierta && s!=='RECIBIDO_SIN_CONFIRMAR' && s!=='RECIBIDO_PARCIAL_SIN_CONFIRMAR') return [];
   if(s==='RECIBIDO_SIN_CONFIRMAR'||s==='RECIBIDO_PARCIAL_SIN_CONFIRMAR') c.push('REC');
+  else if(s==='ASISTIO_SIN_REGISTRO') c.push('ASI');   /* 26-nov-2026: ya vino a su cita; le toca a Recepción */
   else if(s==='VENCIDO_SIN_ENTRADA'||(d!=null&&d<0&&s!=='EN_PLAZO')) c.push('VEN');
   else if(d!=null&&d>=0&&d<=7) c.push('PRO');
   if(trSinOc(t)) c.push('SOC');
@@ -2315,6 +2322,7 @@ const M_CATS=[
   ['SOC','Documentos sin OC','Falta el Nº de OC SAP (1001…). Al <b>anotarlo aquí</b>, el sistema coteja la entrega solo contra el Kardex SAP-SAFIRO.'],
   ['FEC','Fechas por verificar','Al leer el PDF no se pudo confirmar el día o el mes de una fecha. Se sugiere <b>cotejarla con el documento</b>.'],
   ['CED','Sin CEDIS','El documento no indica el CEDIS de entrega. Mientras no lo tenga, <b>no aparece como tránsito</b> en los tableros.'],
+  ['ASI','Asistió, falta registro de Recepción','El proveedor <b>ya vino a su cita</b> en CEDIS Panamá, pero Recepción no ha registrado lo recibido en el panel de confirmación. <b>No requiere acción suya</b>: el saldo se actualiza solo cuando Recepción lo registre o entre al Kardex.'],
   ['DUE','Destino Unidad Ejecutora','Entregas que el proveedor hizo <b>directo en una Unidad Ejecutora</b>, que no salen en los informes de los CEDIS. Las del libro de Seguimiento con recibido completo se confirman solas; las demás, <b>regístrelas con su respaldo</b> y el saldo deja de figurar pendiente.'],
   ['ALL','Todo lo mío','Todos sus tránsitos con saldo pendiente.']];
 function toast(msg, tipo){ var b=$('toastBox'); if(!b){ return; } var d=document.createElement('div'); d.className='toast'+(tipo?' '+tipo:''); d.textContent=String(msg||''); b.appendChild(d); setTimeout(function(){ d.remove(); }, tipo==='err'?7000:4500); }
@@ -2371,15 +2379,16 @@ function misEntrega(t){
 function misSituacion(t){
   var e=EVID[String(t.id)]||{}, s=situacionEv(t), v=e.evidencia;
   if(s==='CONFIRMADO_POR_PLANIFICADOR'){
-    var cp=e.confirmadoPor||{}, qn=cp.tipo==='AUTOMATICO'?'automática · '+(cp.fuente==='RECEPCION'?'Recepción CEDIS Panamá':'Kardex SAP-SAFIRO')
+    var cp=e.confirmadoPor||{}, qn=cp.tipo==='AUTOMATICO'?'automática · '+fteNom(cp.fuente)
       :cp.tipo==='BARRIDO'?'por la Torre de Control':cp.tipo==='REGISTRO_MANUAL'?'registrada por '+esc(cp.por||'el planificador'):cp.tipo==='PLANIFICADOR'?'por '+esc(cp.por||'el planificador'):'';
     if(ueTotal(t)>0 && (!qn || cp.tipo==='AUTOMATICO')) qn=(ueTotal(t)>=Number(t.cantidad)?'entrega directa en Unidades Ejecutoras':fmtNum(ueTotal(t))+' u en Unidades Ejecutoras');
     return '<b style="color:#1f6b36">Recepción confirmada</b><br><span class="sm">'+(Number(t.cant_entregada)>0?fmtNum(t.cant_entregada)+' u':'')+(qn?(Number(t.cant_entregada)>0?' · ':'')+qn:'')+(cp.fecha?' · '+esc(fFecha(cp.fecha)):'')+(e.evidencia&&e.evidencia.cedisDeducido?'<br>CEDIS tomado del almacén del Kardex':'')+'</span>';
   }
   if(s==='_NO_CORRESPONDE') return '<span class="sm">Marcada «no corresponde»: se revisa con las entradas siguientes</span>';
   if((s==='RECIBIDO_SIN_CONFIRMAR'||s==='RECIBIDO_PARCIAL_SIN_CONFIRMAR')&&v){
-    return '<b style="color:#1f6b36">'+(s==='RECIBIDO_PARCIAL_SIN_CONFIRMAR'?'Recibida en parte':'Recibida')+': '+fmtNum(v.recibido)+' u</b><br><span class="sm">'+(v.fuente==='KARDEX'?'Kardex SAP-SAFIRO':'Recepción CEDIS Panamá')+' · '+esc(fFecha(v.ultimaEntrada))+' · confianza '+esc(v.confianza||'')+(Number(v.sinPresupuesto)>0?'<br>entrada 561 (sin presupuesto asignado)':'')+'</span>';
+    return '<b style="color:#1f6b36">'+(s==='RECIBIDO_PARCIAL_SIN_CONFIRMAR'?'Recibida en parte':'Recibida')+': '+fmtNum(v.recibido)+' u</b><br><span class="sm">'+fteNom(v.fuente)+' · '+esc(fFecha(v.ultimaEntrada))+' · confianza '+esc(v.confianza||'')+(Number(v.sinPresupuesto)>0?'<br>entrada 561 (sin presupuesto asignado)':'')+'</span>';
   }
+  if(s==='ASISTIO_SIN_REGISTRO'){ var ct=e.cita||{}; return '<b style="color:#8a5a1a">Asistió a su cita</b><br><span class="sm">'+esc((ct.fechas||[]).map(fFecha).join(', '))+' · '+fmtNum(ct.unidades||0)+' u citadas · falta registro de Recepción</span>'; }
   if(s==='VENCIDO_SIN_ENTRADA') return Number(t.cant_entregada)>0
     ? '<b style="color:#1f6b36">Recibido en parte: '+fmtNum(t.cant_entregada)+' u</b><br><span class="sm">saldo vencido, sin entrada nueva en '+esc(evRevisado(e))+'</span>'
     : 'Sin entrada<br><span class="sm">revisado en '+esc(evRevisado(e))+'</span>';
@@ -2394,7 +2403,8 @@ function misAccion(t, cat){
   var id=esc(t.id), est=String(t.estado_transito||'').toUpperCase(), cs=misCats(t);
   var ueB=ueSePuede(t)?'<button class="btn btn-sec" data-a="ue" data-id="'+id+'">Entrega en Unidad Ejecutora</button>':'';
   if(cat==='DUE') return ueB?('<button class="btn" data-a="ue" data-id="'+id+'">Registrar entrega en UE</button>'+(uePrePend(t).filter(function(p){ return p.rec>0; }).length?'<div class="sm">Seguimiento reporta '+uePrePend(t).filter(function(p){ return p.rec>0; }).length+' entrega(s) recibida(s) por registrar</div>':'')):'<span class="sm">Las entregas se registran en la Solicitud de Entrega</span>';
-  var k=cat==='ALL'?(['REC','SOC','FEC','CED','VEN','PRO'].find(function(x){ return cs.indexOf(x)>=0; })||''):cat;
+  var k=cat==='ALL'?(['REC','SOC','FEC','CED','VEN','PRO','ASI'].find(function(x){ return cs.indexOf(x)>=0; })||''):cat;
+  if(k==='ASI') return '<span class="sm">Le toca a Recepción registrar lo recibido en el panel de confirmación</span>';
   if(k==='REC') return '<button class="btn ok" data-a="conf" data-id="'+id+'">Confirmar</button><button class="btn btn-sec" data-a="nocorr" data-id="'+id+'">No corresponde</button>';
   if(k==='SOC'){ var e=EVID[String(t.id)]||{}, sug=e.ocSugerida||'';
     return '<div class="mt-oc"><input id="oc_'+id+'" placeholder="1001234567-08-12" value="'+esc(sug)+'" maxlength="18" title="Nº de OC SAP: 1001234567 o 1001234567-08-12"><button class="btn" data-a="oc" data-id="'+id+'">Guardar</button></div>'+(sug?'<div class="sm">sugerida por la cita del proveedor: verifíquela con el PDF</div>':'<div class="sm">Escríbala tal como aparece en el PDF (Contrato Nº / OC)</div>'); }
